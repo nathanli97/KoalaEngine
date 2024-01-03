@@ -16,11 +16,8 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+
+
 #pragma once
 
-void *PyIntegrateLoadScriptFromDisk(const char *path);
-void PyIntegrateInitialize();
-void PyIntegrateUnloadProgram(void* program);
-
 void PyIntegrateRunNoArg(void *program, const char * funcname);
-void PyIntegrateRunWithDeltaTime(void *program, const char * funcname);

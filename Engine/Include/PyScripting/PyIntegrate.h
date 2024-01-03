@@ -16,49 +16,9 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "PyIntegrate.h"
+#pragma once
 
-#define PY_SSIZE_T_CLEAN
-#include <Python.h>
+void PyIntegrateInitialize();
 
-#include <spdlog/spdlog.h>
-
-#include <filesystem>
-#include <thread>
-
-void *PyIntegrateLoadScriptFromDisk(const char *path)
-{
-    if (!std::filesystem::exists(path))
-        return nullptr;
-    PyObject *name = PyUnicode_DecodeFSDefault(path);
-    PyObject *module = PyImport_Import(name);
-
-    Py_DECREF(name);
-    return module;
-}
-
-void PyIntegrateUnloadScript(void* program)
-{
-    auto *proc = static_cast<PyObject*>(program);
-
-    Py_DECREF(proc);
-}
-
-void PyIntegrateInitialize()
-{
-    Py_Initialize();
-}
-
-void PyIntegrateRunNoArg(void *program, const char * funcname)
-{
-    auto *proc = static_cast<PyObject*>(program);
-    auto func = PyObject_GetAttrString(proc, funcname);
-
-    if (func && PyCallable_Check(func))
-    {
-        PyObject_CallNoArgs(func);
-    } else
-    {
-        spdlog::error("Failed to execute python func {}", funcname);
-    }
-}
+void *PyLoadScriptFromDisk(const char *path);
+void PyUnloadProgram(void* program);

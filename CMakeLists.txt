@@ -10,7 +10,8 @@ find_package(fmt CONFIG REQUIRED)
 find_package(Python REQUIRED Development)
 
 
-file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/*)
+file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine/Include)
 
 add_executable(koala main.cpp ${SOURCE_FILES})
 target_include_directories(koala
@@ -18,7 +19,7 @@ target_include_directories(koala
 )
 
 if (MINGW)
-    target_link_libraries(koala ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog_header_only)
+    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog_header_only)
 else ()
-    target_link_libraries(koala ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog)
+    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog)
 endif ()
