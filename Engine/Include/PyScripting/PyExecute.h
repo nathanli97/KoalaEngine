@@ -21,3 +21,8 @@
 #pragma once
 
 void PyIntegrateRunNoArg(void *program, const char * funcname);
+
+namespace Koala {
+    int ExecuteScript(void *program);
+    template<typename RetType=void, typename ...ArgType> RetType ExecuteFunction(void *program, const char *funcname, ArgType ...args);
+}
