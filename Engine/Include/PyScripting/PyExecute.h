@@ -22,7 +22,15 @@
 
 void PyIntegrateRunNoArg(void *program, const char * funcname);
 
-namespace Koala {
+namespace Koala::Scripting {
+    enum ScriptingType
+    {
+        Number,
+        String,
+
+    };
     int ExecuteScript(void *program);
-    template<typename RetType=void, typename ...ArgType> RetType ExecuteFunction(void *program, const char *funcname, ArgType ...args);
+
+    void *ExecuteFunctionPy(void *program, const char *funcname, uint16_t argc, uint64_t (*GetArg)(uint16_t index));
+    template<typename ...ArgType> void* ExecuteFunction(void *program, const char *funcname, ArgType ...args);
 }

@@ -16,33 +16,17 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "PyScripting/PyInclude.h"
-#include "PyScripting/PyIntegrate.h"
+#pragma once
 
-#include <spdlog/spdlog.h>
-
-#include <filesystem>
-#include <thread>
-
-void *PyLoadScriptFromDisk(const char *path)
-{
-    if (!std::filesystem::exists(path))
-        return nullptr;
-    PyObject *name = PyUnicode_DecodeFSDefault(path);
-    PyObject *module = PyImport_Import(name);
-
-    Py_DECREF(name);
-    return module;
-}
-
-void PyIntegrateUnloadScript(void* program)
-{
-    auto *proc = static_cast<PyObject*>(program);
-
-    Py_DECREF(proc);
-}
-
-void PyIntegrateInitialize()
-{
-    Py_Initialize();
-}
+#ifdef _DEBUG
+#undef _DEBUG
+#ifdef _MSC_VER
+#define _STL_CRT_SECURE_INVALID_PARAMETER(expr) _CRT_SECURE_INVALID_PARAMETER(expr)
+#endif
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#define _DEBUG
+#else
+#define PY_SSIZE_T_CLEAN
+#include <Python.h>
+#endif
