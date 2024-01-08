@@ -10,7 +10,7 @@ int main()
     using namespace Koala;
     Scripting::Initialize();
 
-    void *init_script = Scripting::LoadScriptFromDisk("init.py");
+    void *init_script = Scripting::LoadScriptFromDisk("init");
 
     if (init_script)
     {
@@ -22,6 +22,7 @@ int main()
     {
         spdlog::warn("Init script load failed. the engine may not working.");
     }
+
 
     return 0;
 }

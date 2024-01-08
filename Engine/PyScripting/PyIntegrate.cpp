@@ -28,43 +28,9 @@
 #include "FileSystem/SystemPath.h"
 namespace Koala::Scripting
 {
-    std::optional<std::string> FindScriptFile(const std::string& in_path)
+    void *LoadScriptFromDisk(const std::string& module_name)
     {
-        spdlog::debug("Finding script {}", in_path.c_str());
-        const auto paths = Path::GetScriptLoadPaths();
-        for (auto path: paths)
-        {
-
-            if (!path.empty())
-                path.append("/");
-            path.append(in_path);
-
-            if (!std::filesystem::exists(path))
-            {
-                spdlog::debug("Script {} is not found at {}, considering next path", in_path.c_str(), path);
-                continue;
-            }
-
-            spdlog::debug("Script found: {}", in_path.c_str());
-            return path;
-        }
-        return {};
-    }
-    void *LoadScriptFromDisk(const std::string& path)
-    {
-        const auto found_script = FindScriptFile(path);
-        if (!found_script.has_value())
-        {
-            spdlog::warn("Load script {} failed. Considered paths: ", path);
-            for (auto &p : Path::GetScriptLoadPaths())
-            {
-                spdlog::warn("{}", p.c_str());
-            }
-            spdlog::warn("ENV RootDir = {}", Path::GetRootPath());
-            return nullptr;
-        }
-
-        auto& script_path = found_script.value();
+        auto& script_path = module_name;
 
         PyObject *name = PyUnicode_DecodeFSDefault(script_path.c_str());
         PyObject *module = PyImport_Import(name);
@@ -92,8 +58,21 @@ namespace Koala::Scripting
 
         PyConfig config;
         PyConfig_InitPythonConfig(&config);
+
         config.module_search_paths_set = 1;
-        PyWideStringList_Append(&config.module_search_paths, L".");
+
+        auto const &paths = Path::GetScriptLoadPaths();
+
+        for(auto const &path: paths)
+        {
+            PyWideStringList_Append(&config.module_search_paths, path.generic_wstring().c_str());
+        }
+
         Py_InitializeFromConfig(&config);
+    }
+
+    void Shutdown()
+    {
+        Py_Finalize();
     }
 }

@@ -25,5 +25,7 @@ namespace Koala::Scripting
 
     void *LoadScriptFromDisk(const std::string& path);
     void UnloadScript(void* program);
+
+    void Shutdown();
 }
 

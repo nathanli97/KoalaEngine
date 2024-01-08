@@ -23,18 +23,19 @@
 #include <vector>
 
 namespace Koala::Path {
-    inline std::string GetRootPath()
+    inline std::filesystem::path GetRootPath()
     {
-        return "";
+        return std::filesystem::current_path();
     }
-    inline std::vector<std::string> GetScriptLoadPaths()
+    inline std::vector<std::filesystem::path> GetScriptLoadPaths()
     {
-        std::vector<std::string> result;
+        std::vector<std::filesystem::path> result;
         result.push_back(GetRootPath());
-        result.push_back(GetRootPath() + "/Engine");
-        result.push_back(GetRootPath() + "/Engine/Scripts");
-        result.push_back(GetRootPath() + "/TestGame/");
-        result.push_back(GetRootPath() + "/TestGame/Scripts");
+        result.push_back(GetRootPath() / "Scripts");
+        result.push_back(GetRootPath() / "Engine");
+        result.push_back(GetRootPath() / "Engine"/ "Scripts");
+        result.push_back(GetRootPath() / "TestGame");
+        result.push_back(GetRootPath() / "TestGame"/ "Scripts");
         return result;
     }
 }
