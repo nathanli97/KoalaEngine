@@ -20,7 +20,7 @@ int main()
     }
     else
     {
-        spdlog::warn("Init script not found. The engine may not working.");
+        spdlog::warn("Init script load failed. the engine may not working.");
     }
 
     return 0;
