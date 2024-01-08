@@ -3,9 +3,11 @@
 #include <spdlog/spdlog.h>
 
 #include "Core.h"
+#include "Engine/CmdParser.h"
 
-int main()
+int main(int argc, char** argv)
 {
+    Koala::CmdParser::Initialize(argc, argv);
     spdlog::set_level(spdlog::level::debug);
     using namespace Koala;
     Scripting::Initialize();
