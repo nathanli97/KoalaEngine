@@ -10,10 +10,13 @@ find_package(fmt CONFIG REQUIRED)
 find_package(Python REQUIRED Development)
 
 
-file(GLOB_RECURSE SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*)
+file(GLOB_RECURSE SOURCE_H_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*.h)
+file(GLOB_RECURSE SOURCE_INL_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*.inl)
+file(GLOB_RECURSE SOURCE_C_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*.c)
+file(GLOB_RECURSE SOURCE_CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*.cpp)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine/Include)
 
-add_executable(koala main.cpp ${SOURCE_FILES})
+add_executable(koala main.cpp ${SOURCE_H_FILES} ${SOURCE_INL_FILES} ${SOURCE_C_FILES} ${SOURCE_CPP_FILES})
 target_include_directories(koala
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )

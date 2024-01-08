@@ -6,13 +6,17 @@
 
 int main()
 {
-    PyIntegrateInitialize();
+    spdlog::set_level(spdlog::level::debug);
+    using namespace Koala;
+    Scripting::Initialize();
 
-    void *init_script = PyLoadScriptFromDisk("init.py");
+    void *init_script = Scripting::LoadScriptFromDisk("init.py");
 
     if (init_script)
     {
-        PyIntegrateRunNoArg(init_script, "on_init");
+        spdlog::debug("Executing init script");
+        Scripting::ExecuteFunctionNoArg(init_script, "on_init");
+        Scripting::UnloadScript(init_script);
     }
     else
     {

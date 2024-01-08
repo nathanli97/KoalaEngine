@@ -15,24 +15,26 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#include "PyScripting/PyInclude.h"
-#include "PyScripting/PyExecute.h"
 
-#include <spdlog/spdlog.h>
 
-namespace Koala::Scripting
-{
-    void ExecuteFunctionNoArg(void *program, const char * funcname)
+
+#pragma once
+#include <string>
+#include <vector>
+
+namespace Koala::Path {
+    inline std::string GetRootPath()
     {
-        auto *proc = static_cast<PyObject*>(program);
-        auto func = PyObject_GetAttrString(proc, funcname);
-
-        if (func && PyCallable_Check(func))
-        {
-            PyObject_CallNoArgs(func);
-        } else
-        {
-            spdlog::error("Failed to execute python func {}", funcname);
-        }
+        return "";
+    }
+    inline std::vector<std::string> GetScriptLoadPaths()
+    {
+        std::vector<std::string> result;
+        result.push_back(GetRootPath());
+        result.push_back(GetRootPath() + "/Engine");
+        result.push_back(GetRootPath() + "/Engine/Scripts");
+        result.push_back(GetRootPath() + "/TestGame/");
+        result.push_back(GetRootPath() + "/TestGame/Scripts");
+        return result;
     }
 }

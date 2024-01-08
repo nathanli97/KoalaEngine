@@ -22,27 +22,78 @@
 #include <spdlog/spdlog.h>
 
 #include <filesystem>
-#include <thread>
+#include <optional>
+#include <utility>
 
-void *PyLoadScriptFromDisk(const char *path)
+#include "FileSystem/SystemPath.h"
+namespace Koala::Scripting
 {
-    if (!std::filesystem::exists(path))
-        return nullptr;
-    PyObject *name = PyUnicode_DecodeFSDefault(path);
-    PyObject *module = PyImport_Import(name);
+    std::optional<std::string> FindScriptFile(const std::string& in_path)
+    {
+        spdlog::debug("Finding script {}", in_path.c_str());
+        const auto paths = Path::GetScriptLoadPaths();
+        for (auto path: paths)
+        {
 
-    Py_DECREF(name);
-    return module;
-}
+            if (!path.empty())
+                path.append("/");
+            path.append(in_path);
 
-void PyIntegrateUnloadScript(void* program)
-{
-    auto *proc = static_cast<PyObject*>(program);
+            if (!std::filesystem::exists(path))
+            {
+                spdlog::debug("Script {} is not found at {}, considering next path", in_path.c_str(), path);
+                continue;
+            }
 
-    Py_DECREF(proc);
-}
+            spdlog::debug("Script found: {}", in_path.c_str());
+            return path;
+        }
+        return {};
+    }
+    void *LoadScriptFromDisk(const std::string& path)
+    {
+        const auto found_script = FindScriptFile(path);
+        if (!found_script.has_value())
+        {
+            spdlog::warn("Load script {} failed. Considered paths: ", path);
+            for (auto &p : Path::GetScriptLoadPaths())
+            {
+                spdlog::warn("{}", p.c_str());
+            }
+            spdlog::warn("ENV RootDir = {}", Path::GetRootPath());
+            return nullptr;
+        }
 
-void PyIntegrateInitialize()
-{
-    Py_Initialize();
+        auto& script_path = found_script.value();
+
+        PyObject *name = PyUnicode_DecodeFSDefault(script_path.c_str());
+        PyObject *module = PyImport_Import(name);
+        if (module == nullptr)
+        {
+            spdlog::error("Failed to load script: {}", script_path.c_str());
+            PyErr_Print();
+        }
+
+        Py_DECREF(name);
+        return module;
+    }
+
+    void UnloadScript(void* program)
+    {
+        auto *proc = static_cast<PyObject*>(program);
+        if (!proc) return;
+
+        Py_DECREF(proc);
+    }
+
+    void Initialize()
+    {
+        Py_Initialize();
+
+        PyConfig config;
+        PyConfig_InitPythonConfig(&config);
+        config.module_search_paths_set = 1;
+        PyWideStringList_Append(&config.module_search_paths, L".");
+        Py_InitializeFromConfig(&config);
+    }
 }

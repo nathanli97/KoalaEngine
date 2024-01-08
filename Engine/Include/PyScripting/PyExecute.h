@@ -19,18 +19,18 @@
 
 
 #pragma once
-
-void PyIntegrateRunNoArg(void *program, const char * funcname);
-
 namespace Koala::Scripting {
-    enum ScriptingType
+    enum ArgTypeMap
     {
         Number,
-        String,
-
+        Float,
+        String
     };
-    int ExecuteScript(void *program);
+    //int ExecuteScript(void *program);
 
-    void *ExecuteFunctionPy(void *program, const char *funcname, uint16_t argc, uint64_t (*GetArg)(uint16_t index));
-    template<typename ...ArgType> void* ExecuteFunction(void *program, const char *funcname, ArgType ...args);
+    //void *ExecuteFunctionPy(void *program, const char *funcname, uint16_t argc, uint64_t (*GetArg)(uint16_t index));
+    //template<typename ...ArgType> void* ExecuteFunction(void *program, const char *funcname, ArgType ...args);
+
+    void ExecuteFunctionNoArg(void *program, const char * funcname);
+    //void ExecuteFunctionWithDeltaTime(void *program, const char * funcname);
 }

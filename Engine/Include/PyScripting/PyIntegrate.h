@@ -17,8 +17,13 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <string>
 
-void PyIntegrateInitialize();
+namespace Koala::Scripting
+{
+    void Initialize();
 
-void *PyLoadScriptFromDisk(const char *path);
-void PyUnloadProgram(void* program);
+    void *LoadScriptFromDisk(const std::string& path);
+    void UnloadScript(void* program);
+}
+
