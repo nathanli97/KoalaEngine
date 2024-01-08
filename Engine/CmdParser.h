@@ -47,7 +47,7 @@ namespace Koala
         {
             if (!HasArg(arg))
                 return "";
-            return args[arg];
+            return args.at(arg);
         }
     private:
         std::map<std::string, std::string> args;
