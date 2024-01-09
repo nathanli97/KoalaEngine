@@ -16,11 +16,44 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "Engine.h"
 
 
-#pragma once
+#include "Core.h"
 
-#include <spdlog/spdlog.h>
-#include "CmdParser.h"
-#include "PyScripting/PyIntegrate.h"
-#include "PyScripting/PyExecute.h"
+
+namespace Koala
+{
+    bool Engine::Initialize(int argc, char** argv)
+    {
+        using namespace Koala;
+
+        CmdParser::Initialize(argc, argv);
+
+        if (CmdParser::Get().HasArg("debug"))
+        {
+            spdlog::set_level(spdlog::level::debug);
+            spdlog::warn("LogLevel set to DEBUG");
+        }
+
+        Scripting::Initialize();
+
+        void *init_script = Scripting::LoadScriptFromDisk("init");
+
+        if (init_script)
+        {
+            spdlog::debug("Executing init script");
+            Scripting::ExecuteFunctionNoArg(init_script, "on_init");
+            Scripting::UnloadScript(init_script);
+        }
+        else
+        {
+            spdlog::error("Init script load failed.");
+            return false;
+        }
+
+        spdlog::info("Engine initialized");
+        return true;
+    }
+
+}

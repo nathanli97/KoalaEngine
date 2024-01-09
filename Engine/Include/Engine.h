@@ -20,7 +20,20 @@
 
 #pragma once
 
-#include <spdlog/spdlog.h>
-#include "CmdParser.h"
-#include "PyScripting/PyIntegrate.h"
-#include "PyScripting/PyExecute.h"
+namespace Koala {
+    class Engine
+    {
+    public:
+        static bool Start(int argc, char** argv)
+        {
+            return Engine::Get().Initialize(argc, argv);
+        }
+        static Engine& Get()
+        {
+            static Engine engine;
+            return engine;
+        }
+    private:
+        bool Initialize(int argc, char** argv);
+    };
+}

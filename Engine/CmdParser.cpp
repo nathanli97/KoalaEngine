@@ -16,7 +16,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "CmdParser.h"
+#include "Include/CmdParser.h"
 
 #include <spdlog/spdlog.h>
 
@@ -78,6 +78,10 @@ namespace Koala
                 spdlog::warn("Unexpected arg {}, ignored", arg);
             }
         }
-        spdlog::info("Engine running with commandline {}", cmdline);
+        if (cmdline.empty())
+            spdlog::info("Engine running with no commandline");
+        else
+            spdlog::info("Engine running with commandline {}", cmdline);
+
     }
 }
