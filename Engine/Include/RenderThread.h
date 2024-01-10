@@ -16,52 +16,18 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
 
+#pragma once
+#include "ThreadedModule.h"
 
-#include "Core.h"
-#include "RenderThread.h"
-
-
-namespace Koala
-{
-    bool Engine::Initialize(int argc, char** argv)
-    {
-        using namespace Koala;
-
-        CmdParser::Initialize(argc, argv);
-
-        if (CmdParser::Get().HasArg("debug"))
-        {
-            spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
-        }
-
-        Scripting::Initialize();
-
-        void *init_script = Scripting::LoadScriptFromDisk("init");
-
-        if (init_script)
-        {
-            spdlog::debug("Executing init script");
-            Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
-        }
-        else
-        {
-            spdlog::error("Init script load failed.");
-            return false;
-        }
-
-        // Initialize modules
-
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        spdlog::info("Engine initialized");
-        return true;
-    }
-
+namespace Koala {
+    class RenderThread: public IThreadedModule {
+    public:
+        bool Initialize() override;
+        bool Shutdown() override;
+        void Tick(float delta_time) override;
+        void Run() override;
+        RenderThread(): IThreadedModule() {}
+    };
 }
+

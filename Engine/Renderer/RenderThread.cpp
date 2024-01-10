@@ -16,52 +16,30 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
 
+#include "../Include/RenderThread.h"
 
-#include "Core.h"
-#include "RenderThread.h"
-
+#include <spdlog/spdlog.h>
 
 namespace Koala
 {
-    bool Engine::Initialize(int argc, char** argv)
+    bool RenderThread::Initialize()
     {
-        using namespace Koala;
-
-        CmdParser::Initialize(argc, argv);
-
-        if (CmdParser::Get().HasArg("debug"))
-        {
-            spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
-        }
-
-        Scripting::Initialize();
-
-        void *init_script = Scripting::LoadScriptFromDisk("init");
-
-        if (init_script)
-        {
-            spdlog::debug("Executing init script");
-            Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
-        }
-        else
-        {
-            spdlog::error("Init script load failed.");
-            return false;
-        }
-
-        // Initialize modules
-
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        spdlog::info("Engine initialized");
+        spdlog::info("RenderThread is initialized.");
         return true;
     }
 
+    bool RenderThread::Shutdown()
+    {
+        return true;
+    }
+
+    void RenderThread::Tick(float delta_time)
+    {
+    }
+
+    void RenderThread::Run()
+    {
+        spdlog::info("RenderThread is running.");
+    }
 }

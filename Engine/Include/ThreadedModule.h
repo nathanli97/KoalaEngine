@@ -16,52 +16,18 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
 
+#pragma once
+#include "Module.h"
+#include "Thread.h"
 
-#include "Core.h"
-#include "RenderThread.h"
-
-
-namespace Koala
-{
-    bool Engine::Initialize(int argc, char** argv)
+namespace Koala {
+    struct IThreadedModule: public IModule, Thread
     {
-        using namespace Koala;
+         IThreadedModule(): IModule() {}
 
-        CmdParser::Initialize(argc, argv);
-
-        if (CmdParser::Get().HasArg("debug"))
-        {
-            spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
-        }
-
-        Scripting::Initialize();
-
-        void *init_script = Scripting::LoadScriptFromDisk("init");
-
-        if (init_script)
-        {
-            spdlog::debug("Executing init script");
-            Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
-        }
-        else
-        {
-            spdlog::error("Init script load failed.");
-            return false;
-        }
-
-        // Initialize modules
-
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        spdlog::info("Engine initialized");
-        return true;
-    }
-
+        void CreateThread();
+    private:
+        bool thread_created = false;
+    };
 }

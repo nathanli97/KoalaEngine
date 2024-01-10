@@ -16,52 +16,47 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
 
 
-#include "Core.h"
-#include "RenderThread.h"
+#pragma once
+#include <list>
+#include <thread>
+#include <vector>
 
-
-namespace Koala
-{
-    bool Engine::Initialize(int argc, char** argv)
+namespace Koala {
+    class Thread
     {
-        using namespace Koala;
-
-        CmdParser::Initialize(argc, argv);
-
-        if (CmdParser::Get().HasArg("debug"))
+    public:
+        virtual void Run() = 0;
+    };
+    class ThreadManager
+    {
+    public:
+        static ThreadManager& Get()
         {
-            spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
+            static ThreadManager manager;
+            return manager;
         }
-
-        Scripting::Initialize();
-
-        void *init_script = Scripting::LoadScriptFromDisk("init");
-
-        if (init_script)
+        void CreateThread(Thread* thread)
         {
-            spdlog::debug("Executing init script");
-            Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
+            threads.emplace_back(
+                [thread]
+                {
+                    thread->Run();
+                }
+                );
         }
-        else
+        ~ThreadManager()
         {
-            spdlog::error("Init script load failed.");
-            return false;
+            for (auto & thread: threads)
+            {
+                if (thread.joinable())
+                    thread.join();
+            }
+            threads.clear();
         }
-
-        // Initialize modules
-
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        spdlog::info("Engine initialized");
-        return true;
-    }
-
+    private:
+        ThreadManager() = default;
+        std::list<std::thread> threads;
+    };
 }

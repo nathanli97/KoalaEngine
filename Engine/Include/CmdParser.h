@@ -17,7 +17,7 @@
 
 
 #pragma once
-#include <assert.h>
+#include <cassert>
 #include <map>
 #include <set>
 #include <string>

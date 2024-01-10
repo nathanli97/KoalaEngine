@@ -16,52 +16,33 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
 
 
-#include "Core.h"
-#include "RenderThread.h"
+#pragma once
 
+namespace Koala {
+struct IModule {
+public:
+    // virtual destructor
+    virtual ~IModule() = default;
 
-namespace Koala
-{
-    bool Engine::Initialize(int argc, char** argv)
+    // Module startup/shutdown functions.
+    // Those functions will be called in MainThread.
+    virtual bool Initialize() = 0;
+    virtual bool Shutdown() = 0;
+
+    // Module Tick function.
+    // Tick function will be called once every frame.
+
+    // delta_time: in ms.
+    virtual void Tick(float delta_time) = 0;
+
+    template <typename T>
+    static T& Get()
     {
-        using namespace Koala;
-
-        CmdParser::Initialize(argc, argv);
-
-        if (CmdParser::Get().HasArg("debug"))
-        {
-            spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
-        }
-
-        Scripting::Initialize();
-
-        void *init_script = Scripting::LoadScriptFromDisk("init");
-
-        if (init_script)
-        {
-            spdlog::debug("Executing init script");
-            Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
-        }
-        else
-        {
-            spdlog::error("Init script load failed.");
-            return false;
-        }
-
-        // Initialize modules
-
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        spdlog::info("Engine initialized");
-        return true;
+        static T module;
+        return module;
     }
-
+    IModule() = default;
+};
 }
