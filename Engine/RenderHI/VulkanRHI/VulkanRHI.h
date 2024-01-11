@@ -20,7 +20,7 @@
 
 #pragma once
 #include "VulkanRuntime.h"
-#include "../RenderHI.h"
+#include "RenderHI/RenderHI.h"
 
 namespace Koala::RenderHI {
 

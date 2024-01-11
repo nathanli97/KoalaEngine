@@ -20,6 +20,11 @@
 #pragma once
 #include "ThreadedModule.h"
 
+namespace Koala::RenderHI
+{
+    struct RenderHI;
+}
+
 namespace Koala {
     class RenderThread: public IThreadedModule {
     public:
@@ -30,6 +35,8 @@ namespace Koala {
         RenderThread(): IThreadedModule() {}
     private:
         bool state_thread_running = false;
+
+        RenderHI::RenderHI *render = nullptr;
     };
 }
 

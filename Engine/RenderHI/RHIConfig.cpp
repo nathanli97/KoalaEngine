@@ -16,17 +16,32 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <unordered_set>
 
-#include "VulkanRHI.h"
+#include "RenderHI/RenderHI.h"
 
+#ifdef INCLUDE_RHI_VULKAN
+#include "VulkanRHI/VulkanRHI.h"
+#endif
 
-namespace Koala::RenderHI {
-    void VulkanRHI::Initialize()
+namespace Koala::RenderHI
+{
+    std::unordered_set<std::string> GetAvaliableRenderHIs()
     {
+        return std::unordered_set<std::string>{
+#ifdef INCLUDE_RHI_VULKAN
+            "vulkan",
+#endif
+        };
     }
-
-    void VulkanRHI::Shutdown()
+    RenderHI* CreateRHI(const std::string& name)
     {
+        if (name == "null")
+            return nullptr;
+#ifdef INCLUDE_RHI_VULKAN
+        else if (name == "vulkan")
+            return new VulkanRHI{};
+#endif
+        else return nullptr;
     }
-} // RenderHI
-// Koala
+}

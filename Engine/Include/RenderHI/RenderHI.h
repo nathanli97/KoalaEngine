@@ -19,6 +19,8 @@
 
 
 #pragma once
+#include <unordered_set>
+
 #include "ISingleton.h"
 
 
@@ -29,5 +31,7 @@ namespace Koala::RenderHI
         virtual void Initialize() = 0;
         virtual void Shutdown() = 0;
     };
+    std::unordered_set<std::string> GetAvaliableRenderHIs();
+    RenderHI* CreateRHI(const std::string&);
 }
 

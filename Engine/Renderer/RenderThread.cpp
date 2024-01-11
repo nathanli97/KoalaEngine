@@ -21,10 +21,18 @@
 
 #include <spdlog/spdlog.h>
 
+#include "Config.h"
+#include "../RenderHI/VulkanRHI/VulkanRHI.h"
+
 namespace Koala
 {
     bool RenderThread::Initialize()
     {
+        auto renderer = IModule::Get<Config>().GetSettingStr("render.renderer", "vulkan");
+        if (renderer.value() == "vulkan")
+        {
+            render = new RenderHI::VulkanRHI;
+        }
         spdlog::info("RenderThread is initialized.");
         return true;
     }

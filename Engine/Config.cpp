@@ -57,13 +57,22 @@ namespace Koala
         return true;
     }
 
-    std::optional<std::string> Config::GetSettingStr(std::string key) const
+    std::optional<std::string> Config::GetSettingStr(std::string key, std::string default_value) const
     {
         std::optional<std::string> result;
         std::lock_guard<std::mutex> lock_guard(global_config_lock);
         if (engine_configs.count(key) != 0)
         {
             result = engine_configs.at(key);
+        }
+        if (game_configs.count(key) != 0)
+        {
+            result = game_configs.at(key);
+        }
+
+        if (!result.has_value() && !default_value.empty())
+        {
+            result = default_value;
         }
         return result;
     }

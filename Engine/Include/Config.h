@@ -48,7 +48,7 @@ namespace Koala
 
         void PrintAllConfigurations() const;
 
-        std::optional<std::string> GetSettingStr(std::string key) const;
+        std::optional<std::string> GetSettingStr(std::string key, std::string default_value = "") const;
         void SetSettingStr(std::string key, std::string value, bool write_into_engine_config = false);
     private:
         mutable std::mutex global_config_lock;
