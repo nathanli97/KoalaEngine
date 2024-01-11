@@ -56,6 +56,10 @@ namespace Koala
 
         // Initialize core modules
         IModule::Get<Config>().Initialize();
+        if (CmdParser::Get().HasArg("printcfg"))
+        {
+            IModule::Get<Config>().PrintAllConfigurations();
+        }
         // Initialize render-thread
 
         IModule::Get<RenderThread>().Initialize();

@@ -167,7 +167,7 @@ namespace Koala
                 str = str.substr(0, str.length() - 2);
         };
 
-        while (file >> line)
+        while (std::getline(file, line))
         {
             remove_blank_lines(line);
             if (
@@ -198,7 +198,7 @@ namespace Koala
                     StringTool::endswith(str, " ") ||
                     StringTool::endswith(str, "\t")
                     ))
-                    str = str.substr(0, str.length() - 2);
+                    str = str.substr(0, str.length() - 1);
             };
 
             {
@@ -231,5 +231,23 @@ namespace Koala
             std::string line = pair.first + " = " + pair.second;
             file << line << "\n";
         }
+    }
+
+    void Config::PrintAllConfigurations() const
+    {
+        std::lock_guard<std::mutex> lock_guard(global_config_lock);
+        spdlog::warn("Printing all configurations!");
+        for (auto const &config: engine_configs)
+        {
+            spdlog::warn("[ENG] {}={}", config.first, config.second);
+        }
+
+        for (auto const &config: game_configs)
+        {
+            spdlog::warn("[GAME] {}={}", config.first, config.second);
+        }
+
+        spdlog::warn("Print all configurations END!");
+
     }
 }

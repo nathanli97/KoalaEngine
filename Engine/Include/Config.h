@@ -43,8 +43,10 @@ namespace Koala
 
         void SetAutoSaving(bool enabled)
         {
-            auto_saving = true;
+            auto_saving = enabled;
         }
+
+        void PrintAllConfigurations() const;
 
         std::optional<std::string> GetSettingStr(std::string key) const;
         void SetSettingStr(std::string key, std::string value, bool write_into_engine_config = false);
