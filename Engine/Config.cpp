@@ -98,7 +98,7 @@ namespace Koala
 
         if (!file_engine_config.is_open())
         {
-            spdlog::error("Failed to load engine configuration from file {}", path_engine_configfile);
+            spdlog::error("Failed to load engine configuration from file {}", path_engine_configfile.string());
             result = false;
         }
         else
@@ -108,7 +108,7 @@ namespace Koala
 
         if (!file_game_config.is_open())
         {
-            spdlog::error("Failed to load game configuration from file {}", path_game_configfile);
+            spdlog::error("Failed to load game configuration from file {}", path_game_configfile.string());
             result = false;
         }
         else
