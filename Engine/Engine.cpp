@@ -19,8 +19,10 @@
 #include "Engine.h"
 
 
+#include "Config.h"
 #include "Core.h"
 #include "RenderThread.h"
+#include "RenderHI/RenderHI.h"
 
 
 namespace Koala
@@ -43,9 +45,8 @@ namespace Koala
 
         if (init_script)
         {
-            spdlog::debug("Executing init script");
+            spdlog::debug("Executing pre_init script");
             Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
-            Scripting::UnloadScript(init_script);
         }
         else
         {
@@ -53,12 +54,19 @@ namespace Koala
             return false;
         }
 
-        // Initialize modules
-
+        // Initialize core modules
+        IModule::Get<Config>().Initialize();
         // Initialize render-thread
 
         IModule::Get<RenderThread>().Initialize();
         IModule::Get<RenderThread>().CreateThread();
+
+        ISingleton::Get<ModuleManager>().InitializeModules();
+
+
+        spdlog::debug("Executing post_init script");
+        Scripting::ExecuteFunctionNoArg(init_script, "post_init");
+        Scripting::UnloadScript(init_script);
 
         spdlog::info("Engine initialized");
         return true;

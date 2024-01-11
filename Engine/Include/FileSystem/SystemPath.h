@@ -38,4 +38,8 @@ namespace Koala::Path {
         result.push_back(GetRootPath() / "TestGame"/ "Scripts");
         return result;
     }
+    inline std::filesystem::path GetConfigPath()
+    {
+        return GetRootPath() / "Config";
+    }
 }

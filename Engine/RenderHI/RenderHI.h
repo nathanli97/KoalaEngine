@@ -17,19 +17,17 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
-#include "ThreadedModule.h"
 
-namespace Koala {
-    class RenderThread: public IThreadedModule {
-    public:
-        bool Initialize() override;
-        bool Shutdown() override;
-        void Tick(float delta_time) override;
-        void Run() override;
-        RenderThread(): IThreadedModule() {}
-    private:
-        bool state_thread_running = false;
+#pragma once
+#include "ISingleton.h"
+
+
+namespace Koala::RenderHI
+{
+    struct RenderHI: public ISingleton{
+        virtual ~RenderHI() = default;
+        virtual void Initialize() = 0;
+        virtual void Shutdown() = 0;
     };
 }
 

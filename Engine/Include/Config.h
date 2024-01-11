@@ -17,19 +17,45 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
-#include "ThreadedModule.h"
 
-namespace Koala {
-    class RenderThread: public IThreadedModule {
+#pragma once
+#include <mutex>
+#include <optional>
+
+#include "Module.h"
+#include <unordered_map>
+
+namespace Koala
+{
+    class Config : public IModule
+    {
     public:
         bool Initialize() override;
         bool Shutdown() override;
         void Tick(float delta_time) override;
-        void Run() override;
-        RenderThread(): IThreadedModule() {}
+        bool Reload();
+        bool Save();
+
+        bool HasAutoSaving() const
+        {
+            return auto_saving;
+        }
+
+        void SetAutoSaving(bool enabled)
+        {
+            auto_saving = true;
+        }
+
+        std::optional<std::string> GetSettingStr(std::string key) const;
+        void SetSettingStr(std::string key, std::string value, bool write_into_engine_config = false);
     private:
-        bool state_thread_running = false;
+        mutable std::mutex global_config_lock;
+        bool readonly_mode = false;
+
+        void LoadINI(std::ifstream& file, std::unordered_map<std::string, std::string> &out);
+        void SaveINI(std::ofstream& file, const std::unordered_map<std::string, std::string> &config) const;
+
+        std::unordered_map<std::string, std::string> engine_configs, game_configs;
+        bool auto_saving = false;
     };
 }
-

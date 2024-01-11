@@ -19,30 +19,38 @@
 
 
 #pragma once
+#include <list>
+
+#include "ISingleton.h"
 
 namespace Koala {
-struct IModule {
-public:
-    // virtual destructor
-    virtual ~IModule() = default;
+    struct IModule: ISingleton {
+    public:
+        // virtual destructor
+        virtual ~IModule() = default;
 
-    // Module startup/shutdown functions.
-    // Those functions will be called in MainThread.
-    virtual bool Initialize() = 0;
-    virtual bool Shutdown() = 0;
+        // Module startup/shutdown functions.
+        // Those functions will be called in MainThread.
+        virtual bool Initialize() = 0;
+        virtual bool Shutdown() = 0;
 
-    // Module Tick function.
-    // Tick function will be called once every frame.
+        // Module Tick function.
+        // Tick function will be called once every frame.
 
-    // delta_time: in ms.
-    virtual void Tick(float delta_time) = 0;
-
-    template <typename T>
-    static T& Get()
+        // delta_time: in ms.
+        virtual void Tick(float delta_time) = 0;
+    };
+    class ModuleManager: public ISingleton
     {
-        static T module;
-        return module;
-    }
-    IModule() = default;
-};
+    public:
+        // Register a new module
+        // the modules will initializes in registered order.
+        void RegisterModule(IModule* module);
+
+        void InitializeModules();
+        void TickModules(float delta);
+        void ShutdownModules();
+    private:
+        std::list<IModule*> modules;
+    };
 }

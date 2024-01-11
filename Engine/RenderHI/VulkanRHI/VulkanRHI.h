@@ -17,19 +17,20 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
+
 #pragma once
-#include "ThreadedModule.h"
+#include "VulkanRuntime.h"
+#include "../RenderHI.h"
 
-namespace Koala {
-    class RenderThread: public IThreadedModule {
-    public:
-        bool Initialize() override;
-        bool Shutdown() override;
-        void Tick(float delta_time) override;
-        void Run() override;
-        RenderThread(): IThreadedModule() {}
-    private:
-        bool state_thread_running = false;
-    };
-}
+namespace Koala::RenderHI {
 
+class VulkanRHI: public RenderHI{
+public:
+    void Initialize() override;
+    void Shutdown() override;
+private:
+    VulkanRuntime runtime;
+};
+
+} // RenderHI
+// Koala

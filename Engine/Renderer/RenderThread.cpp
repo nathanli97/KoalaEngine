@@ -40,6 +40,8 @@ namespace Koala
 
     void RenderThread::Run()
     {
+        state_thread_running = true;
         spdlog::info("RenderThread is running.");
+        state_thread_running = false;
     }
 }

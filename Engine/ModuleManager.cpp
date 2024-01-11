@@ -16,20 +16,38 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "Module.h"
+namespace Koala
+{
+    void ModuleManager::RegisterModule(IModule* module)
+    {
+        modules.push_back(module);
+    }
 
-#pragma once
-#include "ThreadedModule.h"
+    void ModuleManager::InitializeModules()
+    {
+        for (auto it = modules.begin(); it != modules.end(); ++it)
+        {
+            IModule * module = *it;
+            module->Initialize();
+        }
+    }
 
-namespace Koala {
-    class RenderThread: public IThreadedModule {
-    public:
-        bool Initialize() override;
-        bool Shutdown() override;
-        void Tick(float delta_time) override;
-        void Run() override;
-        RenderThread(): IThreadedModule() {}
-    private:
-        bool state_thread_running = false;
-    };
+    void ModuleManager::TickModules(float delta)
+    {
+        for (auto it = modules.begin(); it != modules.end(); ++it)
+        {
+            IModule * module = *it;
+            module->Tick(delta);
+        }
+    }
+
+    void ModuleManager::ShutdownModules()
+    {
+        for (auto it = modules.rbegin(); it != modules.rend(); ++it)
+        {
+            IModule * module = *it;
+            module->Shutdown();
+        }
+    }
 }
-

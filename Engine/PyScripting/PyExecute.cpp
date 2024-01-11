@@ -30,9 +30,6 @@ namespace Koala::Scripting
         if (func && PyCallable_Check(func))
         {
             PyObject_CallNoArgs(func);
-        } else
-        {
-            spdlog::error("Failed to execute python func {}", funcname);
         }
     }
 }

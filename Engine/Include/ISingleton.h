@@ -17,19 +17,23 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#pragma once
-#include "ThreadedModule.h"
 
-namespace Koala {
-    class RenderThread: public IThreadedModule {
+#pragma once
+#include <type_traits>
+
+namespace Koala
+{
+    class ISingleton
+    {
     public:
-        bool Initialize() override;
-        bool Shutdown() override;
-        void Tick(float delta_time) override;
-        void Run() override;
-        RenderThread(): IThreadedModule() {}
-    private:
-        bool state_thread_running = false;
+        template <typename T>
+        static T& Get()
+        {
+            static_assert(std::is_base_of_v<ISingleton, T>, "T must be a derived class of ISingleton class.");
+            static T instance;
+            return instance;
+        }
+    protected:
+        ISingleton() = default;
     };
 }
-
