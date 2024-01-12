@@ -46,9 +46,20 @@ namespace Koala
             auto_saving = enabled;
         }
 
+        bool HasAutoSavingWhenEngineExiting() const
+        {
+            return saving_when_engine_exiting;
+        }
+
+        void SetAutoSavingWhenEngineExiting(bool enabled)
+        {
+            saving_when_engine_exiting = enabled;
+        }
+
         void PrintAllConfigurations() const;
 
         std::optional<std::string> GetSettingStr(std::string key, std::string default_value = "") const;
+        std::string GetSettingStrWithAutoSaving(std::string key, std::string default_value, bool write_into_engine_config = false);
         void SetSettingStr(std::string key, std::string value, bool write_into_engine_config = false);
     private:
         mutable std::mutex global_config_lock;
@@ -59,5 +70,6 @@ namespace Koala
 
         std::unordered_map<std::string, std::string> engine_configs, game_configs;
         bool auto_saving = false;
+        bool saving_when_engine_exiting = false;
     };
 }

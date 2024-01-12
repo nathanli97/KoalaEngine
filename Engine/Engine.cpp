@@ -84,6 +84,9 @@ namespace Koala
     void Engine::Shutdown()
     {
         IModule::Get<RenderThread>().WaitForRTStop();
+        ISingleton::Get<ModuleManager>().ShutdownModules();
+        IModule::Get<Config>().Shutdown();
+        Scripting::Shutdown();
         spdlog::info("Engine is exiting");
     }
 

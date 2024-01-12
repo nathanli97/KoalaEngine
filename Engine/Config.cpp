@@ -50,10 +50,14 @@ namespace Koala
 
     bool Config::Shutdown()
     {
-        if(!Save())
+        if (HasAutoSavingWhenEngineExiting())
         {
-            spdlog::error("Failed to save settings.");
+            if(!Save())
+            {
+                spdlog::error("Failed to save settings.");
+            }
         }
+
         return true;
     }
 
@@ -75,6 +79,18 @@ namespace Koala
             result = default_value;
         }
         return result;
+    }
+
+    std::string Config::GetSettingStrWithAutoSaving(std::string key, std::string default_value, bool write_into_engine_config)
+    {
+        auto value = GetSettingStr(key);
+        if (value.has_value())
+            return value.value();
+        else
+        {
+            SetSettingStr(key, default_value, write_into_engine_config);
+            return default_value;
+        }
     }
 
     void Config::SetSettingStr(std::string key, std::string value, bool write_into_engine_config)

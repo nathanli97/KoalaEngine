@@ -28,17 +28,17 @@ namespace Koala
 {
     bool RenderThread::Initialize()
     {
-        auto renderer = IModule::Get<Config>().GetSettingStr("render.renderer", "vulkan");
+        auto renderer = IModule::Get<Config>().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
         auto avaliable_renderers = RenderHI::GetAvaliableRenderHIs();
 
-        if (avaliable_renderers.count(renderer.value()) == 0)
+        if (avaliable_renderers.count(renderer) == 0)
         {
-            spdlog::error("Requested renderer unavaliable: {}", renderer.value());
+            spdlog::error("Requested renderer unavaliable: {}", renderer);
 
             return false;
         }
 
-        render = RenderHI::GetRHI(renderer.value());
+        render = RenderHI::GetRHI(renderer);
         spdlog::info("The MainThread Part of RenderThread initialization is completed. Waiting for RT running.");
         return true;
     }

@@ -25,6 +25,10 @@ namespace Koala::Scripting
     void ExecuteFunctionNoArg(void *program, const char * funcname)
     {
         auto *proc = static_cast<PyObject*>(program);
+
+        if (!PyObject_HasAttrString(proc, funcname))
+            return;
+
         auto func = PyObject_GetAttrString(proc, funcname);
 
         if (func && PyCallable_Check(func))

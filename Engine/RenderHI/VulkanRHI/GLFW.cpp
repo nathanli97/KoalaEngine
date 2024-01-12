@@ -35,10 +35,10 @@ namespace Koala::RenderHI
     {
         auto &config = IModule::Get<Config>();
 
-        int window_width = std::stoi(config.GetSettingStr("render.window.width", "1280").value());
-        int window_height = std::stoi(config.GetSettingStr("render.window.height", "960").value());
+        int window_width = std::stoi(config.GetSettingStrWithAutoSaving("render.window.width", "1280", true));
+        int window_height = std::stoi(config.GetSettingStrWithAutoSaving("render.window.height", "960", true));
 
-        std::string window_title = config.GetSettingStr("render.window.title", "Koala").value();
+        std::string window_title = config.GetSettingStrWithAutoSaving("render.window.title", "Koala");
 
         int ret = glfwInit();
         if (ret != GLFW_TRUE)
