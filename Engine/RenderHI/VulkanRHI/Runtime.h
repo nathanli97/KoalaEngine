@@ -29,5 +29,9 @@ namespace Koala::RenderHI
 {
     struct VulkanRuntime {
     };
+    struct GLFWRuntime
+    {
+        GLFWwindow *window{};
+    };
 }
 

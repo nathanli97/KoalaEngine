@@ -29,10 +29,16 @@ namespace Koala
     bool RenderThread::Initialize()
     {
         auto renderer = IModule::Get<Config>().GetSettingStr("render.renderer", "vulkan");
-        if (renderer.value() == "vulkan")
+        auto avaliable_renderers = RenderHI::GetAvaliableRenderHIs();
+
+        if (avaliable_renderers.count(renderer.value()) == 0)
         {
-            render = new RenderHI::VulkanRHI;
+            spdlog::error("Requested renderer unavaliable: {}", renderer.value());
+
+            return false;
         }
+
+        render = RenderHI::GetRHI(renderer.value());
         spdlog::info("RenderThread is initialized.");
         return true;
     }
@@ -50,6 +56,19 @@ namespace Koala
     {
         state_thread_running = true;
         spdlog::info("RenderThread is running.");
+
+        spdlog::info("RenderThread: Initializing RHI");
+        render->Initialize();
+        spdlog::info("RenderThread: RHI Initialized");
+
+        while (render->Tick())
+        {
+            // TODO: Render!!!!!!!!!!!!!
+        }
+
+        spdlog::info("RenderThread: Shutdowning RHI");
+        render->Shutdown();
+        spdlog::info("RenderThread is stopping.");
         state_thread_running = false;
     }
 }

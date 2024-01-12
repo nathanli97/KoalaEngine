@@ -19,14 +19,27 @@
 
 #include "VulkanRHI.h"
 
+#include <string>
+
+#include "Config.h"
+#include "Module.h"
+
 
 namespace Koala::RenderHI {
     void VulkanRHI::Initialize()
     {
+        GLFWInitialize();
     }
 
     void VulkanRHI::Shutdown()
     {
+        GLFWShutdown();
     }
+
+    bool VulkanRHI::Tick()
+    {
+        return GLFWTick();
+    }
+
 } // RenderHI
 // Koala

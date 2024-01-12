@@ -30,8 +30,10 @@ namespace Koala::RenderHI
         virtual ~RenderHI() = default;
         virtual void Initialize() = 0;
         virtual void Shutdown() = 0;
+        // RETURN FALSE if window is closing, renderer should stop rendering
+        virtual bool Tick() = 0;
     };
     std::unordered_set<std::string> GetAvaliableRenderHIs();
-    RenderHI* CreateRHI(const std::string&);
+    RenderHI* GetRHI(const std::string&);
 }
 

@@ -34,13 +34,13 @@ namespace Koala::RenderHI
 #endif
         };
     }
-    RenderHI* CreateRHI(const std::string& name)
+    RenderHI* GetRHI(const std::string& name)
     {
         if (name == "null")
             return nullptr;
 #ifdef INCLUDE_RHI_VULKAN
         else if (name == "vulkan")
-            return new VulkanRHI{};
+            return &ISingleton::Get<VulkanRHI>();
 #endif
         else return nullptr;
     }

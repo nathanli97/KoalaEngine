@@ -19,7 +19,7 @@
 
 
 #pragma once
-#include "VulkanRuntime.h"
+#include "Runtime.h"
 #include "RenderHI/RenderHI.h"
 
 namespace Koala::RenderHI {
@@ -28,8 +28,18 @@ class VulkanRHI: public RenderHI{
 public:
     void Initialize() override;
     void Shutdown() override;
+    bool Tick() override;
 private:
-    VulkanRuntime runtime;
+    VulkanRuntime vk;
+    GLFWRuntime glfw;
+
+    bool GLFWInitialize();
+    void GLFWShutdown();
+
+    // Ticking GLFW.
+    // Return true: continue to rendering
+    // Return false: stop rendering, the window is closing.
+    bool GLFWTick();
 };
 
 } // RenderHI
