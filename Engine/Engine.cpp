@@ -21,6 +21,7 @@
 
 #include "Config.h"
 #include "Core.h"
+#include "EngineVersion.h"
 #include "RenderThread.h"
 #include "RenderHI/RenderHI.h"
 
@@ -74,6 +75,11 @@ namespace Koala
         Scripting::UnloadScript(init_script);
 
         spdlog::info("Engine initialized");
+        spdlog::info("Welcome to KoalaEngine {}.{}.{} ({})",
+            KOALA_ENGINE_VER_MAJOR,
+            KOALA_ENGINE_VER_MINOR,
+            KOALA_ENGINE_VER_PATCH,
+            KOALA_ENGINE_VER_CODENAME);
         return true;
     }
     void Engine::Tick()

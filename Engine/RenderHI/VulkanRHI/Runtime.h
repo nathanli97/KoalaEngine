@@ -28,6 +28,7 @@
 namespace Koala::RenderHI
 {
     struct VulkanRuntime {
+        VkInstance instance{};
     };
     struct GLFWRuntime
     {

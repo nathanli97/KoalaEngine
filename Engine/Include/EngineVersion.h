@@ -17,38 +17,11 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-
 #pragma once
-#include "Runtime.h"
-#include "RenderHI/RenderHI.h"
 
-namespace Koala::RenderHI {
-
-class VulkanRHI: public RenderHI{
-public:
-    bool Initialize() override;
-    void Shutdown() override;
-    bool Tick() override;
-private:
-    VulkanRuntime vk;
-    GLFWRuntime glfw;
-
-    bool GLFWInitialize();
-    void GLFWShutdown();
-
-    // Ticking GLFW.
-    // Return true: continue to rendering
-    // Return false: stop rendering, the window is closing.
-    bool GLFWTick();
-
-    // Initialize Vulkan
-    bool VulkanInitialize();
-
-    // ------Vulkan Initialization Functions------
-    bool InitVulkanInstance();
+#define KOALA_ENGINE_VER_MAJOR 0
+#define KOALA_ENGINE_VER_MINOR 1
+#define KOALA_ENGINE_VER_PATCH 0
+#define KOALA_ENGINE_VER_CODENAME "Waht"
 
 
-};
-
-} // RenderHI
-// Koala

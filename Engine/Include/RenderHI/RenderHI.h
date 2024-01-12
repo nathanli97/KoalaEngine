@@ -28,7 +28,7 @@ namespace Koala::RenderHI
 {
     struct RenderHI: public ISingleton{
         virtual ~RenderHI() = default;
-        virtual void Initialize() = 0;
+        virtual bool Initialize() = 0;
         virtual void Shutdown() = 0;
         // RETURN FALSE if window is closing, renderer should stop rendering
         virtual bool Tick() = 0;

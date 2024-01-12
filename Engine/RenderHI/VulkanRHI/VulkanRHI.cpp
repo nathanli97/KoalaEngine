@@ -26,9 +26,10 @@
 
 
 namespace Koala::RenderHI {
-    void VulkanRHI::Initialize()
+    bool VulkanRHI::Initialize()
     {
-        GLFWInitialize();
+        return GLFWInitialize() &&
+            VulkanInitialize();
     }
 
     void VulkanRHI::Shutdown()
@@ -41,5 +42,9 @@ namespace Koala::RenderHI {
         return GLFWTick();
     }
 
+    bool VulkanRHI::VulkanInitialize()
+    {
+        return InitVulkanInstance();
+    }
 } // RenderHI
 // Koala
