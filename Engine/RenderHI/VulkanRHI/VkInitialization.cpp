@@ -23,6 +23,48 @@
 #include "Module.h"
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>
+#define RHI_ENABLE_VALIDATION 0
+#if RHI_ENABLE_VALIDATION
+static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
+    VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+    void *
+)
+{
+    std::string message_type;
+    switch (messageType)
+    {
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:message_type = "GENERAL";break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:message_type = "VIOLATES_SPECIFICATION";break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:message_type = "PERFORMANCE";break;
+    default:break;
+    }
+
+    switch (messageSeverity)
+    {
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: spdlog::debug("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:spdlog::info("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:spdlog::warn("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:spdlog::error("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    default:break;
+    }
+
+    return VK_FALSE;
+}
+VkResult VulkanCreateDebugUtilsMessengerEXT(VkInstance instance,
+                                            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
+                                            const VkAllocationCallbacks *pAllocator,
+                                            VkDebugUtilsMessengerEXT *pDebugMessenger) {
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    } else {
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+    }
+}
+static VkDebugUtilsMessengerEXT vk_debug_messenger{};
+#endif
 
 namespace Koala::RenderHI
 {
@@ -58,15 +100,15 @@ namespace Koala::RenderHI
         const std::vector<const char *> validation_layers = {
             "VK_LAYER_KHRONOS_validation"
         };
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-        create_info.ppEnabledLayerNames = validation_layers.data();
+        vk_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        vk_create_info.ppEnabledLayerNames = validation_layers.data();
         required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
 #ifdef __APPLE__
         required_extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
-        create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        vk_create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
         vk_create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
@@ -78,6 +120,28 @@ namespace Koala::RenderHI
             spdlog::error("RHI: Failed to create VK Instance: {}", string_VkResult(result));
             return false;
         }
+#if RHI_ENABLE_VALIDATION
+        VkDebugUtilsMessengerCreateInfoEXT vk_debug_utils_messenger_create_info_ext{};
+        vk_debug_utils_messenger_create_info_ext.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        vk_debug_utils_messenger_create_info_ext.messageSeverity =
+            VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
+        vk_debug_utils_messenger_create_info_ext.messageType =
+            VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
+                | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        vk_debug_utils_messenger_create_info_ext.pfnUserCallback = VulkanDebugCallBack;
+        vk_debug_utils_messenger_create_info_ext.pUserData = nullptr;
+        if (VulkanCreateDebugUtilsMessengerEXT(vk.instance,
+                                               &vk_debug_utils_messenger_create_info_ext,
+                                               nullptr,
+                                               &vk_debug_messenger) != VK_SUCCESS) {
+            spdlog::error("RHI: Failed to create vulkan validation messenger");
+        }
+        else
+        {
+            spdlog::info("RHI: Vulkan validation layer is enabled and initialized successfully");
+        }
+#endif
 
         return true;
     }

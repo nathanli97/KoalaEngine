@@ -39,7 +39,6 @@ namespace Koala
         }
 
         render = RenderHI::GetRHI(renderer);
-        spdlog::info("The MainThread Part of RenderThread initialization is completed. Waiting for RT running.");
         return true;
     }
 
