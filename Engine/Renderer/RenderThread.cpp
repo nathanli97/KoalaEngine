@@ -39,7 +39,7 @@ namespace Koala
         }
 
         render = RenderHI::GetRHI(renderer.value());
-        spdlog::info("RenderThread is initialized.");
+        spdlog::info("The MainThread Part of RenderThread initialization is completed. Waiting for RT running.");
         return true;
     }
 
@@ -54,12 +54,16 @@ namespace Koala
 
     void RenderThread::Run()
     {
-        state_thread_running = true;
         spdlog::info("RenderThread is running.");
 
         spdlog::info("RenderThread: Initializing RHI");
         render->Initialize();
         spdlog::info("RenderThread: RHI Initialized");
+
+        {
+            std::lock_guard lock_guard(mutex_render_ready);
+            cv_render_ready.notify_all();
+        }
 
         while (render->Tick())
         {
@@ -69,6 +73,10 @@ namespace Koala
         spdlog::info("RenderThread: Shutdowning RHI");
         render->Shutdown();
         spdlog::info("RenderThread is stopping.");
-        state_thread_running = false;
+
+        {
+            std::lock_guard lock(mutex_renderthread_stop);
+            cv_renderthread_stop.notify_all();
+        }
     }
 }

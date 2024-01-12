@@ -26,14 +26,37 @@ namespace Koala {
     public:
         static bool Start(int argc, char** argv)
         {
-            return Engine::Get().Initialize(argc, argv);
+            if (!Engine::Get().Initialize(argc, argv))
+            {
+                return false;
+            }
+
+            while(!Engine::Get().IsEngineExitRequested())
+                Engine::Get().Tick();
+
+            Engine::Get().Shutdown();
+            return true;
         }
         static Engine& Get()
         {
             static Engine engine;
             return engine;
         }
+        [[nodiscard]] bool IsEngineExitRequested() const
+        {
+            return requested_engine_stop;
+        }
+
+        void RequestEngineStop()
+        {
+            requested_engine_stop = true;
+        }
     private:
         bool Initialize(int argc, char** argv);
+        void Tick();
+        void Shutdown();
+
+        // TODO: This flag variable may be need to protect by LOCK
+        bool requested_engine_stop = false;
     };
 }

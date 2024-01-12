@@ -68,12 +68,23 @@ namespace Koala
         ISingleton::Get<ModuleManager>().InitializeModules();
 
 
+        IModule::Get<RenderThread>().WaitForRenderReady();
         spdlog::debug("Executing post_init script");
         Scripting::ExecuteFunctionNoArg(init_script, "post_init");
         Scripting::UnloadScript(init_script);
 
         spdlog::info("Engine initialized");
         return true;
+    }
+    void Engine::Tick()
+    {
+        return;
+    }
+
+    void Engine::Shutdown()
+    {
+        IModule::Get<RenderThread>().WaitForRTStop();
+        spdlog::info("Engine is exiting");
     }
 
 }

@@ -18,6 +18,8 @@
 
 
 #pragma once
+#include <condition_variable>
+
 #include "ThreadedModule.h"
 
 namespace Koala::RenderHI
@@ -32,11 +34,31 @@ namespace Koala {
         bool Shutdown() override;
         void Tick(float delta_time) override;
         void Run() override;
+
+        // Wait for rendering system is ready.
+        // This function will block executes until rendering system is initialized completedly and ready to render.
+        // This function can be called in any-thread except RenderThread.
+        void WaitForRenderReady()
+        {
+            std::unique_lock lock(mutex_render_ready);
+            cv_render_ready.wait(lock);
+        }
+
+        void WaitForRTStop()
+        {
+            std::unique_lock lock(mutex_renderthread_stop);
+            cv_renderthread_stop.wait(lock);
+        }
+
         RenderThread(): IThreadedModule() {}
     private:
-        bool state_thread_running = false;
-
         RenderHI::RenderHI *render = nullptr;
+
+        std::mutex mutex_render_ready;
+        std::condition_variable cv_render_ready;
+
+        std::mutex mutex_renderthread_stop;
+        std::condition_variable cv_renderthread_stop;
     };
 }
 
