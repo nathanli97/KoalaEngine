@@ -16,10 +16,9 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
 #pragma once
 
+#ifdef INCLUDE_RHI_VULKAN
 #define GLFW_INCLUDE_VULKAN
 
 #include <GLFW/glfw3.h>
@@ -35,4 +34,4 @@ namespace Koala::RenderHI
         GLFWwindow *window{};
     };
 }
-
+#endif
