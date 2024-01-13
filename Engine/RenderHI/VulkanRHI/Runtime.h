@@ -17,6 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <vector>
 
 #ifdef INCLUDE_RHI_VULKAN
 #define GLFW_INCLUDE_VULKAN
@@ -28,10 +29,16 @@ namespace Koala::RenderHI
 {
     struct VulkanRuntime {
         VkInstance instance{};
+        VkSurfaceKHR surface_khr{};
+        VkPhysicalDevice physical_device{};
     };
-    struct GLFWRuntime
-    {
+    struct GLFWRuntime {
         GLFWwindow *window{};
+    };
+    struct SwapChainSupportDetails {
+        VkSurfaceCapabilitiesKHR capabilities;
+        std::vector<VkSurfaceFormatKHR> formats;
+        std::vector<VkPresentModeKHR> present_modes;
     };
 }
 #endif

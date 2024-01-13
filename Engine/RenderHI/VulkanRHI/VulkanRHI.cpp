@@ -27,6 +27,13 @@ namespace Koala::RenderHI {
             VulkanInitialize();
     }
 
+    const char* VulkanRHI::GetGPUName()
+    {
+        if (gpu_name.empty())
+            return nullptr;
+        return gpu_name.c_str();
+    }
+
     void VulkanRHI::Shutdown()
     {
         GLFWShutdown();
@@ -39,7 +46,8 @@ namespace Koala::RenderHI {
 
     bool VulkanRHI::VulkanInitialize()
     {
-        return InitVulkanInstance();
+        return InitVulkanInstance() &&
+            ChooseRenderDevice();
     }
 }
 #endif

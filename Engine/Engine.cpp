@@ -69,7 +69,12 @@ namespace Koala
         ISingleton::Get<ModuleManager>().InitializeModules();
 
 
-        IModule::Get<RenderThread>().WaitForRenderReady();
+        if (!IModule::Get<RenderThread>().WaitForRenderReady())
+        {
+            spdlog::error("Rendering System has error");
+            return false;
+        }
+
         spdlog::debug("Executing post_init script");
         Scripting::ExecuteFunctionNoArg(init_script, "post_init");
         Scripting::UnloadScript(init_script);

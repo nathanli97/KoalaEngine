@@ -71,5 +71,7 @@ namespace Koala
         std::unordered_map<std::string, std::string> engine_configs, game_configs;
         bool auto_saving = false;
         bool saving_when_engine_exiting = false;
+
+        // void OverrideSettingWithCommandLine();
     };
 }

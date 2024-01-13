@@ -33,6 +33,10 @@ namespace Koala::RenderHI
         virtual void Shutdown() = 0;
         // RETURN FALSE if window is closing, renderer should stop rendering
         virtual bool Tick() = 0;
+
+        // Return the GPU using for rendering.
+        // Return NULL if none of GPU is suitable or not choosed yet.
+        virtual const char* GetGPUName() = 0;
     };
     std::unordered_set<std::string> GetAvaliableRenderHIs();
     RenderHI* GetRHI(const std::string&);

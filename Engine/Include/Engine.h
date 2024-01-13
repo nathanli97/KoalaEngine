@@ -28,6 +28,7 @@ namespace Koala {
         {
             if (!Engine::Get().Initialize(argc, argv))
             {
+                Engine::Get().Shutdown();
                 return false;
             }
 

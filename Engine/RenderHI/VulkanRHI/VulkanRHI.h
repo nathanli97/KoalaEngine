@@ -29,9 +29,12 @@ public:
     bool Initialize() override;
     void Shutdown() override;
     bool Tick() override;
+    const char* GetGPUName() override;
 private:
     VulkanRuntime vk;
     GLFWRuntime glfw;
+
+    std::string gpu_name;
 
     bool GLFWInitialize();
     void GLFWShutdown();
@@ -46,6 +49,9 @@ private:
 
     // ------Vulkan Initialization Functions------
     bool InitVulkanInstance();
+    bool ChooseRenderDevice();
+
+    bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chain_support_details);
 
 
 };

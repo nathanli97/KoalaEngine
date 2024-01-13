@@ -22,6 +22,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Config.h"
+#include "Engine.h"
 #include "../RenderHI/VulkanRHI/VulkanRHI.h"
 
 namespace Koala
@@ -56,12 +57,36 @@ namespace Koala
         spdlog::info("RenderThread is running.");
 
         spdlog::info("RenderThread: Initializing RHI");
-        render->Initialize();
+
+        if (!render->Initialize())
+        {
+            spdlog::error("RHI: Failed to initialize!");
+
+            spdlog::info("RenderThread: Shutdowning RHI");
+            render->Shutdown();
+            spdlog::info("RenderThread is stopping.");
+
+            Engine::Get().RequestEngineStop();
+
+            thread_has_initerr = true;
+
+            {
+                std::lock_guard lock(mutex_renderthread_stop);
+                cv_renderthread_stop.notify_all();
+            }
+
+            {
+                std::unique_lock lock(mutex_render_ready_or_initerr);
+                cv_render_ready_or_initerr.notify_all();
+            }
+            return;
+        }
+
         spdlog::info("RenderThread: RHI Initialized");
 
         {
-            std::lock_guard lock_guard(mutex_render_ready);
-            cv_render_ready.notify_all();
+            std::lock_guard lock_guard(mutex_render_ready_or_initerr);
+            cv_render_ready_or_initerr.notify_all();
         }
 
         while (render->Tick())

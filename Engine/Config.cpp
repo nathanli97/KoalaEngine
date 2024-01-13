@@ -25,6 +25,7 @@
 #include <regex>
 #include <spdlog/spdlog.h>
 
+#include "CmdParser.h"
 #include "StringTools.h"
 
 namespace Koala
@@ -275,4 +276,13 @@ namespace Koala
         spdlog::warn("Print all configurations END!");
 
     }
+
+    // void Config::OverrideSettingWithCommandLine()
+    // {
+    //     if (CmdParser::Get().HasArg("cfg"))
+    //     {
+    //         auto cfg_override = CmdParser::Get().GetArgStr("cfg");
+    //         const static std::regex regex("");
+    //     }
+    // }
 }

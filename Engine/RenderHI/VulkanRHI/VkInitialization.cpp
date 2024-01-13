@@ -16,6 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "CmdParser.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include <spdlog/spdlog.h>
 
@@ -69,6 +70,9 @@ static VkDebugUtilsMessengerEXT vk_debug_messenger{};
 
 namespace Koala::RenderHI
 {
+    const static std::vector<const char *> VK_DeviceRequiredExtensions = {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
     bool VulkanRHI::InitVulkanInstance()
     {
         VkApplicationInfo app_info{};
@@ -143,6 +147,163 @@ namespace Koala::RenderHI
             spdlog::info("RHI: Vulkan validation layer is enabled and initialized successfully");
         }
 #endif
+
+        // Create a window surface for VK WSI
+
+        result = glfwCreateWindowSurface(vk.instance, glfw.window, nullptr, &vk.surface_khr);
+        if (result != VK_SUCCESS)
+        {
+            spdlog::error("RHI: Failed to create window surface for vulkan: {}", string_VkResult(result));
+            return false;
+        }
+        return true;
+    }
+    bool VulkanRHI::ChooseRenderDevice()
+    {
+        uint32_t count_devices = 0;
+        auto result = vkEnumeratePhysicalDevices(vk.instance, &count_devices, nullptr);
+        std::vector<VkPhysicalDevice> physical_devices(count_devices);
+        result = vkEnumeratePhysicalDevices(vk.instance, &count_devices, physical_devices.data());
+
+        std::unordered_map<std::string, VkPhysicalDevice> suitable_devices;
+        std::unordered_map<std::string, VkPhysicalDeviceProperties> suitable_device_props;
+        std::unordered_map<std::string, VkPhysicalDeviceFeatures> suitable_devices_features;
+
+
+        if (result != VK_SUCCESS) {
+            spdlog::error("RHI: Failed to enumerate VK physical devices: {}", string_VkResult(result));
+            return false;
+        }
+
+        spdlog::info("RHI: We found {} devices which can render Vulkan.", count_devices);
+
+        auto prefered_device_name = IModule::Get<Config>().GetSettingStr("render.device");
+
+        for (const auto device : physical_devices)
+        {
+            VkPhysicalDeviceProperties device_properties;
+            VkPhysicalDeviceFeatures device_features;
+            vkGetPhysicalDeviceProperties(device, &device_properties);
+            vkGetPhysicalDeviceFeatures(device, &device_features);
+
+            bool is_this_device_suitable = true;
+
+            uint32_t device_extension_count = 0;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, nullptr);
+            std::vector<VkExtensionProperties> available_extensions(device_extension_count);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, available_extensions.data());
+            for (const std::string &required_extension_name : VK_DeviceRequiredExtensions) {
+                if (std::find_if(available_extensions.cbegin(),
+                                 available_extensions.cend(),
+                                 [&](const VkExtensionProperties &extension_properties) -> bool {
+                                   return required_extension_name == extension_properties.extensionName;
+                                 }) == available_extensions.cend()) {
+                    is_this_device_suitable = false;
+                    break;
+                                 }
+            }
+
+            if (!is_this_device_suitable)
+                continue;
+
+            SwapChainSupportDetails chain_support_details;
+
+            if (!QuerySwapChainSupport(device, chain_support_details)) {
+                is_this_device_suitable = false;
+            }
+            if (chain_support_details.formats.empty() || chain_support_details.present_modes.empty()) {
+                is_this_device_suitable = false;
+            }
+
+            if (!is_this_device_suitable)
+                continue;
+
+            suitable_devices.emplace(device_properties.deviceName, device);
+            suitable_device_props.emplace(device_properties.deviceName, device_properties);
+            suitable_devices_features.emplace(device_properties.deviceName, device_features);
+        }
+
+        if (prefered_device_name.has_value())
+        {
+            if (suitable_devices.count(prefered_device_name.value()) != 0)
+            {
+                vk.physical_device = suitable_devices.at(prefered_device_name.value());
+                spdlog::info("RHI: Choosed prefered GPU: {}", prefered_device_name.value());
+                return true;
+            }
+            else
+            {
+                spdlog::warn("RHI: Prefered GPU {} is not avaliable or not suitable", prefered_device_name.value());
+            }
+        }
+
+
+        const bool print_gpu_info = CmdParser::Get().HasArg("printgpus");
+
+        VkPhysicalDevice choose_device{nullptr};
+
+        for (auto const & gpu: suitable_devices)
+        {
+            auto const &prop = suitable_device_props[gpu.first];
+            if (print_gpu_info)
+                spdlog::info("RHI: GPU '{}' Type={}", gpu.first, string_VkPhysicalDeviceType(prop.deviceType));
+
+            if (!choose_device && prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            {
+                gpu_name = prop.deviceName;
+                spdlog::debug("RHI: We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
+                choose_device = gpu.second;
+            }
+        }
+
+        if (!choose_device)
+        {
+            choose_device = suitable_devices.begin()->second;
+            gpu_name = suitable_devices.begin()->first;
+        }
+
+        if (!choose_device || suitable_devices.empty())
+        {
+            spdlog::error("RHI: No suitable GPUs found! Try use --printgpus to check all the suitable GPUs.");
+            return false;
+        }
+
+        return true;
+    }
+    bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chain_support_details)
+    {
+        VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vk.surface_khr, &chain_support_details.capabilities);
+        if (result != VK_SUCCESS) {
+            return false;
+        }
+        uint32_t format_count{};
+        result = vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surface_khr, &format_count, nullptr);
+
+        if (format_count != 0) {
+            chain_support_details.formats.resize(format_count);
+            result =
+                vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surface_khr, &format_count, chain_support_details.formats.data());
+        }
+
+        if (result != VK_SUCCESS) {
+            spdlog::error("RHI: Failed to query VK physical device surface format {}", string_VkResult(result));
+            return false;
+        }
+
+        uint32_t present_mode_count{};
+        result = vkGetPhysicalDeviceSurfacePresentModesKHR(device, vk.surface_khr, &present_mode_count, nullptr);
+        if (present_mode_count != 0) {
+            chain_support_details.present_modes.resize(present_mode_count);
+            result = vkGetPhysicalDeviceSurfacePresentModesKHR(device,
+                                                               vk.surface_khr,
+                                                               &present_mode_count,
+                                                               chain_support_details.present_modes.data());
+        }
+
+        if (result != VK_SUCCESS) {
+            spdlog::warn("RHI: Failed to query VK physical device surface present modes: {}", string_VkResult(result));
+            return false;
+        }
 
         return true;
     }

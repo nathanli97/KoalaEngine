@@ -45,8 +45,10 @@ namespace Koala
 
         [[nodiscard]] std::string GetArgStr(const std::string& arg) const
         {
+#ifndef _NDEBUG
             if (!HasArg(arg))
                 return "";
+#endif
             return args.at(arg);
         }
     private:

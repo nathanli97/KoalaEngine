@@ -35,17 +35,24 @@ namespace Koala {
         void Tick(float delta_time) override;
         void Run() override;
 
-        // Wait for rendering system is ready.
+        // Wait for rendering system is ready, or render thread is exited too early.
         // This function will block executes until rendering system is initialized completedly and ready to render.
         // This function can be called in any-thread except RenderThread.
-        void WaitForRenderReady()
+
+        // Return FALSE if RenderThread is exited too early (Has ERROR).
+        bool WaitForRenderReady()
         {
-            std::unique_lock lock(mutex_render_ready);
-            cv_render_ready.wait(lock);
+            std::unique_lock lock(mutex_render_ready_or_initerr);
+            cv_render_ready_or_initerr.wait(lock);
+
+            return !thread_has_initerr;
         }
 
         void WaitForRTStop()
         {
+            if (thread_has_initerr)
+                return;
+
             std::unique_lock lock(mutex_renderthread_stop);
             cv_renderthread_stop.wait(lock);
         }
@@ -54,11 +61,13 @@ namespace Koala {
     private:
         RenderHI::RenderHI *render = nullptr;
 
-        std::mutex mutex_render_ready;
-        std::condition_variable cv_render_ready;
+        std::mutex mutex_render_ready_or_initerr;
+        std::condition_variable cv_render_ready_or_initerr;
 
         std::mutex mutex_renderthread_stop;
         std::condition_variable cv_renderthread_stop;
+
+        bool thread_has_initerr = false;
     };
 }
 
