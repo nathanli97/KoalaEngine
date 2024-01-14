@@ -21,9 +21,19 @@
 
 
 namespace Koala::RenderHI {
+    bool VulkanRHI::PreInit()
+    {
+        return GLFWInitialize();
+    }
+
+    void VulkanRHI::PostShutdown()
+    {
+        GLFWShutdown();
+    }
+
     bool VulkanRHI::Initialize()
     {
-        return GLFWInitialize() &&
+        return
             VulkanInitialize();
     }
 
@@ -36,7 +46,7 @@ namespace Koala::RenderHI {
 
     void VulkanRHI::Shutdown()
     {
-        GLFWShutdown();
+        // TODO: Missing shutdown logic of Vulkan
     }
 
     bool VulkanRHI::Tick()

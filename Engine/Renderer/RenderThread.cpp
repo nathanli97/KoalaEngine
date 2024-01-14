@@ -40,16 +40,20 @@ namespace Koala
         }
 
         render = RenderHI::GetRHI(renderer);
+        render->PreInit();
         return true;
     }
 
     bool RenderThread::Shutdown()
     {
+        render->PostShutdown();
         return true;
     }
 
     void RenderThread::Tick(float delta_time)
     {
+        if (!render->Tick())
+            Engine::Get().RequestEngineStop();
     }
 
     void RenderThread::Run()
@@ -89,7 +93,7 @@ namespace Koala
             cv_render_ready_or_initerr.notify_all();
         }
 
-        while (render->Tick())
+        while (!Engine::Get().IsEngineExitRequested())
         {
             // TODO: Render!!!!!!!!!!!!!
         }

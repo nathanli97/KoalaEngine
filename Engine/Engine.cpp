@@ -89,12 +89,14 @@ namespace Koala
     }
     void Engine::Tick()
     {
-        return;
+        // TODO: Pass actual deltatime to the function.
+        IModule::Get<RenderThread>().Tick(0);
     }
 
     void Engine::Shutdown()
     {
         IModule::Get<RenderThread>().WaitForRTStop();
+        IModule::Get<RenderThread>().Shutdown();
         ISingleton::Get<ModuleManager>().ShutdownModules();
         IModule::Get<Config>().Shutdown();
         Scripting::Shutdown();

@@ -26,10 +26,16 @@ namespace Koala::RenderHI {
 
 class VulkanRHI: public RenderHI{
 public:
+    // ===== Caller: RT =======
     bool Initialize() override;
     void Shutdown() override;
-    bool Tick() override;
     const char* GetGPUName() override;
+
+
+    // ===== Caller: MainThread =======
+    bool PreInit() override;
+    void PostShutdown() override;
+    bool Tick() override;
 private:
     VulkanRuntime vk;
     GLFWRuntime glfw;

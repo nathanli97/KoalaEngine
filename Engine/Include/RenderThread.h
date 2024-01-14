@@ -30,9 +30,15 @@ namespace Koala::RenderHI
 namespace Koala {
     class RenderThread: public IThreadedModule {
     public:
+        // Caller: MT, BEFORE RT is created
         bool Initialize() override;
+        // Caller: MT, AFTER RT is stopped
         bool Shutdown() override;
+
+        // Caller: MT
         void Tick(float delta_time) override;
+
+        // Caller: RT
         void Run() override;
 
         // Wait for rendering system is ready, or render thread is exited too early.
