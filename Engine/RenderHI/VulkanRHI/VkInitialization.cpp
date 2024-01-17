@@ -18,13 +18,14 @@
 
 #include "CmdParser.h"
 #ifdef INCLUDE_RHI_VULKAN
-#include <spdlog/spdlog.h>
-
+#include "Core.h"
 #include "Config.h"
-#include "EngineVersion.h"
 #include "Module.h"
+
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>
+
+static Koala::Logger logger("RHI");
 #if RHI_ENABLE_VALIDATION
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -44,10 +45,10 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
 
     switch (messageSeverity)
     {
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: spdlog::debug("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:spdlog::info("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:spdlog::warn("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:spdlog::error("RHI Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: logger.debug("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:logger.info("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:logger.warning("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:logger.error("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
     default:break;
     }
 
@@ -121,7 +122,7 @@ namespace Koala::RenderHI
 
         if (result != VK_SUCCESS)
         {
-            spdlog::error("RHI: Failed to create VK Instance: {}", string_VkResult(result));
+            logger.error("Failed to create VK Instance: {}", string_VkResult(result));
             return false;
         }
 #if RHI_ENABLE_VALIDATION
@@ -139,11 +140,11 @@ namespace Koala::RenderHI
                                                &vk_debug_utils_messenger_create_info_ext,
                                                nullptr,
                                                &vk_debug_messenger) != VK_SUCCESS) {
-            spdlog::error("RHI: Failed to create vulkan validation messenger");
+            logger.error("Failed to create vulkan validation messenger");
         }
         else
         {
-            spdlog::info("RHI: Vulkan validation layer is enabled and initialized successfully");
+            logger.info("Vulkan validation layer is enabled and initialized successfully");
         }
 #endif
 
@@ -152,7 +153,7 @@ namespace Koala::RenderHI
         result = glfwCreateWindowSurface(vk.instance, glfw.window, nullptr, &vk.surface_khr);
         if (result != VK_SUCCESS)
         {
-            spdlog::error("RHI: Failed to create window surface for vulkan: {}", string_VkResult(result));
+            logger.error("Failed to create window surface for vulkan: {}", string_VkResult(result));
             return false;
         }
         return true;
@@ -170,11 +171,11 @@ namespace Koala::RenderHI
 
 
         if (result != VK_SUCCESS) {
-            spdlog::error("RHI: Failed to enumerate VK physical devices: {}", string_VkResult(result));
+            logger.error("Failed to enumerate VK physical devices: {}", string_VkResult(result));
             return false;
         }
 
-        spdlog::info("RHI: We found {} devices which can render Vulkan.", count_devices);
+        logger.info("We found {} devices which can render Vulkan.", count_devices);
 
         auto prefered_device_name = IModule::Get<Config>().GetSettingStr("render.device");
 
@@ -227,12 +228,12 @@ namespace Koala::RenderHI
             if (suitable_devices.count(prefered_device_name.value()) != 0)
             {
                 vk.physical_device = suitable_devices.at(prefered_device_name.value());
-                spdlog::info("RHI: Choosed prefered GPU: {}", prefered_device_name.value());
+                logger.info("Choosed prefered GPU: {}", prefered_device_name.value());
                 return true;
             }
             else
             {
-                spdlog::warn("RHI: Prefered GPU {} is not avaliable or not suitable", prefered_device_name.value());
+                logger.warning("Prefered GPU {} is not avaliable or not suitable", prefered_device_name.value());
             }
         }
 
@@ -245,12 +246,12 @@ namespace Koala::RenderHI
         {
             auto const &prop = suitable_device_props[gpu.first];
             if (print_gpu_info)
-                spdlog::info("RHI: GPU '{}' Type={}", gpu.first, string_VkPhysicalDeviceType(prop.deviceType));
+                logger.info("GPU '{}' Type={}", gpu.first, string_VkPhysicalDeviceType(prop.deviceType));
 
             if (!choose_device && prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
             {
                 gpu_name = prop.deviceName;
-                spdlog::debug("RHI: We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
+                logger.debug("We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
                 choose_device = gpu.second;
             }
         }
@@ -263,7 +264,7 @@ namespace Koala::RenderHI
 
         if (!choose_device || suitable_devices.empty())
         {
-            spdlog::error("RHI: No suitable GPUs found! Try use --printgpus to check all the suitable GPUs.");
+            logger.error("No suitable GPUs found! Try use --printgpus to check all the suitable GPUs.");
             return false;
         }
 
@@ -309,13 +310,13 @@ namespace Koala::RenderHI
 
         if (vk.queue_info.IsComplete())
         {
-            spdlog::info("RHI: Device passed all checks");
+            logger.info("Device passed all checks");
         } else if (vk.queue_info.IsMinimumSupported())
         {
-            spdlog::warn("RHI: Your device didn't supports all features we need. the rendering is limited.");
+            logger.warning("Your device didn't supports all features we need. the rendering is limited.");
         } else
         {
-            spdlog::error("RHI: Your device didn't meet the minimum requirements.");
+            logger.error("Your device didn't meet the minimum requirements.");
             return false;
         }
 
@@ -339,7 +340,7 @@ namespace Koala::RenderHI
         }
 
         if (result != VK_SUCCESS) {
-            spdlog::error("RHI: Failed to query VK physical device surface format {}", string_VkResult(result));
+            logger.error("Failed to query VK physical device surface format {}", string_VkResult(result));
             return false;
         }
 
@@ -354,7 +355,7 @@ namespace Koala::RenderHI
         }
 
         if (result != VK_SUCCESS) {
-            spdlog::warn("RHI: Failed to query VK physical device surface present modes: {}", string_VkResult(result));
+            logger.warning("Failed to query VK physical device surface present modes: {}", string_VkResult(result));
             return false;
         }
 

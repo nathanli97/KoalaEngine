@@ -23,10 +23,12 @@
 
 #include "Config.h"
 #include "Engine.h"
+#include "Logger.h"
 #include "../RenderHI/VulkanRHI/VulkanRHI.h"
 
 namespace Koala
 {
+    Logger logger("RenderThread");
     bool RenderThread::Initialize()
     {
         auto renderer = IModule::Get<Config>().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
@@ -34,7 +36,7 @@ namespace Koala
 
         if (avaliable_renderers.count(renderer) == 0)
         {
-            spdlog::error("Requested renderer unavaliable: {}", renderer);
+            logger.error("Requested renderer unavaliable: {}", renderer);
 
             return false;
         }
@@ -58,17 +60,17 @@ namespace Koala
 
     void RenderThread::Run()
     {
-        spdlog::info("RenderThread is running.");
+        logger.info("RenderThread is running.");
 
-        spdlog::info("RenderThread: Initializing RHI");
+        logger.info("RenderThread: Initializing RHI");
 
         if (!render->Initialize())
         {
-            spdlog::error("RHI: Failed to initialize!");
+            logger.error("RHI: Failed to initialize!");
 
-            spdlog::info("RenderThread: Shutdowning RHI");
+            logger.info("RenderThread: Shutdowning RHI");
             render->Shutdown();
-            spdlog::info("RenderThread is stopping.");
+            logger.info("RenderThread is stopping.");
 
             Engine::Get().RequestEngineStop();
 
@@ -86,7 +88,7 @@ namespace Koala
             return;
         }
 
-        spdlog::info("RenderThread: RHI Initialized");
+        logger.info("RenderThread: RHI Initialized");
 
         {
             std::lock_guard lock_guard(mutex_render_ready_or_initerr);
@@ -98,9 +100,9 @@ namespace Koala
             // TODO: Render!!!!!!!!!!!!!
         }
 
-        spdlog::info("RenderThread: Shutdowning RHI");
+        logger.info("RenderThread: Shutdowning RHI");
         render->Shutdown();
-        spdlog::info("RenderThread is stopping.");
+        logger.info("RenderThread is stopping.");
 
         {
             std::lock_guard lock(mutex_renderthread_stop);
