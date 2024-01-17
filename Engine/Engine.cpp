@@ -28,6 +28,7 @@
 
 namespace Koala
 {
+    Logger logger_engine("Engine");
     bool Engine::Initialize(int argc, char** argv)
     {
         using namespace Koala;
@@ -37,7 +38,7 @@ namespace Koala
         if (CmdParser::Get().HasArg("debug"))
         {
             spdlog::set_level(spdlog::level::debug);
-            spdlog::warn("LogLevel set to DEBUG");
+            logger_engine.warning("LogLevel set to DEBUG");
         }
 
         Scripting::Initialize();
@@ -46,12 +47,12 @@ namespace Koala
 
         if (init_script)
         {
-            spdlog::debug("Executing pre_init script");
+            logger_engine.debug("Executing pre_init script");
             Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
         }
         else
         {
-            spdlog::error("Init script load failed.");
+            logger_engine.error("Init script load failed.");
             return false;
         }
 
@@ -71,16 +72,16 @@ namespace Koala
 
         if (!IModule::Get<RenderThread>().WaitForRenderReady())
         {
-            spdlog::error("Rendering System has error");
+            logger_engine.error("Rendering System has error");
             return false;
         }
 
-        spdlog::debug("Executing post_init script");
+        logger_engine.debug("Executing post_init script");
         Scripting::ExecuteFunctionNoArg(init_script, "post_init");
         Scripting::UnloadScript(init_script);
 
-        spdlog::info("Engine initialized");
-        spdlog::info("Welcome to KoalaEngine {}.{}.{} ({})",
+        logger_engine.info("Engine initialized");
+        logger_engine.info("Welcome to KoalaEngine {}.{}.{} ({})",
             KOALA_ENGINE_VER_MAJOR,
             KOALA_ENGINE_VER_MINOR,
             KOALA_ENGINE_VER_PATCH,
@@ -100,7 +101,7 @@ namespace Koala
         ISingleton::Get<ModuleManager>().ShutdownModules();
         IModule::Get<Config>().Shutdown();
         Scripting::Shutdown();
-        spdlog::info("Engine is exiting");
+        logger_engine.info("Engine is exiting");
     }
 
 }
