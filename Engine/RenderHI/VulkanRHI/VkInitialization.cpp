@@ -25,7 +25,6 @@
 #include "Module.h"
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>
-#define RHI_ENABLE_VALIDATION 0
 #if RHI_ENABLE_VALIDATION
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -200,7 +199,7 @@ namespace Koala::RenderHI
                                  }) == available_extensions.cend()) {
                     is_this_device_suitable = false;
                     break;
-                                 }
+                }
             }
 
             if (!is_this_device_suitable)
@@ -268,8 +267,62 @@ namespace Koala::RenderHI
             return false;
         }
 
+        vk.physical_device = choose_device;
         return true;
     }
+    bool VulkanRHI::InitVulkanQueue()
+    {
+        uint32_t queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, nullptr);
+        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, queue_families.data());
+
+        uint32_t index = 0;
+        for (auto const &queue_family: queue_families)
+        {
+            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT && queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            {
+                vk.queue_info.graphics_queue_index = vk.queue_info.compute_queue_index = index;
+            } else if (!vk.queue_info.graphics_queue_index.has_value() && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+            {
+                vk.queue_info.graphics_queue_index = index;
+            } else if (!vk.queue_info.compute_queue_index.has_value() && queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            {
+                vk.queue_info.compute_queue_index = index;
+            }
+
+            if (!vk.queue_info.present_queue_index.has_value())
+            {
+                VkBool32 is_present_supported = VK_FALSE;
+                vkGetPhysicalDeviceSurfaceSupportKHR(vk.physical_device, index, vk.surface_khr, &is_present_supported);
+                if (is_present_supported)
+                {
+                    vk.queue_info.present_queue_index = index;
+                }
+            }
+            index++;
+
+            // All the queue families we need is found, no further check is needed.
+            if (vk.queue_info.IsComplete())
+                break;
+        }
+
+        if (vk.queue_info.IsComplete())
+        {
+            spdlog::info("RHI: Device passed all checks");
+        } else if (vk.queue_info.IsMinimumSupported())
+        {
+            spdlog::warn("RHI: Your device didn't supports all features we need. the rendering is limited.");
+        } else
+        {
+            spdlog::error("RHI: Your device didn't meet the minimum requirements.");
+            return false;
+        }
+
+        return true;
+    }
+
+
     bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chain_support_details)
     {
         VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vk.surface_khr, &chain_support_details.capabilities);

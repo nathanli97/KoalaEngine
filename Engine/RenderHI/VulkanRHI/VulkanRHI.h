@@ -56,8 +56,10 @@ private:
     // ------Vulkan Initialization Functions------
     bool InitVulkanInstance();
     bool ChooseRenderDevice();
+    bool InitVulkanQueue();
 
     bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chain_support_details);
+
 
 
 };

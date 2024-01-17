@@ -17,14 +17,16 @@ file(GLOB_RECURSE SOURCE_CPP_FILES ${CMAKE_CURRENT_SOURCE_DIR}/Engine/*.cpp)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/Engine/Include)
 
 add_compile_definitions(INCLUDE_RHI_VULKAN=1)
+add_compile_definitions(RHI_ENABLE_VALIDATION=1)
 
 add_executable(koala main.cpp ${SOURCE_H_FILES} ${SOURCE_INL_FILES} ${SOURCE_C_FILES} ${SOURCE_CPP_FILES})
 target_include_directories(koala
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
 
+set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt)
 if (MINGW)
-    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog_header_only)
+    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES} spdlog::spdlog_header_only)
 else ()
-    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} Eigen3::Eigen glfw Python::Python fmt::fmt spdlog::spdlog)
+    target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES} spdlog::spdlog)
 endif ()

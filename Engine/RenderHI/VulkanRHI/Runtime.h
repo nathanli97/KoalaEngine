@@ -17,6 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <optional>
 #include <vector>
 
 #ifdef INCLUDE_RHI_VULKAN
@@ -31,6 +32,26 @@ namespace Koala::RenderHI
         VkInstance instance{};
         VkSurfaceKHR surface_khr{};
         VkPhysicalDevice physical_device{};
+
+        struct
+        {
+            std::optional<uint32_t> graphics_queue_index;
+            std::optional<uint32_t> compute_queue_index;
+            std::optional<uint32_t> present_queue_index;
+
+            [[nodiscard]] bool IsComplete() const
+            {
+                return graphics_queue_index.has_value() &&
+                    compute_queue_index.has_value() &&
+                    present_queue_index.has_value();
+            }
+
+            [[nodiscard]] bool IsMinimumSupported() const
+            {
+                return graphics_queue_index.has_value() &&
+                    present_queue_index.has_value();
+            }
+        } queue_info;
     };
     struct GLFWRuntime {
         GLFWwindow *window{};

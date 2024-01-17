@@ -16,49 +16,14 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#ifdef INCLUDE_RHI_VULKAN
-#include "VulkanRHI.h"
 
+#pragma once
+#include <string>
 
-namespace Koala::RenderHI {
-    bool VulkanRHI::PreInit()
+namespace Koala::RenderHI
+{
+    struct RenderCapability
     {
-        return GLFWInitialize();
-    }
-
-    void VulkanRHI::PostShutdown()
-    {
-        GLFWShutdown();
-    }
-
-    bool VulkanRHI::Initialize()
-    {
-        return
-            VulkanInitialize();
-    }
-
-    const char* VulkanRHI::GetGPUName()
-    {
-        if (gpu_name.empty())
-            return nullptr;
-        return gpu_name.c_str();
-    }
-
-    void VulkanRHI::Shutdown()
-    {
-        // TODO: Missing shutdown logic of Vulkan
-    }
-
-    bool VulkanRHI::Tick()
-    {
-        return GLFWTick();
-    }
-
-    bool VulkanRHI::VulkanInitialize()
-    {
-        return InitVulkanInstance() &&
-            ChooseRenderDevice() &&
-            InitVulkanQueue();
-    }
+        std::string gpu_name;
+    };
 }
-#endif
