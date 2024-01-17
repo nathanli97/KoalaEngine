@@ -27,6 +27,14 @@
 
 static Koala::Logger logger("RHI");
 #if RHI_ENABLE_VALIDATION
+void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance,
+                                         VkDebugUtilsMessengerEXT debugMessenger,
+                                         const VkAllocationCallbacks *pAllocator) {
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr) {
+        func(instance, debugMessenger, pAllocator);
+    }
+}
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -355,7 +363,7 @@ namespace Koala::RenderHI
         device_create_info.ppEnabledLayerNames = validation_layers.data();
 #endif
 
-        VkResult result = vkCreateDevice(vk.physical_device, &device_create_info, nullptr, &vk.devive);
+        VkResult result = vkCreateDevice(vk.physical_device, &device_create_info, nullptr, &vk.device);
 
         if (result != VK_SUCCESS)
         {
@@ -364,9 +372,9 @@ namespace Koala::RenderHI
         }
 
 
-        vkGetDeviceQueue(vk.devive, vk.queue_info.present_queue_index.value(), 0, &vk.present_queue);
-        vkGetDeviceQueue(vk.devive, vk.queue_info.compute_queue_index.value(), 0, &vk.compute_queue);
-        vkGetDeviceQueue(vk.devive, vk.queue_info.graphics_queue_index.value(), 0, &vk.graphics_queue);
+        vkGetDeviceQueue(vk.device, vk.queue_info.present_queue_index.value(), 0, &vk.present_queue);
+        vkGetDeviceQueue(vk.device, vk.queue_info.compute_queue_index.value(), 0, &vk.compute_queue);
+        vkGetDeviceQueue(vk.device, vk.queue_info.graphics_queue_index.value(), 0, &vk.graphics_queue);
 
         return true;
     }
@@ -408,6 +416,32 @@ namespace Koala::RenderHI
         }
 
         return true;
+    }
+
+    void VulkanRHI::VulkanShutdown()
+    {
+        if (!vk.instance)
+        {
+            return;
+        }
+
+        if (vk.device)
+        {
+            vkDestroyDevice(vk.device, nullptr);
+        }
+
+#if RHI_ENABLE_VALIDATION
+        if (vk_debug_messenger)
+        {
+            VulkanDestroyDebugUtilsMessengerEXT(vk.instance, vk_debug_messenger, nullptr);
+        }
+#endif
+
+        if (vk.surface_khr)
+        {
+            vkDestroySurfaceKHR(vk.instance, vk.surface_khr, nullptr);
+        }
+        vkDestroyInstance(vk.instance, nullptr);
     }
 
 }

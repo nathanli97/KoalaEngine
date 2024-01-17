@@ -46,7 +46,7 @@ namespace Koala::RenderHI {
 
     void VulkanRHI::Shutdown()
     {
-        // TODO: Missing shutdown logic of Vulkan
+        VulkanShutdown();
     }
 
     bool VulkanRHI::Tick()
@@ -60,5 +60,6 @@ namespace Koala::RenderHI {
             ChooseRenderDevice() &&
             InitVulkanQueue();
     }
+
 }
 #endif

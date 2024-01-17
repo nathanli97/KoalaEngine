@@ -52,6 +52,7 @@ private:
 
     // Initialize Vulkan
     bool VulkanInitialize();
+    void VulkanShutdown();
 
     // ------Vulkan Initialization Functions------
     bool InitVulkanInstance();

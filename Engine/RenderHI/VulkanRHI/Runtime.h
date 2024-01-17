@@ -51,7 +51,7 @@ namespace Koala::RenderHI
         VkQueue compute_queue{};
         VkQueue graphics_queue{};
 
-        VkDevice devive{};
+        VkDevice device{};
     };
     struct GLFWRuntime {
         GLFWwindow *window{};
