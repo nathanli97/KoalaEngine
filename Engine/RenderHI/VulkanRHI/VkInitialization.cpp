@@ -34,6 +34,8 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
     void *
 )
 {
+    if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+        return VK_FALSE;
     std::string message_type;
     switch (messageType)
     {
@@ -281,7 +283,8 @@ namespace Koala::RenderHI
         uint32_t index = 0;
         for (auto const &queue_family: queue_families)
         {
-            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT && queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT &&
+                queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
             {
                 vk.queue_info.graphics_queue_index = vk.queue_info.compute_queue_index = index;
             } else if (!vk.queue_info.graphics_queue_index.has_value() && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
@@ -308,17 +311,62 @@ namespace Koala::RenderHI
                 break;
         }
 
-        if (vk.queue_info.IsComplete())
-        {
-            logger.info("Device passed all checks");
-        } else if (vk.queue_info.IsMinimumSupported())
-        {
-            logger.warning("Your device didn't supports all features we need. the rendering is limited.");
-        } else
+        if (!vk.queue_info.IsComplete())
         {
             logger.error("Your device didn't meet the minimum requirements.");
             return false;
         }
+
+
+        float queue_priority = 1;
+
+        const std::set<uint32_t> unique_queue_families = {
+            vk.queue_info.graphics_queue_index.value(),
+            vk.queue_info.present_queue_index.value(),
+            vk.queue_info.compute_queue_index.value()
+        };
+
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+
+        for (const uint32_t queue_family : unique_queue_families) {
+            VkDeviceQueueCreateInfo queue_create_info{};
+            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queue_create_info.queueFamilyIndex = queue_family;
+            queue_create_info.queueCount = 1;
+            queue_create_info.pQueuePriorities = &queue_priority;
+            queue_create_infos.push_back(queue_create_info);
+        }
+
+        VkPhysicalDeviceFeatures device_features{};
+        VkDeviceCreateInfo device_create_info{};
+        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        device_create_info.pQueueCreateInfos = queue_create_infos.data();
+        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(unique_queue_families.size());
+        device_create_info.pEnabledFeatures = &device_features;
+        device_create_info.enabledLayerCount = 0;
+        device_create_info.enabledExtensionCount = static_cast<uint32_t>(VK_DeviceRequiredExtensions.size());
+        device_create_info.ppEnabledExtensionNames = VK_DeviceRequiredExtensions.data();
+
+#if RHI_ENABLE_VALIDATION
+        const std::vector<const char *> validation_layers = {
+            "VK_LAYER_KHRONOS_validation"
+        };
+        device_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+        device_create_info.ppEnabledLayerNames = validation_layers.data();
+#endif
+
+        VkResult result = vkCreateDevice(vk.physical_device, &device_create_info, nullptr, &vk.devive);
+
+        if (result != VK_SUCCESS)
+        {
+            logger.error("Failed to create VK device: {}", string_VkResult(result));
+            return false;
+        }
+
+
+        vkGetDeviceQueue(vk.devive, vk.queue_info.present_queue_index.value(), 0, &vk.present_queue);
+        vkGetDeviceQueue(vk.devive, vk.queue_info.compute_queue_index.value(), 0, &vk.compute_queue);
+        vkGetDeviceQueue(vk.devive, vk.queue_info.graphics_queue_index.value(), 0, &vk.graphics_queue);
 
         return true;
     }

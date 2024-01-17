@@ -45,13 +45,13 @@ namespace Koala::RenderHI
                     compute_queue_index.has_value() &&
                     present_queue_index.has_value();
             }
-
-            [[nodiscard]] bool IsMinimumSupported() const
-            {
-                return graphics_queue_index.has_value() &&
-                    present_queue_index.has_value();
-            }
         } queue_info;
+
+        VkQueue present_queue{};
+        VkQueue compute_queue{};
+        VkQueue graphics_queue{};
+
+        VkDevice devive{};
     };
     struct GLFWRuntime {
         GLFWwindow *window{};
