@@ -379,6 +379,80 @@ namespace Koala::RenderHI
         return true;
     }
 
+    bool VulkanRHI::CreateSwapChain()
+    {
+        VkExtent2D extent;
+
+        SwapChainSupportDetails chain_support_details;
+        QuerySwapChainSupport(vk.physical_device, chain_support_details);
+
+        VkSurfaceFormatKHR surface_format = chain_support_details.formats[0];
+        for (const auto &format: chain_support_details.formats)
+        {
+            if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+            {
+                surface_format = format;
+            }
+        }
+
+        auto enable_vsync = IModule::Get<Config>().GetSettingStr("render.vsync", "True").value() == "True";
+        VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+
+        if (!enable_vsync)
+        {
+            bool mailbox_supported = false;
+            bool fifo_relaxed_supported = false;
+            bool immediate_supported = false;
+            for (auto const mode: chain_support_details.present_modes)
+            {
+                if (!mailbox_supported && mode == VK_PRESENT_MODE_MAILBOX_KHR)
+                {
+                    mailbox_supported = true;
+                    continue;
+                }
+                if (!fifo_relaxed_supported && mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
+                {
+                    fifo_relaxed_supported = true;
+                    continue;
+                }
+                if (!immediate_supported && mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+                {
+                    immediate_supported = true;
+                    continue;
+                }
+            }
+
+            if (mailbox_supported)
+            {
+                present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
+            } else if (fifo_relaxed_supported)
+            {
+                present_mode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+            } else if (immediate_supported)
+            {
+                present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+            }
+        }
+
+        if (chain_support_details.capabilities.currentExtent.width != UINT32_MAX)
+        {
+            extent = chain_support_details.capabilities.currentExtent;
+        }
+        else
+        {
+            extent = GetFrameBufferSizeFromGLFW(chain_support_details.capabilities);
+        }
+
+        if (extent.width == 0 || extent.height == 0)
+        {
+            logger.debug("Framebuffer width or height is 0. Maybe window has minimized");
+            return false;
+        }
+
+        return true;
+    }
+
+
 
     bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chain_support_details)
     {

@@ -16,6 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <algorithm>
 #if INCLUDE_RHI_VULKAN
 #include <string>
 #include <spdlog/spdlog.h>
@@ -85,6 +86,20 @@ namespace Koala::RenderHI
 
         return true;
     }
+
+    VkExtent2D VulkanRHI::GetFrameBufferSizeFromGLFW(const VkSurfaceCapabilitiesKHR &capabilities)
+    {
+        int w,h;
+        glfwGetFramebufferSize(glfw.window, &w, &h);
+
+        VkExtent2D extent;
+        extent.width = std::clamp((uint32_t) w, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        extent.height =
+            std::clamp((uint32_t) h, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
+
+        return extent;
+    }
+
 
 }
 #endif

@@ -58,8 +58,11 @@ private:
     bool InitVulkanInstance();
     bool ChooseRenderDevice();
     bool InitVulkanQueue();
+    bool CreateSwapChain();
 
     bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chain_support_details);
+
+    VkExtent2D GetFrameBufferSizeFromGLFW(const VkSurfaceCapabilitiesKHR &capabilities);
 
 
 
