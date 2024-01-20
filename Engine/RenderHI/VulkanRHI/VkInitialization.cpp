@@ -25,7 +25,7 @@
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>
 
-static Koala::Logger logger("RHI-VK");
+static Koala::Logger logger("RHI");
 #if RHI_ENABLE_VALIDATION
 void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance,
                                          VkDebugUtilsMessengerEXT debugMessenger,
@@ -85,6 +85,7 @@ namespace Koala::RenderHI
     };
     bool VulkanRHI::InitVulkanInstance()
     {
+        logger.info("Initializating Vulkan(using VK API v{}.{}.{})... ", VK_VERSION_MAJOR(VK_APIVERSION), VK_VERSION_MINOR(VK_APIVERSION), VK_VERSION_PATCH(VK_APIVERSION));
         VkApplicationInfo app_info{};
 
         auto &config = IModule::Get<Config>();
