@@ -486,8 +486,11 @@ namespace Koala::RenderHI
         swapchain_create_info.imageColorSpace = surface_format.colorSpace;
         swapchain_create_info.imageExtent = extent;
         swapchain_create_info.imageArrayLayers = 1;
-        // TODO: Render directly to swapchain. not deferred rendering.
-        swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        swapchain_create_info.imageUsage =
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
+            VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
 
         uint32_t swapchain_queue_families[] = {
             vk.queue_info.graphics_queue_index.value(),
@@ -544,6 +547,7 @@ namespace Koala::RenderHI
             view_create_info.image = image;
             view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
             view_create_info.format = vk.swap_chain.image_format;
+            // We don't need swizzle for now.
             view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
             view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
