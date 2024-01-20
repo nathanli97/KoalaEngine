@@ -58,8 +58,29 @@ namespace Koala::RenderHI {
     {
         return InitVulkanInstance() &&
             ChooseRenderDevice() &&
-            InitVulkanQueue();
+            InitVulkanQueue() &&
+            CreateSwapChain() &&
+            CreateSwapChainViews();
     }
+
+
+    void VulkanRHI::CleanSwapChain()
+    {
+        for (auto &view: vk.swap_chain.image_views)
+        {
+            if (view)
+            {
+                vkDestroyImageView(vk.device, view, nullptr);
+            }
+        }
+
+        if (vk.swap_chain.swapchain_khr)
+        {
+            vkDestroySwapchainKHR(vk.device, vk.swap_chain.swapchain_khr, nullptr);
+        }
+        vk.swap_chain.images.clear();
+    }
+
 
 }
 #endif

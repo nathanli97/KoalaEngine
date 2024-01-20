@@ -59,12 +59,14 @@ private:
     bool ChooseRenderDevice();
     bool InitVulkanQueue();
     bool CreateSwapChain();
+    bool CreateSwapChainViews();
 
     bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chain_support_details);
 
     VkExtent2D GetFrameBufferSizeFromGLFW(const VkSurfaceCapabilitiesKHR &capabilities);
 
 
+    void CleanSwapChain();
 
 };
 

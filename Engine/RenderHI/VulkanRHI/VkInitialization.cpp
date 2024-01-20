@@ -434,6 +434,9 @@ namespace Koala::RenderHI
             }
         }
 
+        logger.debug("Present mode: {}", string_VkPresentModeKHR(present_mode));
+
+
         if (chain_support_details.capabilities.currentExtent.width != UINT32_MAX)
         {
             extent = chain_support_details.capabilities.currentExtent;
@@ -445,12 +448,104 @@ namespace Koala::RenderHI
 
         if (extent.width == 0 || extent.height == 0)
         {
+            // window minimized?
             logger.debug("Framebuffer width or height is 0. Maybe window has minimized");
             return false;
         }
 
+        uint32_t image_count = chain_support_details.capabilities.minImageCount + 1;
+        if(chain_support_details.capabilities.maxImageCount > 0 && image_count > chain_support_details.capabilities.maxImageCount)
+        {
+            logger.warning("SwapChain supported image count too small -- selecting minimal value of image count");
+            image_count = chain_support_details.capabilities.minImageCount;
+        }
+
+        VkSwapchainCreateInfoKHR swapchain_create_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+        swapchain_create_info.surface = vk.surface_khr;
+        swapchain_create_info.minImageCount = image_count;
+        swapchain_create_info.imageFormat = surface_format.format;
+        swapchain_create_info.imageColorSpace = surface_format.colorSpace;
+        swapchain_create_info.imageExtent = extent;
+        swapchain_create_info.imageArrayLayers = 1;
+        // TODO: Render directly to swapchain. not deferred rendering.
+        swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        uint32_t swapchain_queue_families[] = {
+            vk.queue_info.graphics_queue_index.value(),
+            vk.queue_info.present_queue_index.value()
+        };
+
+        if (vk.queue_info.graphics_queue_index.value() != vk.queue_info.present_queue_index.value())
+        {
+            swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            swapchain_create_info.queueFamilyIndexCount = 2;
+            swapchain_create_info.pQueueFamilyIndices = swapchain_queue_families;
+        }
+        else
+        {
+            // If graphics and present queues are same queue, then we don't need concurrently use two queues.
+            // Because we can use same queue for graphics and present.
+            swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            swapchain_create_info.queueFamilyIndexCount = 0;
+            swapchain_create_info.pQueueFamilyIndices = nullptr;
+        }
+
+        swapchain_create_info.preTransform = chain_support_details.capabilities.currentTransform;
+        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchain_create_info.presentMode = present_mode;
+        swapchain_create_info.clipped = VK_TRUE;
+        swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+        VkResult result = vkCreateSwapchainKHR(vk.device, &swapchain_create_info, nullptr, &vk.swap_chain.swapchain_khr);
+
+        if (result == VK_SUCCESS)
+        {
+            vkGetSwapchainImagesKHR(vk.device, vk.swap_chain.swapchain_khr, &image_count, nullptr);
+            vk.swap_chain.images.resize(image_count);
+            vkGetSwapchainImagesKHR(vk.device, vk.swap_chain.swapchain_khr, &image_count, vk.swap_chain.images.data());
+            vk.swap_chain.image_format = surface_format.format;
+            vk.swap_chain.image_extent = extent;
+        }
+        else
+        {
+            logger.error("Failed to create swapchain: {}", string_VkResult(result));
+        }
         return true;
     }
+
+    bool VulkanRHI::CreateSwapChainViews()
+    {
+        vk.swap_chain.image_views.resize(vk.swap_chain.images.size());
+
+        uint32_t index = 0;
+        for (auto &image: vk.swap_chain.images)
+        {
+            VkImageViewCreateInfo view_create_info{};
+            view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            view_create_info.image = image;
+            view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            view_create_info.format = vk.swap_chain.image_format;
+            view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            view_create_info.subresourceRange.baseMipLevel = 0;
+            view_create_info.subresourceRange.levelCount = 1;
+            view_create_info.subresourceRange.baseArrayLayer = 0;
+            view_create_info.subresourceRange.layerCount = 1;
+
+            VkResult result = vkCreateImageView(vk.device, &view_create_info, nullptr, &vk.swap_chain.image_views[index++]);
+
+            if (result != VK_SUCCESS)
+            {
+                logger.error("VK ImageView #{} creation was failed: {}", index - 1, string_VkResult(result));
+                return false;
+            }
+        }
+        return true;
+    }
+
 
 
 
@@ -494,6 +589,8 @@ namespace Koala::RenderHI
 
     void VulkanRHI::VulkanShutdown()
     {
+        CleanSwapChain();
+
         if (!vk.instance)
         {
             return;

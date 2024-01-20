@@ -52,6 +52,15 @@ namespace Koala::RenderHI
         VkQueue graphics_queue{};
 
         VkDevice device{};
+
+        struct
+        {
+            std::vector<VkImage> images;
+            std::vector<VkImageView> image_views;
+            VkFormat image_format{};
+            VkExtent2D image_extent{};
+            VkSwapchainKHR swapchain_khr{};
+        } swap_chain;
     };
     struct GLFWRuntime {
         GLFWwindow *window{};
