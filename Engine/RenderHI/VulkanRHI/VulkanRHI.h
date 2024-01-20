@@ -36,6 +36,11 @@ public:
     bool PreInit() override;
     void PostShutdown() override;
     bool Tick() override;
+
+    [[nodiscard]] inline VmaAllocator GetMemoryAllocator() const
+    {
+        return vk.vma_allocator;
+    }
 private:
     VulkanRuntime vk;
     GLFWRuntime glfw;
@@ -57,7 +62,8 @@ private:
     // ------Vulkan Initialization Functions------
     bool InitVulkanInstance();
     bool ChooseRenderDevice();
-    bool InitVulkanQueue();
+    bool InitVulkanDeviceAndQueue();
+    bool InitMemoryAlloctor();
     bool CreateSwapChain();
     bool CreateSwapChainViews();
 
@@ -67,6 +73,7 @@ private:
 
 
     void CleanSwapChain();
+
 
 };
 

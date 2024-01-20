@@ -7,6 +7,7 @@ find_package(glfw3 CONFIG REQUIRED)
 find_package(Eigen3 CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
 find_package(Python REQUIRED Development)
 
 
@@ -24,7 +25,7 @@ target_include_directories(koala
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
 
-set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt)
+set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator)
 if (MINGW)
     target_link_libraries(koala PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES} spdlog::spdlog_header_only)
 else ()

@@ -25,7 +25,7 @@
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>
 
-static Koala::Logger logger("RHI");
+static Koala::Logger logger("RHI-VK");
 #if RHI_ENABLE_VALIDATION
 void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance,
                                          VkDebugUtilsMessengerEXT debugMessenger,
@@ -94,7 +94,7 @@ namespace Koala::RenderHI
         app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         app_info.pEngineName = "Koala Engine";
         app_info.engineVersion = VK_MAKE_VERSION(KOALA_ENGINE_VER_MAJOR, KOALA_ENGINE_VER_MINOR, KOALA_ENGINE_VER_PATCH);
-        app_info.apiVersion = VK_API_VERSION_1_2;
+        app_info.apiVersion = VK_APIVERSION;
 
         VkInstanceCreateInfo vk_create_info{};
         vk_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
@@ -281,7 +281,7 @@ namespace Koala::RenderHI
         vk.physical_device = choose_device;
         return true;
     }
-    bool VulkanRHI::InitVulkanQueue()
+    bool VulkanRHI::InitVulkanDeviceAndQueue()
     {
         uint32_t queue_family_count = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, nullptr);
@@ -375,6 +375,25 @@ namespace Koala::RenderHI
         vkGetDeviceQueue(vk.device, vk.queue_info.present_queue_index.value(), 0, &vk.present_queue);
         vkGetDeviceQueue(vk.device, vk.queue_info.compute_queue_index.value(), 0, &vk.compute_queue);
         vkGetDeviceQueue(vk.device, vk.queue_info.graphics_queue_index.value(), 0, &vk.graphics_queue);
+
+        return true;
+    }
+
+    bool VulkanRHI::InitMemoryAlloctor()
+    {
+        VmaAllocatorCreateInfo allocator_create_info = {};
+        allocator_create_info.vulkanApiVersion = VK_APIVERSION;
+        allocator_create_info.physicalDevice = vk.physical_device;
+        allocator_create_info.device = vk.device;
+        allocator_create_info.instance = vk.instance;
+
+        VkResult result = vmaCreateAllocator(&allocator_create_info, &vk.vma_allocator);
+
+        if (result != VK_SUCCESS)
+        {
+            logger.error("Failed to initialize VMA! {}", string_VkResult(result));
+            return false;
+        }
 
         return true;
     }

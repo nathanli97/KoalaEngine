@@ -19,6 +19,8 @@
 #pragma once
 #include <optional>
 #include <vector>
+#define VMA_VULKAN_VERSION 1003000
+#include <vk_mem_alloc.h>
 
 #ifdef INCLUDE_RHI_VULKAN
 #define GLFW_INCLUDE_VULKAN
@@ -26,12 +28,17 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+#define VK_APIVERSION VK_API_VERSION_1_3
+
+
 namespace Koala::RenderHI
 {
     struct VulkanRuntime {
         VkInstance instance{};
         VkSurfaceKHR surface_khr{};
         VkPhysicalDevice physical_device{};
+
+        VmaAllocator vma_allocator;
 
         struct
         {

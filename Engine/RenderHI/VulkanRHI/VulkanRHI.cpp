@@ -58,7 +58,7 @@ namespace Koala::RenderHI {
     {
         return InitVulkanInstance() &&
             ChooseRenderDevice() &&
-            InitVulkanQueue() &&
+            InitVulkanDeviceAndQueue() &&
             CreateSwapChain() &&
             CreateSwapChainViews();
     }
