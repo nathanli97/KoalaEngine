@@ -253,6 +253,7 @@ namespace Koala::RenderHI
 
         VkPhysicalDevice choose_device{nullptr};
 
+        bool using_discrete_gpu = false;
         for (auto const & gpu: suitable_devices)
         {
             auto const &prop = suitable_device_props[gpu.first];
@@ -264,6 +265,7 @@ namespace Koala::RenderHI
                 gpu_name = prop.deviceName;
                 logger.debug("We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
                 choose_device = gpu.second;
+                using_discrete_gpu = true;
             }
         }
 
@@ -279,6 +281,12 @@ namespace Koala::RenderHI
             return false;
         }
 
+        if (!using_discrete_gpu)
+        {
+            logger.warning("No discrete GPU(s) is found!");
+        }
+
+        logger.info("Using GPU: {}", gpu_name);
         vk.physical_device = choose_device;
         return true;
     }
