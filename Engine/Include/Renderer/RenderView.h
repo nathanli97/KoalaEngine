@@ -75,5 +75,8 @@ namespace Koala::Renderer
         int z = 0;
         // Is this view hidden?
         bool is_hidden = false;
+
+        // View Projector
+        // TODO
     };
 }
