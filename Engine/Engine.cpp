@@ -52,7 +52,7 @@ namespace Koala
         }
         else
         {
-            logger_engine.error("Init script load failed.");
+            logger_engine.error("Init script load failed. Tip: CurrentWorkingDirectory should be koala project's root directory. (Engine will attempt to load script from Engine/Scripts/)");
             return false;
         }
 
