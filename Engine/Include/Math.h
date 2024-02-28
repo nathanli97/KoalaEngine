@@ -35,12 +35,13 @@ namespace Koala {
         return IsNearlyZero(a - b);
     }
 
-    typedef Eigen::Matrix3f Mat3f;
-    typedef Eigen::Matrix3d Mat3d;
-    typedef Eigen::Matrix4f Mat4f;
-    typedef Eigen::Matrix4d Mat4d;
-    typedef Eigen::Vector3f Vec3f;
-    typedef Eigen::Vector3d Vec3d;
-    typedef Eigen::Vector4f Vec4f;
-    typedef Eigen::Vector4d Vec4d;
+    typedef Eigen::Matrix3f    Mat3f;
+    typedef Eigen::Matrix3d    Mat3d;
+    typedef Eigen::Matrix4f    Mat4f;
+    typedef Eigen::Matrix4d    Mat4d;
+    typedef Eigen::Vector3f    Vec3f;
+    typedef Eigen::Vector3d    Vec3d;
+    typedef Eigen::Vector4f    Vec4f;
+    typedef Eigen::Vector4d    Vec4d;
+    typedef Eigen::Quaternionf Quat;
 }

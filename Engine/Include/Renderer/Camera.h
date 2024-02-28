@@ -17,11 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-
+#include <Math.h>
 
 namespace Koala::Renderer {
     class Camera {
-
+    public:
+        Vec3f position;
+        Quat orientation;
+        // FOV angle. in rad.
+        float fov;
     };
 }
 
