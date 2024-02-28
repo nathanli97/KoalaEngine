@@ -16,14 +16,31 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
 #pragma once
 
 #include "Definations.h"
-#include "CmdParser.h"
-#include "Engine.h"
-#include "EngineVersion.h"
-#include "Logger.h"
-#include "PyScripting/PyIntegrate.h"
-#include "PyScripting/PyExecute.h"
+#include <cmath>
+#include <Eigen/Dense>
+
+
+
+namespace Koala {
+    FORCEINLINE bool IsNearlyZero(float x)
+    {
+        return ::fabs(x) <= 0.0001f;
+    }
+
+    FORCEINLINE bool IsNearlyEqual(float a, float b)
+    {
+        return IsNearlyZero(a - b);
+    }
+
+    typedef Eigen::Matrix3f Mat3f;
+    typedef Eigen::Matrix3d Mat3d;
+    typedef Eigen::Matrix4f Mat4f;
+    typedef Eigen::Matrix4d Mat4d;
+    typedef Eigen::Vector3f Vec3f;
+    typedef Eigen::Vector3d Vec3d;
+    typedef Eigen::Vector4f Vec4f;
+    typedef Eigen::Vector4d Vec4d;
+}

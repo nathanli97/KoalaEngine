@@ -17,7 +17,9 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "Camera.h"
 #include "ISingleton.h"
+#include "Projectors/Projector.h"
 
 namespace Koala::Renderer
 {
@@ -76,7 +78,17 @@ namespace Koala::Renderer
         // Is this view hidden?
         bool is_hidden = false;
 
+        // This function will copy props from this class to camera.
+        // e.g. w,h,x,y,z
+        void ApplyChangesToCamera();
+
+        // Camera
+        // TODO: Support multiple cameras
+        Camera *camera{nullptr};
+
         // View Projector
-        // TODO
+        // This pointer should be pointed to camera->proj.
+        // TODO: Support multiple projectors
+        Projector *projector{nullptr};
     };
 }
