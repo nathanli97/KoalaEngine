@@ -87,8 +87,7 @@ namespace Koala::Renderer
         Camera *camera{nullptr};
 
         // View Projector
-        // This pointer should be pointed to camera->proj.
         // TODO: Support multiple projectors
-        Projector *projector{nullptr};
+        [[nodiscard]] Projector *GetProjector() const {return camera->projector;}
     };
 }

@@ -20,7 +20,41 @@
 
 
 namespace Koala::Renderer {
-    class Projector {
+    enum EProjectorType {
+        NoProjector = 0,             // Just Identity proj matrix.
+        OrthographicProjector,
+        PerspectiveProjector,
+        ProjectorTypeNum,
+    };
 
+    class Projector {
+    public:
+        // Update Projection Matrix if needed.
+        void UpdateProjection();
+
+        // Params
+        // The params shared on multiple projection methods.
+        struct {
+        } comm_param;
+
+        // Proj method-specified projection params.
+        union {
+            struct NoProject{};
+            struct PerspectiveProject{};
+            struct OrthographicProject{};
+        } proj_param;
+
+        // Get Projection Matrix.
+        const Mat4f& GetProjectionMatrix() const;
+        // Update proj matrix if needed. then, return result matrix.
+        const Mat4f& AcquireProjectionMatrix() const;
+
+        FORCEINLINE NODISCARD bool IsProjectorTypeValid() const {return projector_type < EProjectorType::ProjectorTypeNum;}
+        FORCEINLINE NODISCARD EProjectorType GetProjectType() const {return projector_type;}
+    private:
+        Mat4f project_matrix;
+        void CalculateProjectionMatrix();
+
+        EProjectorType projector_type{ProjectorTypeNum};
     };
 }

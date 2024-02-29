@@ -20,8 +20,7 @@
 #include <Math.h>
 
 namespace Koala::Renderer {
-    class OrthographicProjector{
-    public:
+    struct OrthographicProjector{
         static void CalculateProjMatrix(Mat4f &out);
     };
 };

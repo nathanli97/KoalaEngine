@@ -19,13 +19,18 @@
 #pragma once
 #include <Math.h>
 
+#include "Projectors/Projector.h"
+
 namespace Koala::Renderer {
     class Camera {
     public:
         Vec3f position;
-        Quat orientation;
-        // FOV angle. in rad.
+        Quatf orientation;
+        // FOV angle. in rad. only used in perspective projection.
         float fov;
+
+
+        Projector *projector;
     };
 }
 

@@ -20,18 +20,29 @@
 #include <Math.h>
 
 namespace Koala::Renderer {
-    class PerspectiveProjector{
-    public:
+
+    struct PerspectiveProjector{
         /**
-         * @brief Calculate perspective projection matrix.
-         * @details This function will calculate 'OpenGL style' projection matrix with z range mapped to [0,1].
-         *          i.e. LH coordinate system with z-depth mapped to [0,1]
+         * The functions used to calculate the perspective projection matrix.
+         * _{LH,RH}NDC_ means this matrix is based on LeftHand or RightHand coordinate.
+         * Half/Full Z means this matrix will map the z axis to [-1,1](Full) or [0,1](Half)
+         * _ReservedZ version of the functions will remap the z to 1-z for depth precision consideration.
+         * Common params:
          * @param out the final perspective projection matrix output.
          * @param fov the field of view angle in rad
          * @param aspect the aspect ratio for display. e.g. 16/9
          * @param z_near the near plane used in clipping
          * @param z_far the far plane used in clipping
          */
-        static void CalculateProjMatrix(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+
+        static void CalculatePerspectiveProjMatrix_LHNDC_HalfZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_RHNDC_HalfZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_LHNDC_FullZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_RHNDC_FullZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+
+        static void CalculatePerspectiveProjMatrix_LHNDC_HalfZ_ReversedZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_RHNDC_HalfZ_ReversedZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_LHNDC_FullZ_ReversedZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculatePerspectiveProjMatrix_RHNDC_FullZ_ReversedZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
     };
 };

@@ -23,7 +23,6 @@
 #include <Eigen/Dense>
 
 
-
 namespace Koala {
     FORCEINLINE bool IsNearlyZero(float x)
     {
@@ -43,5 +42,6 @@ namespace Koala {
     typedef Eigen::Vector3d    Vec3d;
     typedef Eigen::Vector4f    Vec4f;
     typedef Eigen::Vector4d    Vec4d;
-    typedef Eigen::Quaternionf Quat;
+    typedef Eigen::Quaternionf Quatf;
+    typedef Eigen::Quaterniond Quatd;
 }
