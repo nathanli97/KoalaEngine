@@ -35,13 +35,18 @@ namespace Koala::Renderer {
         // Params
         // The params shared on multiple projection methods.
         struct {
+            float near, far;
         } comm_param;
 
         // Proj method-specified projection params.
         union {
             struct NoProject{};
-            struct PerspectiveProject{};
-            struct OrthographicProject{};
+            struct PerspectiveProject {
+                float fov, aspect;
+            };
+            struct OrthographicProject {
+                float left, right, bottom, top;
+            };
         } proj_param;
 
         // Get Projection Matrix.

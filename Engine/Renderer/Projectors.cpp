@@ -16,24 +16,14 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#pragma once
-#include <KoalaMath.h>
+#include <Math.h>
+#include <Renderer/Projectors/Orthographic/OrthographicProjector.h>
+#include <Renderer/Projectors/Perspective/PerspectiveProjector.h>
 
 namespace Koala::Renderer {
-    /**
-         * The functions used to calculate the orthographic projection matrix.
-         * Assumes the world coordinate is RH-based coordinate system.
-         * Required params:
-         * @param out the final orthographic projection matrix output.
-         * @param near the near plane
-         * @param far the far plane
-         * @param left the left plane
-         * @param right the right plane
-         * @param bottom the bottom plane
-         * @param top the top plane
-         */
-    struct OrthographicProjector{
-        static void CalculateProjMatrix(Mat4f &out,
-            float near, float far, float left, float right, float bottom, float top);
-    };
-};
+    void OrthographicProjector::CalculateProjMatrix(Mat4f &out,
+        float near, float far, float left, float right, float bottom, float top) {
+
+    }
+
+}

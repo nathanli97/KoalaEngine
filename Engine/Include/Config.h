@@ -24,6 +24,7 @@
 
 #include "Module.h"
 #include <unordered_map>
+#include <string>
 
 namespace Koala
 {
