@@ -18,12 +18,13 @@
 
 #pragma once
 
+#include <MathDef.h>
 
 namespace Koala::Renderer {
     enum EProjectorType {
-        NoProjector = 0,             // Just Identity proj matrix.
-        OrthographicProjector,
-        PerspectiveProjector,
+        NoProjectorType = 0,             // Just Identity proj matrix.
+        OrthographicProjectorType,
+        PerspectiveProjectorType,
         ProjectorTypeNum,
     };
 
@@ -41,25 +42,36 @@ namespace Koala::Renderer {
         // Proj method-specified projection params.
         union {
             struct NoProject{};
-            struct PerspectiveProject {
+            struct {
                 float fov, aspect;
-            };
-            struct OrthographicProject {
+            } persp;
+            struct {
                 float left, right, bottom, top;
-            };
+            } ortho;
         } proj_param;
 
         // Get Projection Matrix.
-        const Mat4f& GetProjectionMatrix() const;
+        NODISCARD FORCEINLINE const Mat4f& GetProjectionMatrix() const;
         // Update proj matrix if needed. then, return result matrix.
-        const Mat4f& AcquireProjectionMatrix() const;
+        const Mat4f& AcquireProjectionMatrix();
 
-        FORCEINLINE NODISCARD bool IsProjectorTypeValid() const {return projector_type < EProjectorType::ProjectorTypeNum;}
-        FORCEINLINE NODISCARD EProjectorType GetProjectType() const {return projector_type;}
+        NODISCARD FORCEINLINE bool IsProjectorTypeValid() const {return projector_type < EProjectorType::ProjectorTypeNum;}
+        NODISCARD FORCEINLINE EProjectorType GetProjectType() const {return projector_type;}
+        FORCEINLINE void SetProjectType(const EProjectorType type)
+        {
+            projector_type = type;
+            MarkDirty();
+        }
+        FORCEINLINE void MarkDirty()
+        {
+            is_matrix_dirty = true;
+        }
     private:
         Mat4f project_matrix;
-        void CalculateProjectionMatrix();
 
         EProjectorType projector_type{ProjectorTypeNum};
+        bool is_matrix_dirty{true};
+
+        FORCEINLINE void CalculateProjectionMatrix();
     };
 }

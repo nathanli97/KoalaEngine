@@ -17,7 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <KoalaMath.h>
+#include <MathDef.h>
 
 namespace Koala::Renderer {
     /**

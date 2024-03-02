@@ -16,11 +16,54 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include <Math.h>
+#include <Renderer/Projectors/Projector.h>
 #include <Renderer/Projectors/Orthographic/OrthographicProjector.h>
 #include <Renderer/Projectors/Perspective/PerspectiveProjector.h>
 
 namespace Koala::Renderer {
+    void Projector::CalculateProjectionMatrix()
+    {
+
+        switch (projector_type)
+        {
+        case EProjectorType::NoProjectorType:
+            project_matrix.setIdentity();
+            break;
+        case EProjectorType::OrthographicProjectorType:
+            OrthographicProjector::CalculateProjMatrix(project_matrix,
+                comm_param.near, comm_param.far,
+                proj_param.ortho.left, proj_param.ortho.right, proj_param.ortho.bottom, proj_param.ortho.top);
+            break;
+        case EProjectorType::PerspectiveProjectorType:
+            PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(project_matrix,
+                proj_param.persp.fov, proj_param.persp.aspect,
+                comm_param.near, comm_param.far);
+            break;
+        default:
+            ASSERT(projector_type < ProjectorTypeNum);
+        }
+        is_matrix_dirty = false;
+    }
+
+    void Projector::UpdateProjection()
+    {
+        if (is_matrix_dirty)
+        {
+            CalculateProjectionMatrix();
+        }
+    }
+
+    const Mat4f& Projector::GetProjectionMatrix() const
+    {
+        return project_matrix;
+    }
+
+    const Mat4f& Projector::AcquireProjectionMatrix()
+    {
+        UpdateProjection();
+        return project_matrix;
+    }
+
     void PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(Mat4f& out, float fov, float aspect, float z_near, float z_far)
     {
         float fov_sin = ::sinf(fov / 2.0f);

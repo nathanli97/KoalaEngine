@@ -22,15 +22,64 @@
 #include "Projectors/Projector.h"
 
 namespace Koala::Renderer {
+    enum ECameraMode
+    {
+        PerspectiveCamera,
+        OrthographicCamera
+    };
     class Camera {
     public:
         Vec3f position;
         Quatf orientation;
-        // FOV angle. in rad. only used in perspective projection.
-        float fov;
 
+        // Perspective params
+        // FOV angle. in rad. only used in perspective projection.
+        float fov{0};
+        float aspect{0};
+        float near{0}, far{0};
+
+        // Orthographic params
+        float bottom{0}, top{0}, left{0}, right{0};
 
         Projector *projector;
+        ECameraMode camera_mode{ECameraMode::OrthographicCamera};
+
+        Camera():projector(new Projector)
+        {
+            projector->SetProjectType(OrthographicProjectorType);
+        }
+
+        void Update() const;
+        NODISCARD FORCEINLINE bool IsProjectionDirty() const
+        {
+            if (camera_mode == PerspectiveCamera)
+            {
+                if (projector->GetProjectType() != EProjectorType::PerspectiveProjectorType)
+                {
+                    projector->SetProjectType(EProjectorType::PerspectiveProjectorType);
+                    return false;
+                }
+
+                return !IsNearlyEqual(far, projector->comm_param.far) ||
+                    !IsNearlyEqual(near, projector->comm_param.near) ||
+                    !IsNearlyEqual(fov, projector->proj_param.persp.fov) ||
+                    !IsNearlyEqual(aspect, projector->proj_param.persp.aspect);
+            } else // camera_mode == OrthographicCamera
+            {
+                if (projector->GetProjectType() != EProjectorType::OrthographicProjectorType)
+                {
+                    projector->SetProjectType(EProjectorType::OrthographicProjectorType);
+                    return false;
+                }
+
+                return !IsNearlyEqual(far, projector->comm_param.far) ||
+                    !IsNearlyEqual(near, projector->comm_param.near) ||
+                    !IsNearlyEqual(bottom, projector->proj_param.ortho.bottom) ||
+                    !IsNearlyEqual(top, projector->proj_param.ortho.top) ||
+                    !IsNearlyEqual(left, projector->proj_param.ortho.left) ||
+                    !IsNearlyEqual(right, projector->proj_param.ortho.right);
+            }
+        }
     };
 }
 
