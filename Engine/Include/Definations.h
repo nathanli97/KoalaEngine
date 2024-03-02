@@ -37,7 +37,7 @@
   #endif
 #elif defined( _MSC_VER )
 
-#define FORCEINLINE __forceinline
+#define FORCEINLINE __forceinline inline
   #ifndef likely
     #define likely(x) x
   #endif

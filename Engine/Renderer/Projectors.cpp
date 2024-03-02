@@ -21,6 +21,53 @@
 #include <Renderer/Projectors/Perspective/PerspectiveProjector.h>
 
 namespace Koala::Renderer {
+    void PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(Mat4f& out, float fov, float aspect, float z_near, float z_far)
+    {
+        float fov_sin = ::sinf(fov / 2.0f);
+        float fov_cos = ::cosf(fov / 2.0f);
+        float fov_cot = fov_cos / fov_sin;
+
+        out.setZero();
+
+        out(0,0) = fov_cot / aspect;
+        out(1,1) = fov_cot;
+
+        float delta_z = z_far - z_near;
+        float v22 = -(z_far + z_near) / delta_z;
+        float v23 = -(2 * z_far * z_near) / delta_z;
+
+        if (z_far == 0) {
+            v22 = 1;
+            v23 = -2 * z_near;
+        }
+
+        out(2,2) = v22;
+        out(2,3) = v23;
+        out(3,2) = -1;
+    }
+
+    void PerspectiveProjector::CalculateProjMatrix_LHNDC_HalfZ(Mat4f& out, float fov, float aspect, float z_near, float z_far)
+    {
+        // TODO: Handle infinity z_far
+        float fov_sin = ::sinf(fov / 2.0f);
+        float fov_cos = ::cosf(fov / 2.0f);
+        float fov_cot = fov_cos / fov_sin;
+
+        out.setZero();
+
+        out(0,0) = fov_cot / aspect;
+        out(1,1) = fov_cot;
+
+        float delta_z = z_far - z_near;
+        float v22 = -(z_far) / delta_z;
+        float v23 = -(z_far * z_near) / delta_z;
+
+        out(2,2) = v22;
+        out(2,3) = v23;
+        out(3,2) = -1;
+    }
+
+
     void OrthographicProjector::CalculateProjMatrix(Mat4f &out,
         float near, float far, float left, float right, float bottom, float top) {
 

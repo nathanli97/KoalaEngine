@@ -24,64 +24,67 @@ namespace Koala::Renderer {
         /**
          * The functions used to calculate the perspective projection matrix.
          * Assumes the world coordinate is RH-based coordinate system.
-         * Required params:
+         * params:
          * @param out the final perspective projection matrix output.
          * @param fov the field of view angle in rad
          * @param aspect the aspect ratio for display. e.g. 16/9
          * @param z_near the near plane used in clipping
          * @param z_far the far plane used in clipping
-         * Template params:
+         *
+         *
          * @tparam is_left_hand_ndc this matrix is based on LeftHand(TRUE) or RightHand(FALSE) NDC coordinate.
          * @tparam is_full_z this matrix will map the z axis to [-1,1](Full) or [0,1](Half).
          * @tparam is_reserved_z ReservedZ version of the proj function will remap the z to 1-z for depth precision consideration.
-         * @tparam is_endless_far Far plane will be treated to infinity. If this option is TRUE, the function will ignore z_far.
          */
 
-        template <bool is_left_hand_ndc = true, bool is_full_z = true, bool is_reserved_z = false, bool is_endless_far = false>
-        static void CalculateProjMatrix(
-            Mat4f &out, float fov, float aspect, float z_near, float z_far
-        )
-        {
-            // TODO: handle is_reserved_z
-            float fov_sin = ::sinf(fov / 2.0f);
-            float fov_cos = ::cosf(fov / 2.0f);
-            float fov_cot = fov_cos / fov_sin;
+        static void CalculateProjMatrix_LHNDC_FullZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculateProjMatrix_LHNDC_HalfZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
 
-            out.setZero();
-
-            out(0,0) = fov_cot / aspect;
-            out(1,1) = fov_cot;
-
-            float delta_z = z_far - z_near;
-            float v22 = 0;
-            float v23 = 0;
-
-            if constexpr (!is_full_z) {
-                if constexpr (is_endless_far) {
-                    v22 = 1;
-                    // TODO: endless_far mode in half-z
-                    // v23 = -2 * z_near;
-                } else {
-                    v22 = -z_far / delta_z;
-                    v23 = (z_far * z_near) / delta_z;
-                }
-            } else {
-                if constexpr (is_endless_far) {
-                    v22 = 1;
-                    v23 = -2 * z_near;
-                } else {
-                    v22 = -(z_far + z_near) / delta_z;
-                    v23 = -(2 * z_far * z_near) / delta_z;
-                }
-            }
-
-            if constexpr (!is_left_hand_ndc) {
-                v22 = -v22;
-            }
-
-            out(2,2) = v22;
-            out(2,3) = v23;
-            out(3,2) = -1;
-        }
+        // template <bool is_left_hand_ndc = true, bool is_full_z = true, bool is_reserved_z = false, bool is_endless_far = false>
+        // static void CalculateProjMatrix(
+        //     Mat4f &out, float fov, float aspect, float z_near, float z_far
+        // )
+        // {
+        //     // TODO: handle is_reserved_z
+        //     float fov_sin = ::sinf(fov / 2.0f);
+        //     float fov_cos = ::cosf(fov / 2.0f);
+        //     float fov_cot = fov_cos / fov_sin;
+        //
+        //     out.setZero();
+        //
+        //     out(0,0) = fov_cot / aspect;
+        //     out(1,1) = fov_cot;
+        //
+        //     float delta_z = z_far - z_near;
+        //     float v22 = 0;
+        //     float v23 = 0;
+        //
+        //     if constexpr (!is_full_z) {
+        //         if constexpr (is_endless_far) {
+        //             v22 = 1;
+        //             // TODO: endless_far mode in half-z
+        //             // v23 = -2 * z_near;
+        //         } else {
+        //             v22 = -z_far / delta_z;
+        //             v23 = (z_far * z_near) / delta_z;
+        //         }
+        //     } else {
+        //         if constexpr (is_endless_far) {
+        //             v22 = 1;
+        //             v23 = -2 * z_near;
+        //         } else {
+        //             v22 = -(z_far + z_near) / delta_z;
+        //             v23 = -(2 * z_far * z_near) / delta_z;
+        //         }
+        //     }
+        //
+        //     if constexpr (!is_left_hand_ndc) {
+        //         v22 = -v22;
+        //     }
+        //
+        //     out(2,2) = v22;
+        //     out(2,3) = v23;
+        //     out(3,2) = -1;
+        // }
     };
 };
