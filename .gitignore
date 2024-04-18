@@ -1,3 +1,8 @@
-cmake-build-*
+/cmake-build-*
 .idea
 __pycache__
+/Build-*
+/Build
+_deps
+/3rdparty
+/DownloadCache

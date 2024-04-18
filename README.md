@@ -4,6 +4,8 @@
 
 # Getting Started
 
+NOTE: KOALA NEW REQUIRES C++20
+
 THIS PROJECT REQUIRES CMAKE VER >= 3.27.
 
 You will be required to install CMake and Python3 in your system. 
