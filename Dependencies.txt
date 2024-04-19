@@ -1,4 +1,0 @@
-# Name   GitURL                                          tag:xxx/commit:xxx
-glfw3    https://github.com/glfw/glfw.git                tag:3.4
-fmt      https://github.com/fmtlib/fmt.git               tag:10.2.1
-spdlog   https://github.com/gabime/spdlog.git            tag:1.13.0

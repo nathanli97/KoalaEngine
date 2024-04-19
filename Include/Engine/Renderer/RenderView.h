@@ -18,7 +18,7 @@
 
 #pragma once
 #include "Camera.h"
-#include "ISingleton.h"
+#include "Singleton.h"
 #include "Projectors/Projector.h"
 
 namespace Koala::Renderer

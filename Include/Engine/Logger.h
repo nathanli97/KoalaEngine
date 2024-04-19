@@ -19,6 +19,7 @@
 
 #pragma once
 #include <string>
+#include <utility>
 #include <spdlog/spdlog.h>
 
 namespace Koala
@@ -26,27 +27,27 @@ namespace Koala
     class Logger
     {
     public:
-        inline Logger (const std::string& log_cat): cat(log_cat) {}
+        inline explicit Logger (std::string  log_cat): cat(std::move(log_cat)) {}
         template <typename ...T>
-        inline void debug(std::string in_fmt, T... args)
+        inline void debug(const std::string& in_fmt, T... args)
         {
             auto fmt = "[{}] " + in_fmt;
             spdlog::debug(fmt, cat, args...);
         };
         template <typename ...T>
-        void info(std::string in_fmt, T... args)
+        void info(const std::string& in_fmt, T... args)
         {
             auto fmt = "[{}] " + in_fmt;
             spdlog::info(fmt, cat, args...);
         };
         template <typename ...T>
-        void warning(std::string in_fmt, T... args)
+        void warning(const std::string& in_fmt, T... args)
         {
             auto fmt = "[{}] " + in_fmt;
             spdlog::warn(fmt, cat, args...);
         };
         template <typename ...T>
-        void error(std::string in_fmt, T... args)
+        void error(const std::string& in_fmt, T... args)
         {
             auto fmt = "[{}] " + in_fmt;
             spdlog::error(fmt, cat, args...);
