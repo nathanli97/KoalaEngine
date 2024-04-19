@@ -22,8 +22,8 @@
 #include <spdlog/spdlog.h>
 
 #include "Engine.h"
-#include "../../Include/Config.h"
-#include "../../Include/Module.h"
+#include "Config.h"
+#include "Module.h"
 #include "VulkanRHI.h"
 
 namespace Koala::RenderHI

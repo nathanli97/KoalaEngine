@@ -16,7 +16,7 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "Include/CmdParser.h"
+#include "CmdParser.h"
 
 #include <spdlog/spdlog.h>
 

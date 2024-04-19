@@ -1,0 +1,15 @@
+[submodule "3rdparty/eigen3"]
+	path = 3rdparty/eigen3
+	url = https://gitlab.com/libeigen/eigen.git
+[submodule "3rdparty/fmt"]
+	path = 3rdparty/fmt
+	url = https://github.com/fmtlib/fmt.git
+[submodule "3rdparty/spdlog"]
+	path = 3rdparty/spdlog
+	url = https://github.com/gabime/spdlog.git
+[submodule "3rdparty/glfw"]
+	path = 3rdparty/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "3rdparty/vma"]
+	path = 3rdparty/vma
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git

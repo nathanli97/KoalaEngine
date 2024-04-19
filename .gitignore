@@ -4,5 +4,3 @@ __pycache__
 /Build-*
 /Build
 _deps
-/3rdparty
-/DownloadCache

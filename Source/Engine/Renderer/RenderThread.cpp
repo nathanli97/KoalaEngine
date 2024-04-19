@@ -17,7 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-#include "../Include/RenderThread.h"
+#include "RenderThread.h"
 
 #include <spdlog/spdlog.h>
 
