@@ -26,7 +26,7 @@ namespace Koala::Scripting
     {
         auto *proc = static_cast<PyObject*>(program);
 
-        if (!PyObject_HasAttrString(proc, funcname))
+        if (!program || !PyObject_HasAttrString(proc, funcname))
             return;
 
         auto func = PyObject_GetAttrString(proc, funcname);

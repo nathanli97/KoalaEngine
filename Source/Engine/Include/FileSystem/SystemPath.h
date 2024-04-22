@@ -31,11 +31,12 @@ namespace Koala::Path {
     {
         std::vector<std::filesystem::path> result;
         result.push_back(GetRootPath());
+        result.push_back(GetRootPath() / "Source");
         result.push_back(GetRootPath() / "Scripts");
-        result.push_back(GetRootPath() / "Engine");
-        result.push_back(GetRootPath() / "Engine"/ "Scripts");
-        result.push_back(GetRootPath() / "TestGame");
-        result.push_back(GetRootPath() / "TestGame"/ "Scripts");
+        result.push_back(GetRootPath() / "Source"/ "Engine");
+        result.push_back(GetRootPath() / "Source"/ "Engine"/ "Scripts");
+        result.push_back(GetRootPath() / "Source"/ "TestGame");
+        result.push_back(GetRootPath() / "Source"/ "TestGame"/ "Scripts");
         return result;
     }
     inline std::filesystem::path GetConfigPath()
