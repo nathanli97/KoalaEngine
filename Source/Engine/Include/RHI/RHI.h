@@ -25,36 +25,36 @@
 #include "Singleton.h"
 
 
-namespace Koala::RenderHI
+namespace Koala::RHI
 {
-    struct RenderHI: public ISingleton{
-        virtual ~RenderHI() = default;
+    struct IRenderHardware: public ISingleton{
+        virtual ~IRenderHardware() = default;
 
 
         // The following functions will be called on RenderThread.
         // Caller: RenderThread
-        virtual bool Initialize() = 0;
+        virtual bool Initialize_RenderThread() = 0;
         // Caller: RenderThread
-        virtual void Shutdown() = 0;
+        virtual void Shutdown_RenderThread() = 0;
 
 
         // The following functions will be called on MainThread.
         // This function will be called before RT is started.
         // Caller: MainThread
-        virtual bool PreInit() = 0;
+        virtual bool PreInit_MainThread() = 0;
         // This function will be called after RT is stopped.
         // Caller: MainThread
-        virtual void PostShutdown() = 0;
+        virtual void PostShutdown_MainThread() = 0;
         // RETURN FALSE if window is closing, renderer should stop rendering
         // Caller: MainThread
-        virtual bool Tick() = 0;
+        virtual bool Tick_MainThread() = 0;
 
         // The following functions only can be called on RenderThread.
         // Return the GPU using for rendering.
         // Return NULL if none of GPU is suitable or not choosed yet.
         virtual const char* GetGPUName() = 0;
     };
-    std::unordered_set<std::string> GetAvaliableRenderHIs();
-    RenderHI* GetRHI(const std::string&);
+    std::unordered_set<std::string> GetAvaliableRHIs();
+    IRenderHardware* GetRHI(const std::string&);
 }
 

@@ -4,3 +4,4 @@ __pycache__
 /Build-*
 /Build
 _deps
+.vscode

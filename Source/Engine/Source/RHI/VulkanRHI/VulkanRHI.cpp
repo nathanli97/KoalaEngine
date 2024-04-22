@@ -20,18 +20,18 @@
 #include "VulkanRHI.h"
 
 
-namespace Koala::RenderHI {
-    bool VulkanRHI::PreInit()
+namespace Koala::RHI {
+    bool VulkanRHI::PreInit_MainThread()
     {
         return GLFWInitialize();
     }
 
-    void VulkanRHI::PostShutdown()
+    void VulkanRHI::PostShutdown_MainThread()
     {
         GLFWShutdown();
     }
 
-    bool VulkanRHI::Initialize()
+    bool VulkanRHI::Initialize_RenderThread()
     {
         return
             VulkanInitialize();
@@ -44,12 +44,12 @@ namespace Koala::RenderHI {
         return gpu_name.c_str();
     }
 
-    void VulkanRHI::Shutdown()
+    void VulkanRHI::Shutdown_RenderThread()
     {
         VulkanShutdown();
     }
 
-    bool VulkanRHI::Tick()
+    bool VulkanRHI::Tick_MainThread()
     {
         return GLFWTick();
     }

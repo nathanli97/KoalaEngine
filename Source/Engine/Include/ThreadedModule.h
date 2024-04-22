@@ -22,7 +22,7 @@
 #include "Thread.h"
 
 namespace Koala {
-    struct IThreadedModule: public IModule, Thread
+    struct IThreadedModule: public IModule, IThread
     {
          IThreadedModule(): IModule() {}
 

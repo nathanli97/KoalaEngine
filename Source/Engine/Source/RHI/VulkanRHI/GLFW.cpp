@@ -26,7 +26,7 @@
 #include "Module.h"
 #include "VulkanRHI.h"
 
-namespace Koala::RenderHI
+namespace Koala::RHI
 {
     static void GLFW_OnFrameBufferResized(GLFWwindow *window, int w, int h)
     {

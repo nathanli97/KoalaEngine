@@ -20,22 +20,22 @@
 
 #ifdef INCLUDE_RHI_VULKAN
 #include "Runtime.h"
-#include "RenderHI/RenderHI.h"
+#include "RHI/RHI.h"
 
-namespace Koala::RenderHI {
+namespace Koala::RHI {
 
-class VulkanRHI: public RenderHI{
+class VulkanRHI: public IRenderHardware{
 public:
     // ===== Caller: RT =======
-    bool Initialize() override;
-    void Shutdown() override;
+    bool Initialize_RenderThread() override;
+    void Shutdown_RenderThread() override;
     const char* GetGPUName() override;
 
 
     // ===== Caller: MainThread =======
-    bool PreInit() override;
-    void PostShutdown() override;
-    bool Tick() override;
+    bool PreInit_MainThread() override;
+    void PostShutdown_MainThread() override;
+    bool Tick_MainThread() override;
 
     [[nodiscard]] inline VmaAllocator GetMemoryAllocator() const
     {

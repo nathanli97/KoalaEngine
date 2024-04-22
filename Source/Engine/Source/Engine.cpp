@@ -23,7 +23,7 @@
 #include "Core.h"
 #include "EngineVersion.h"
 #include "RenderThread.h"
-#include "RenderHI/RenderHI.h"
+#include "RHI/RHI.h"
 
 
 namespace Koala

@@ -16,14 +16,32 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <unordered_set>
 
-#pragma once
-#include <string>
+#include "RHI/RHI.h"
 
-namespace Koala::RenderHI
+#ifdef INCLUDE_RHI_VULKAN
+#include "VulkanRHI/VulkanRHI.h"
+#endif
+
+namespace Koala::RHI
 {
-    struct RenderCapability
+    std::unordered_set<std::string> GetAvaliableRHIs()
     {
-        std::string gpu_name;
-    };
+        return std::unordered_set<std::string>{
+#ifdef INCLUDE_RHI_VULKAN
+            "vulkan",
+#endif
+        };
+    }
+    IRenderHardware* GetRHI(const std::string& name)
+    {
+        if (name == "null")
+            return nullptr;
+#ifdef INCLUDE_RHI_VULKAN
+        else if (name == "vulkan")
+            return &ISingleton::Get<VulkanRHI>();
+#endif
+        else return nullptr;
+    }
 }

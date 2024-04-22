@@ -31,7 +31,7 @@
 #define VK_APIVERSION VK_API_VERSION_1_3
 
 
-namespace Koala::RenderHI
+namespace Koala::RHI
 {
     struct VulkanRuntime {
         VkInstance instance{};

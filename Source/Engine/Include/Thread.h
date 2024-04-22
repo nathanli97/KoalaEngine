@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace Koala {
-    class Thread
+    class IThread
     {
     public:
         virtual void Run() = 0;
@@ -37,7 +37,7 @@ namespace Koala {
             static ThreadManager manager;
             return manager;
         }
-        void CreateThread(Thread* thread)
+        void CreateThread(IThread* thread)
         {
             threads.emplace_back(
                 [thread]

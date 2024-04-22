@@ -22,9 +22,9 @@
 
 #include "ThreadedModule.h"
 
-namespace Koala::RenderHI
+namespace Koala::RHI
 {
-    struct RenderHI;
+    struct IRenderHardware;
 }
 
 namespace Koala {
@@ -65,7 +65,7 @@ namespace Koala {
 
         RenderThread(): IThreadedModule() {}
     private:
-        RenderHI::RenderHI *render = nullptr;
+        RHI::IRenderHardware *render = nullptr;
 
         std::mutex mutex_render_ready_or_initerr;
         std::condition_variable cv_render_ready_or_initerr;

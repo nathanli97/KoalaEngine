@@ -78,7 +78,7 @@ VkResult VulkanCreateDebugUtilsMessengerEXT(VkInstance instance,
 static VkDebugUtilsMessengerEXT vk_debug_messenger{};
 #endif
 
-namespace Koala::RenderHI
+namespace Koala::RHI
 {
     const static std::vector<const char *> VK_DeviceRequiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
