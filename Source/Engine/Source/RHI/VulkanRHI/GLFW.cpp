@@ -23,7 +23,7 @@
 
 #include "Engine.h"
 #include "Config.h"
-#include "Module.h"
+#include "Core/Module.h"
 #include "VulkanRHI.h"
 
 namespace Koala::RHI

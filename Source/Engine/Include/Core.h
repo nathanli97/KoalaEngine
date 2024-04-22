@@ -24,6 +24,7 @@
 #include "CmdParser.h"
 #include "Engine.h"
 #include "EngineVersion.h"
-#include "Logger.h"
+#include "Core/Logger.h"
+#include "Core/StringTools.h"
 #include "PyScripting/PyIntegrate.h"
 #include "PyScripting/PyExecute.h"

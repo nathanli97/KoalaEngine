@@ -22,8 +22,7 @@
 #include <spdlog/spdlog.h>
 
 #include "Config.h"
-#include "Engine.h"
-#include "Logger.h"
+#include <Core.h>
 #include "../RHI/VulkanRHI/VulkanRHI.h"
 
 namespace Koala

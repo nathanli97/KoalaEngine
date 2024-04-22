@@ -26,7 +26,7 @@
 #include <spdlog/spdlog.h>
 
 #include "CmdParser.h"
-#include "StringTools.h"
+#include "Core/StringTools.h"
 
 namespace Koala
 {

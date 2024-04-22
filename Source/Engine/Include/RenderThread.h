@@ -20,7 +20,7 @@
 #pragma once
 #include <condition_variable>
 
-#include "ThreadedModule.h"
+#include "Core/ThreadedModule.h"
 
 namespace Koala::RHI
 {

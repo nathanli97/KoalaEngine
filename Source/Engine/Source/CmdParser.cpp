@@ -20,7 +20,7 @@
 
 #include <spdlog/spdlog.h>
 
-#include "StringTools.h"
+#include <Core.h>
 
 namespace Koala
 {

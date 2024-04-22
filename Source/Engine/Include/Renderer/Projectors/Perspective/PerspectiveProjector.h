@@ -17,7 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <MathDef.h>
+#include <Math/MathDefinations.h>
 
 namespace Koala::Renderer {
     struct PerspectiveProjector{

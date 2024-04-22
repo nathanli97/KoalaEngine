@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <MathDef.h>
+#include <Math/MathDefinations.h>
 
 namespace Koala::Renderer {
     enum EProjectorType {
