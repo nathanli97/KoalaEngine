@@ -27,6 +27,7 @@ namespace Koala {
     class IThread
     {
     public:
+        virtual ~IThread() = default;
         virtual void Run() = 0;
     };
     class ThreadManager
