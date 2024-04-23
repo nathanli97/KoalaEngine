@@ -28,7 +28,7 @@ namespace Koala::Renderer {
         ProjectorTypeNum,
     };
 
-    class Projector {
+    class SceneProjector {
     public:
         // Update Projection Matrix if needed.
         void UpdateProjection();

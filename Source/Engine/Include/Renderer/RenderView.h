@@ -19,11 +19,12 @@
 #pragma once
 #include "Camera.h"
 #include "Core/Singleton.h"
+#include "Math/Rect.h"
 #include "Projectors/Projector.h"
 
 namespace Koala::Renderer
 {
-    class RenderView : ISingleton
+    class View
     {
     public:
         NODISCARD bool IsRenderable() const
@@ -32,62 +33,38 @@ namespace Koala::Renderer
         }
         NODISCARD bool IsEmpty() const
         {
-            return w == 0 || h == 0;
+            return viewRect.IsEmpty();
         }
-        NODISCARD int GetW() const {return w;}
-        NODISCARD int GetH() const {return h;}
 
-        NODISCARD int GetX() const {return x;}
-        NODISCARD int GetY() const {return y;}
-        NODISCARD int GetZ() const {return z;}
-
-        inline RenderView& SetSize(int in_w, int in_h)
+        FORCEINLINE_DEBUGABLE View& SetSize(int in_w, int in_h)
         {
-            w = in_w;
-            h = in_h;
+            viewRect.max = viewRect.min + Int32Point(in_w, in_h);
             return *this;
         }
-        inline RenderView& SetPosition(int in_x, int in_y)
+        FORCEINLINE_DEBUGABLE View& SetPosition(int in_x, int in_y)
         {
-            x = in_x;
-            y = in_y;
+            auto size = GetViewSize();
+            viewRect.min = Int32Point(in_x, in_y);
+            viewRect.max = viewRect.min + size;
             return *this;
         }
-        inline RenderView& SetZ(int in_z)
-        {
-            z = in_z;
-            return *this;
-        }
-        inline RenderView& Hide()
+        FORCEINLINE_DEBUGABLE View& Hide()
         {
             is_hidden = false;
             return *this;
         }
-        inline RenderView& Show()
+        FORCEINLINE_DEBUGABLE View& Show()
         {
             is_hidden = true;
             return *this;
         }
+        FORCEINLINE_DEBUGABLE Int32Point GetViewSize() {
+            return viewRect.max - viewRect.min;
+        }
     private:
-        // size of this view, in pixels.
-        int w = 0, h = 0;
-        // Position of this view. this point is top-left point of this view.
-        int x = 0, y = 0;
-        // z-axis of this view. z = 0 is top of views. by the default, views are opaque.
-        int z = 0;
+        // The size of RenderTarget.
+        Int32Rect viewRect;
         // Is this view hidden?
         bool is_hidden = false;
-
-        // This function will copy props from this class to camera.
-        // e.g. w,h,x,y,z
-        void ApplyChangesToCamera();
-
-        // Camera
-        // TODO: Support multiple cameras
-        Camera *camera{nullptr};
-
-        // View Projector
-        // TODO: Support multiple projectors
-        NODISCARD Projector *GetProjector() const {return camera->projector;}
     };
 }

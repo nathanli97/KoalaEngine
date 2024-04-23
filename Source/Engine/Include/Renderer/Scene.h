@@ -18,33 +18,6 @@
 
 #pragma once
 
-#include "Definations.h"
-#include <cmath>
-#include <Eigen/Dense>
+class Scene {
 
-
-namespace Koala {
-    FORCEINLINE bool IsNearlyZero(float x)
-    {
-        return ::fabs(x) <= 0.0001f;
-    }
-
-    FORCEINLINE bool IsNearlyEqual(float a, float b)
-    {
-        return IsNearlyZero(a - b);
-    }
-    typedef Eigen::Matrix2f    Mat2f;
-    typedef Eigen::Matrix2d    Mat2d;
-    typedef Eigen::Matrix3f    Mat3f;
-    typedef Eigen::Matrix3d    Mat3d;
-    typedef Eigen::Matrix4f    Mat4f;
-    typedef Eigen::Matrix4d    Mat4d;
-    typedef Eigen::Vector2f    Vec2f;
-    typedef Eigen::Vector2d    Vec2d;
-    typedef Eigen::Vector3f    Vec3f;
-    typedef Eigen::Vector3d    Vec3d;
-    typedef Eigen::Vector4f    Vec4f;
-    typedef Eigen::Vector4d    Vec4d;
-    typedef Eigen::Quaternionf Quatf;
-    typedef Eigen::Quaterniond Quatd;
-}
+};

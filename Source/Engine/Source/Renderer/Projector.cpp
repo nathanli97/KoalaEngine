@@ -21,7 +21,7 @@
 #include <Renderer/Projectors/Perspective/PerspectiveProjector.h>
 
 namespace Koala::Renderer {
-    void Projector::CalculateProjectionMatrix()
+    void SceneProjector::CalculateProjectionMatrix()
     {
 
         switch (projector_type)
@@ -45,7 +45,7 @@ namespace Koala::Renderer {
         is_matrix_dirty = false;
     }
 
-    void Projector::UpdateProjection()
+    void SceneProjector::UpdateProjection()
     {
         if (is_matrix_dirty)
         {
@@ -53,12 +53,12 @@ namespace Koala::Renderer {
         }
     }
 
-    const Mat4f& Projector::GetProjectionMatrix() const
+    const Mat4f& SceneProjector::GetProjectionMatrix() const
     {
         return project_matrix;
     }
 
-    const Mat4f& Projector::AcquireProjectionMatrix()
+    const Mat4f& SceneProjector::AcquireProjectionMatrix()
     {
         UpdateProjection();
         return project_matrix;
