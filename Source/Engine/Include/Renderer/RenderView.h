@@ -18,7 +18,7 @@
 
 #pragma once
 #include "Camera.h"
-#include "Singleton.h"
+#include "Core/Singleton.h"
 #include "Projectors/Projector.h"
 
 namespace Koala::Renderer
@@ -26,20 +26,20 @@ namespace Koala::Renderer
     class RenderView : ISingleton
     {
     public:
-        [[nodiscard]] bool IsRenderable() const
+        NODISCARD bool IsRenderable() const
         {
             return IsEmpty() && !is_hidden;
         }
-        [[nodiscard]] bool IsEmpty() const
+        NODISCARD bool IsEmpty() const
         {
             return w == 0 || h == 0;
         }
-        [[nodiscard]] int GetW() const {return w;}
-        [[nodiscard]] int GetH() const {return h;}
+        NODISCARD int GetW() const {return w;}
+        NODISCARD int GetH() const {return h;}
 
-        [[nodiscard]] int GetX() const {return x;}
-        [[nodiscard]] int GetY() const {return y;}
-        [[nodiscard]] int GetZ() const {return z;}
+        NODISCARD int GetX() const {return x;}
+        NODISCARD int GetY() const {return y;}
+        NODISCARD int GetZ() const {return z;}
 
         inline RenderView& SetSize(int in_w, int in_h)
         {
@@ -88,6 +88,6 @@ namespace Koala::Renderer
 
         // View Projector
         // TODO: Support multiple projectors
-        [[nodiscard]] Projector *GetProjector() const {return camera->projector;}
+        NODISCARD Projector *GetProjector() const {return camera->projector;}
     };
 }

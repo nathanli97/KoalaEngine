@@ -20,7 +20,7 @@
 
 #pragma once
 namespace Koala::Scripting {
-    enum ArgTypeMap
+    enum EArgTypeMap
     {
         Number,
         Float,

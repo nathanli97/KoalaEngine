@@ -36,8 +36,7 @@
     #define unlikely(x)     __builtin_expect((x),0) // NOLINT
   #endif
 #elif defined( _MSC_VER )
-
-#define FORCEINLINE __forceinline
+  #define FORCEINLINE __forceinline
   #ifndef likely
     #define likely(x) x
   #endif
@@ -53,6 +52,13 @@
     #define unlikely(x) x
   #endif
 #endif
+
+#ifdef _NDEBUG
+  #define FORCEINLINE_DEBUGABLE FORCEINLINE
+#else
+  #define FORCEINLINE_DEBUGABLE inline
+#endif
+
 #if !defined(NDEBUG)
   #include <cassert>
   #define ASSERT(X) assert(X)
@@ -77,6 +83,7 @@
 #else
   #define NODISCARD
   #define DEPRECATED(X)
+  #define DEPRECATED_MSG(X)
 #endif
 
 #define NON_CONST_MEMBER_CALL_CONST_RET(Func) \
