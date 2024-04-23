@@ -9,6 +9,10 @@ vswhere_url = "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswh
 def find_latest_vs(source_dir):
     proc = subprocess.run(f'"{source_dir}/3rdparty/vswhere/vswhere.exe"', capture_output=True)
     latest_vs_version = 0
+
+    if proc is None or proc.returncode != 0:
+        return latest_vs_version
+
     for line in proc.stdout.decode('utf-8').split('\n'):
         line = line.replace('\r', '')
         if line.startswith('catalog_productLineVersion:'):

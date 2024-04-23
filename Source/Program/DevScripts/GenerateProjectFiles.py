@@ -93,7 +93,9 @@ def select_generator(args):
 
 
 def generate(cmake, generator):
-    subprocess.run(f'"{cmake}" -B "{build_dir}" -S "{source_dir}" -G "{generator}"', shell=True, check=True)
+    command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}"'
+    print(f'Running {command}')
+    subprocess.run(command, shell=True, check=True)
     pass
 
 
