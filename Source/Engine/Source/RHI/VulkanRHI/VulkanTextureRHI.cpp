@@ -16,6 +16,8 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "VulkanTextureRHI.h"
+
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "Definations.h"
@@ -49,6 +51,7 @@ namespace Koala::RHI
             return VK_FORMAT_BC5_SNORM_BLOCK;
         default:
             ASSERTS(0, "You have unimplemented PixelFormat in function PixelFormatToVkFormat");
+            return VK_FORMAT_MAX_ENUM;
         }
     }
     static VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
@@ -94,10 +97,10 @@ namespace Koala::RHI
             return VK_SAMPLE_COUNT_32_BIT;
         else if (numSamples == 64)
             return VK_SAMPLE_COUNT_64_BIT;
-
         ASSERTS(0, "You have invalid SampleCount: Vulkan not supported");
+        return VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
     }
-    const void* VulkanRHI::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
+    TextureRHIRef VulkanRHI::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
         VkImageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -120,16 +123,18 @@ namespace Koala::RHI
         }
 
         vmaAllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        VkImage image;
-        VmaAllocation allocation;
-        VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &image, &allocation, nullptr);
+        
+        VulkanTextureRHI *textureRHI{new VulkanTextureRHI};
+        
+        VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->imageRef, &textureRHI->allocRef, nullptr);
 
         if (result != VK_SUCCESS)
         {
             logger.error("Failed to allocate texture with {}", string_VkResult(result));
             return nullptr;
         }
-        return nullptr;
+        
+        return textureRHI;
     }
 
 }

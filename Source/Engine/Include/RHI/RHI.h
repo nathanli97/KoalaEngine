@@ -58,7 +58,7 @@ namespace Koala::RHI
         // Return the GPU using for rendering.
         // Return NULL if none of GPU is suitable or not choosed yet.
         virtual const char* GetGPUName() = 0;
-        virtual const void* CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
+        virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
     };
     std::unordered_set<std::string> GetAvaliableRHIs();
     IRenderHardware* GetRHI(const std::string&);
