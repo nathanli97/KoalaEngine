@@ -41,10 +41,10 @@ namespace Koala::Renderer {
         // Orthographic params
         float bottom{0}, top{0}, left{0}, right{0};
 
-        Projector *projector;
+        SceneProjector *projector;
         ECameraMode camera_mode{ECameraMode::OrthographicCamera};
 
-        Camera():projector(new Projector)
+        Camera():projector(new SceneProjector)
         {
             projector->SetProjectType(OrthographicProjectorType);
         }

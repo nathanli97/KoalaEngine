@@ -47,7 +47,7 @@ namespace Koala::RHI
 
     struct ITextureRHI
     {
-        virtual ~ITextureRHI() = 0;
+        virtual ~ITextureRHI() = default;
     };
     typedef ITextureRHI* TextureRHIRef;
 }

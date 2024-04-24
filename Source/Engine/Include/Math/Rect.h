@@ -19,6 +19,8 @@
 #pragma once
 #include <cstdint>
 
+#include "Definations.h"
+
 namespace Koala {
     template <typename T>
     struct IntPoint {

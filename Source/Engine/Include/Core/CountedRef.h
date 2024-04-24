@@ -19,6 +19,8 @@
 #pragma once
 #include <cstdint>
 
+#include "Definations.h"
+
 namespace Koala
 {
     template<typename T>
@@ -33,19 +35,15 @@ namespace Koala
             else
                 return _storage.obj.refCount;
         }
-        CountedRef(const CountedRef& other) noexcept
+        CountedRef(CountedRef& other) noexcept
         {
-            if (other.IsRef())
-            {
-                _storage.ref.refObject = other._storage.ref.refObject;
-            }
-            other.IncrementRefCount();
+            InitAsReference(other);
         }
         CountedRef& operator=(const CountedRef& other) noexcept
         {
             if (&other != this)
             {
-                *this = CountedRef(other);
+                InitAsReference(other);
             }
             return *this;
         }
@@ -58,22 +56,76 @@ namespace Koala
         {
             if (&other != this)
             {
-                
+                InitAsReference();
+                _storage.obj.object = other._storage.obj.object;
+                _storage.obj.refCount = other._storage.obj.refCount;
             }
             return *this;
         }
         CountedRef(ElementType* inElement)
         {
-            _storage.obj.object = inElement;
+            InitAsObject(inElement);
+        }
+        CountedRef& operator=(ElementType* inElement)
+        {
+            InitAsObject(inElement);
+            return *this;
+        }
+
+
+        CountedRef()
+        {
+            InitAsReference();
+        }
+        ~CountedRef()
+        {
+            DecrementRefCount();
+        }
+
+        
+        bool IsValid() const {return (!IsRef() || _storage.ref.refObject != nullptr);}
+        operator bool() const {return IsValid();}
+        bool operator==(const CountedRef& rhs) const
+        {
+            if (
+                !IsValid() && rhs.IsValid() ||
+                IsValid() && !rhs.IsValid()
+                )
+                return false;
+            if (!IsValid() && !rhs.IsValid())
+                return true;
+
+            return GetRef() == rhs.GetRef();
+        }
+        bool operator!=(const CountedRef& rhs) const
+        {
+            return !operator==(rhs);
         }
     private:
-        void IncrementRefCount()
+        void InitAsReference(CountedRef* other = nullptr)
         {
+            if (IsValid()) DecrementRefCount();
+            _storage.ref.pad = UINT64_MAX;
+            if (other != nullptr)
+            {
+                _storage.ref.refObject = other->GetRef();
+                IncrementRefCount();
+            }
+            else
+            {
+                _storage.ref.refObject = nullptr;
+            }
         }
-        void DecrementRefCount()
+        void InitAsObject(ElementType *inElement = nullptr)
         {
+            if (IsValid()) DecrementRefCount();
+            _storage.obj.object = inElement;
+            _storage.obj.refCount = inElement ? 1 : 0;
         }
-        union 
+        
+
+        
+        union _Storage 
         {
             struct 
             {
@@ -86,7 +138,34 @@ namespace Koala
                 ElementType* object{nullptr};
                 size_t refCount{0};
             } obj;
+
+            _Storage()
+            {
+                memset(this, 0, sizeof(_Storage));
+                ref.pad = UINT64_MAX;
+            }
         } _storage;
+
+        
+        // Here we only return non-const reference pointer -- We may need to call IncrementRefCount() or DecrementRefCount() to modify them.
+        CountedRef* GetRef() const
+        {
+            if(IsRef())
+                return GetRef_UnSafe();
+            else
+                return this;
+        }
+        CountedRef* GetRef_UnSafe() const {return _storage.ref.refObject;}
+        
+        void IncrementRefCount() {++(GetRef()->_storage.obj.refCount);}
+        void DecrementRefCount()
+        {
+            --(GetRef()->_storage.obj.refCount);
+            if (!IsRef() && _storage.obj.refCount == 0)
+            {
+                delete _storage.obj.object;
+            }
+        }
         bool IsRef() const {return _storage.ref.pad == UINT64_MAX;}
     };
 }

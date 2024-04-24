@@ -22,13 +22,9 @@
 #include <string>
 #include <unordered_set>
 
+
+#include "TextureRHI.h"
 #include "Core/Singleton.h"
-
-
-namespace Koala
-{
-    struct RHITextureCreateInfo;
-}
 
 namespace Koala::RHI
 {
