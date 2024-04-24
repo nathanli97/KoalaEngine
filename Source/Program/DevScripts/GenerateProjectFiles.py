@@ -138,7 +138,7 @@ def main():
     parser.add_argument('--msys', action='store_true', required=False, help='Use MSYS Makefiles')
     parser.add_argument('--arch', action='store', required=False, help='Specify arch (Visual Studio Only)')
     parser.add_argument('--noclean', action='store_true', required=False, help='Donot clean build directory before generate project files')
-    parser.add_argument('--gather_files', action='store_true', required=False, help='Gather all source files, update SourceFiles.cmake file(s)')
+    parser.add_argument('--no_gather_files', action='store_true', required=False, help='Donot Gather source files and update SourceFiles.gen.cmake file(s)')
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
     parser.add_argument('--nogen', action='store_true', required=False, help='Do not generate project files!')
 
@@ -152,7 +152,7 @@ def main():
     print(f'Generating project files for {generator}')
     if not args.noclean:
         clean()
-    if args.gather_files:
+    if not args.no_gather_files:
         gather_source(source_dir, args)
     if not args.nogen:
         generate(cmake, generator, arch, args)

@@ -7,3 +7,4 @@ _deps
 .vscode
 3rdparty/vswhere
 3rdparty/cmake
+*.gen.*

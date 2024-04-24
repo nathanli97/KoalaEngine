@@ -1,4 +1,4 @@
-include(SourceFiles.cmake)
+include(SourceFiles.gen.cmake)
 
 add_compile_definitions(INCLUDE_RHI_VULKAN=1)
 add_compile_definitions(RHI_ENABLE_VALIDATION=1)

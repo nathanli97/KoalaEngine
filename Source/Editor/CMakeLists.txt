@@ -1,4 +1,4 @@
-include(SourceFiles.cmake)
+include(SourceFiles.gen.cmake)
 add_executable(KoalaEditor ${MODULE_SOURCE_FILES})
 target_compile_features(KoalaEditor PRIVATE cxx_std_17)
 
