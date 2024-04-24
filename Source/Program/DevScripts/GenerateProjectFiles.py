@@ -140,6 +140,7 @@ def main():
     parser.add_argument('--noclean', action='store_true', required=False, help='Donot clean build directory before generate project files')
     parser.add_argument('--gather_files', action='store_true', required=False, help='Gather all source files, update SourceFiles.cmake file(s)')
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
+    parser.add_argument('--nogen', action='store_true', required=False, help='Do not generate project files!')
 
     args = parser.parse_args()
     cmake = find_cmake()
@@ -153,7 +154,8 @@ def main():
         clean()
     if args.gather_files:
         gather_source(source_dir, args)
-    generate(cmake, generator, arch, args)
+    if not args.nogen:
+        generate(cmake, generator, arch, args)
     print('Finished')
 
 
