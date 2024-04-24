@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 
 from libs.utils import download_file
@@ -46,3 +47,20 @@ def select_generator_visualstudio(source_dir, given_version=None):
         return 'Visual Studio 15 2015'
     else:
         raise RuntimeError(f"Unsupported VS version: {vs_version}")
+
+
+def select_arch_visualstudio(args):
+    if args.arch is not None:
+        return args.arch
+
+    arch = platform.machine()
+
+    if arch is None:
+        return None
+
+    if arch == 'AMD64':
+        return 'x64'
+    elif arch == 'i386':
+        return 'Win32'
+    elif arch == 'ARM64':
+        return 'ARM64'

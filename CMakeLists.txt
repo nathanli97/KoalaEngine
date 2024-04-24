@@ -8,6 +8,8 @@ find_package(Vulkan REQUIRED)
 find_package(Python REQUIRED Development)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
+
 
 if (${GIT_SUBMODULE_RESOLVED})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw)

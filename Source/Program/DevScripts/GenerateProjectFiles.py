@@ -3,9 +3,10 @@ import argparse
 import os.path
 import platform
 import re
+import shutil
 import subprocess
 
-from libs.visualstudio import select_generator_visualstudio
+from libs.visualstudio import select_generator_visualstudio, select_arch_visualstudio
 
 source_dir = os.path.join(
     os.getcwd()
@@ -79,24 +80,35 @@ def select_generator(args):
         return 'Xcode'
     elif args.msys:
         return 'MSYS Makefiles'
+    elif args.vs:
+        vs_version = int(args.vs)
+        return select_generator_visualstudio(source_dir, vs_version)
 
     if platform.system() == "Windows":
-        if args.vs:
-            vs_version = int(args.vs)
-            return select_generator_visualstudio(source_dir, vs_version)
-        else:
-            return select_generator_visualstudio(source_dir)
+        return select_generator_visualstudio(source_dir)
     elif platform.system() == "Linux":
         return 'Unix Makefiles'
     elif platform.system() == "Darwin":
         return 'Xcode'
 
 
-def generate(cmake, generator):
-    command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}"'
+def generate(cmake, generator, arch):
+    if arch is not None:
+        command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}" -A {arch}'
+    else:
+        command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}"'
     print(f'Running {command}')
     subprocess.run(command, shell=True, check=True)
     pass
+
+
+def clean():
+    global build_dir
+    print(f'Cleaning CMake related files in {build_dir}...')
+    if os.path.isfile(os.path.join(build_dir, 'CMakeCache.txt')):
+        os.remove(os.path.join(build_dir, 'CMakeCache.txt'))
+    if os.path.isdir(os.path.join(build_dir, 'CMakeFiles')):
+        shutil.rmtree(os.path.join(build_dir, 'CMakeFiles'))
 
 
 def main():
@@ -120,12 +132,20 @@ def main():
     parser.add_argument('--nmake', action='store_true', required=False, help='Use NMake Makefiles')
     parser.add_argument('--xcode', action='store_true', required=False, help='Use Xcode Makefiles')
     parser.add_argument('--msys', action='store_true', required=False, help='Use MSYS Makefiles')
+    parser.add_argument('--arch', action='store', required=False, help='Specify arch (Visual Studio Only)')
+    parser.add_argument('--noclean', action='store_true', required=False, help='Donot clean build directory before generate project files')
 
     args = parser.parse_args()
     cmake = find_cmake()
     generator = select_generator(args)
+    arch = None
+    if generator.startswith('Visual Studio'):
+        arch = select_arch_visualstudio(args)
+
     print(f'Generating project files for {generator}')
-    generate(cmake, generator)
+    if not args.noclean:
+        clean()
+    generate(cmake, generator, arch)
 
 
 if __name__ == '__main__':

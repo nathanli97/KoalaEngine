@@ -1,2 +1,2 @@
 #!/bin/bash
-python Source/Program/DevScripts/GenerateProjectFiles.py
+python Source/Program/DevScripts/GenerateProjectFiles.py "$@"
