@@ -37,13 +37,13 @@ namespace Koala
         }
         CountedRef(CountedRef& other) noexcept
         {
-            InitAsReference(other);
+            InitAsReference(&other);
         }
         CountedRef& operator=(const CountedRef& other) noexcept
         {
             if (&other != this)
             {
-                InitAsReference(other);
+                InitAsReference(&other);
             }
             return *this;
         }
@@ -102,7 +102,7 @@ namespace Koala
             return !operator==(rhs);
         }
     private:
-        void InitAsReference(CountedRef* other = nullptr)
+        void InitAsReference(const CountedRef* other = nullptr)
         {
             if (IsValid()) DecrementRefCount();
             _storage.ref.pad = UINT64_MAX;
@@ -153,9 +153,13 @@ namespace Koala
             if(IsRef())
                 return GetRef_UnSafe();
             else
-                return this;
+            {
+                // This is object itself!
+                return const_cast<CountedRef*>(static_cast<const CountedRef*>(this));
+            }
         }
         CountedRef* GetRef_UnSafe() const {return _storage.ref.refObject;}
+
         
         void IncrementRefCount() {++(GetRef()->_storage.obj.refCount);}
         void DecrementRefCount()
