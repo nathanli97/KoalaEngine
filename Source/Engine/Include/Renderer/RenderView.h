@@ -27,11 +27,11 @@ namespace Koala::Renderer
     class View
     {
     public:
-        NODISCARD bool IsRenderable() const
+        NODISCARD FORCEINLINE_DEBUGABLE bool CanRender() const
         {
-            return IsEmpty() && !is_hidden;
+            return IsEmpty() && !IsHidden();
         }
-        NODISCARD bool IsEmpty() const
+        NODISCARD FORCEINLINE_DEBUGABLE bool IsEmpty() const
         {
             return viewRect.IsEmpty();
         }
@@ -50,14 +50,15 @@ namespace Koala::Renderer
         }
         FORCEINLINE_DEBUGABLE View& Hide()
         {
-            is_hidden = false;
+            isHidden = false;
             return *this;
         }
         FORCEINLINE_DEBUGABLE View& Show()
         {
-            is_hidden = true;
+            isHidden = true;
             return *this;
         }
+        NODISCARD FORCEINLINE_DEBUGABLE bool IsHidden() const {return isHidden;}
         FORCEINLINE_DEBUGABLE Int32Point GetViewSize() {
             return viewRect.max - viewRect.min;
         }
@@ -65,6 +66,6 @@ namespace Koala::Renderer
         // The size of RenderTarget.
         Int32Rect viewRect;
         // Is this view hidden?
-        bool is_hidden = false;
+        bool isHidden = false;
     };
 }

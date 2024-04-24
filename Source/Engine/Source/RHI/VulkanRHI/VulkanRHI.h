@@ -30,6 +30,7 @@ public:
     bool Initialize_RenderThread() override;
     void Shutdown_RenderThread() override;
     const char* GetGPUName() override;
+    const void* CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
 
 
     // ===== Caller: MainThread =======
@@ -42,8 +43,8 @@ public:
         return vk.vma_allocator;
     }
 private:
-    VulkanRuntime vk;
-    GLFWRuntime glfw;
+    VulkanRuntime vk{};
+    GLFWRuntime glfw{};
 
     std::string gpu_name;
 

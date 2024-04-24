@@ -38,7 +38,7 @@ namespace Koala::RHI
         VkSurfaceKHR surface_khr{};
         VkPhysicalDevice physical_device{};
 
-        VmaAllocator vma_allocator;
+        VmaAllocator vma_allocator{};
 
         struct
         {
