@@ -2,8 +2,6 @@ import os
 
 
 def gather_source_files(root: str, args, dirpath=None, allowed_file_postfix=None):
-    if args.verbose:
-        print(f'Gathering source files for {root}...')
     if allowed_file_postfix is None:
         allowed_file_postfix = ('.h', '.hpp', '.cc', '.ccx', '.cpp', '.inc', '.c')
     files = []

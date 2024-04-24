@@ -4,6 +4,8 @@ include(CMake/ProcessDependencies.cmake)
 
 process_dependencies()
 
+option(BUILD_TESTS "Build Tests" ON)
+
 find_package(Vulkan REQUIRED)
 find_package(Python REQUIRED Development)
 
@@ -17,12 +19,15 @@ if (${GIT_SUBMODULE_RESOLVED})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/spdlog)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/vma)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/catch2)
 
     set_target_properties(glfw PROPERTIES FOLDER "ThirdParty")
     set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
     set_target_properties(fmt-header-only PROPERTIES FOLDER "ThirdParty")
     set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
     set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(Catch2 PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(Catch2WithMain PROPERTIES FOLDER "ThirdParty")
 endif ()
 
 
@@ -30,3 +35,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(Source/Engine)
 add_subdirectory(Source/Editor)
+
+if (BUILD_TESTS)
+    add_subdirectory(Source/Tests)
+endif ()

@@ -98,6 +98,8 @@ def generate(cmake, generator, arch, args):
         command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}" -A {arch}'
     else:
         command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}"'
+    if args.test:
+        command += f' -DBUILD_TESTS=1'
     if args.verbose:
         print(f'Running {command}')
         subprocess.run(command, shell=True, check=True)
@@ -141,6 +143,7 @@ def main():
     parser.add_argument('--no_gather_files', action='store_true', required=False, help='Donot Gather source files and update SourceFiles.gen.cmake file(s)')
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
     parser.add_argument('--nogen', action='store_true', required=False, help='Do not generate project files!')
+    parser.add_argument('--test', action='store_true', required=False, help='Generate project files for unit tests')
 
     args = parser.parse_args()
     cmake = find_cmake()
