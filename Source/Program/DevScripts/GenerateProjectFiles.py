@@ -6,6 +6,7 @@ import re
 import shutil
 import subprocess
 
+from libs.SourceFiles import gather_source
 from libs.visualstudio import select_generator_visualstudio, select_arch_visualstudio
 
 source_dir = os.path.join(
@@ -92,14 +93,17 @@ def select_generator(args):
         return 'Xcode'
 
 
-def generate(cmake, generator, arch):
+def generate(cmake, generator, arch, args):
     if arch is not None:
         command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}" -A {arch}'
     else:
         command = f'{cmake} -B "{build_dir}" -S "{source_dir}" -G "{generator}"'
-    print(f'Running {command}')
-    subprocess.run(command, shell=True, check=True)
-    pass
+    if args.verbose:
+        print(f'Running {command}')
+        subprocess.run(command, shell=True, check=True)
+    else:
+        print(f'Running cmake for project files generation...')
+        subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL)
 
 
 def clean():
@@ -134,6 +138,8 @@ def main():
     parser.add_argument('--msys', action='store_true', required=False, help='Use MSYS Makefiles')
     parser.add_argument('--arch', action='store', required=False, help='Specify arch (Visual Studio Only)')
     parser.add_argument('--noclean', action='store_true', required=False, help='Donot clean build directory before generate project files')
+    parser.add_argument('--gather_files', action='store_true', required=False, help='Gather all source files, update SourceFiles.cmake file(s)')
+    parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
 
     args = parser.parse_args()
     cmake = find_cmake()
@@ -145,7 +151,10 @@ def main():
     print(f'Generating project files for {generator}')
     if not args.noclean:
         clean()
-    generate(cmake, generator, arch)
+    if args.gather_files:
+        gather_source(source_dir, args)
+    generate(cmake, generator, arch, args)
+    print('Finished')
 
 
 if __name__ == '__main__':
