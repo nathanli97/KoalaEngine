@@ -41,12 +41,18 @@ def get_commit(path: str) -> str:
     return commit.strip()
 
 
+def clone(path: str, url: str, name: str):
+    run_git(f'clone {url} {name}', path, capture_output=False)
+
+
 def fetch(path: str):
     return run_git('fetch -P', cwd=path)
 
 
 def checkout(path: str, commit_or_branch: str):
-    return run_git(f'checkout {commit_or_branch}', cwd=path)
+    ret = run_git(f'checkout {commit_or_branch}', cwd=path)
+    run_git(f'reset --hard', cwd=path)
+    return ret
 
 
 def setup_git(args):

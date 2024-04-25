@@ -1,4 +1,5 @@
 import os
+import stat
 
 source_dir = os.path.join(
     os.getcwd()
@@ -16,3 +17,8 @@ def set_source_dir(in_source_dir):
 def set_build_dir(in_build_dir):
     global build_dir
     build_dir = in_build_dir
+
+
+def on_rm_error(func, path, exc_info):
+    os.chmod(path, stat.S_IWRITE)
+    os.unlink(path)

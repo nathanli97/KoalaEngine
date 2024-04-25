@@ -2,6 +2,7 @@
 import json
 import os
 import re
+import shutil
 
 from libs import Git, Global
 
@@ -27,20 +28,24 @@ class Dependence:
         return dep
 
     def sync(self, args):
-        path = os.path.join(Global.source_dir, '3rdparty', self.name)
-        if not os.path.isdir(path):
-            os.makedirs(path)
-        if not Git.is_git_repo(path):
-            if args.verbose:
-                print(f'Cloning {self.git} into 3rdparty/{self.name}...')
-                Git.run_git(f'clone {self.git} {self.name}', os.path.join(Global.source_dir, '3rdparty'), capture_output=False)
-            else:
-                Git.run_git(f'clone {self.git} {self.name}', os.path.join(Global.source_dir, '3rdparty'))
-        else:
-            if len(self.branch) > 0:
-                Git.checkout(path, self.branch)
-            if len(self.commit) > 0:
-                Git.checkout(path, self.commit)
+        root_path = os.path.join(Global.source_dir, '3rdparty')
+
+        if not os.path.isdir(root_path):
+            os.makedirs(root_path)
+
+        path = os.path.join(root_path, self.name)
+
+        # clone
+        if os.path.isdir(path) and not Git.is_git_repo(path):
+            shutil.rmtree(path, onerror=Global.on_rm_error)
+            Git.clone(root_path, self.git, self.name)
+        elif not os.path.isdir(path):
+            Git.clone(root_path, self.git, self.name)
+
+        if len(self.branch) > 0:
+            Git.checkout(path, self.branch)
+        if len(self.commit) > 0:
+            Git.checkout(path, self.commit)
 
 
 def get_dependencies():
@@ -95,6 +100,11 @@ def need_sync_dependencies(args):
             if args.verbose:
                 print(
                     f'[need_sync_dependencies]: Need sync dependencies because {dep.name} repo directory does not exist')
+            return True
+        if not Git.is_git_repo(path):
+            if args.verbose:
+                print(
+                    f'[need_sync_dependencies]: Need sync dependencies because {dep.name} repo directory is invalid')
             return True
         commit = Git.get_commit(path)
         if commit != dep.commit:

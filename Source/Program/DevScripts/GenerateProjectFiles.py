@@ -109,7 +109,7 @@ def clean():
     if os.path.isfile(os.path.join(Global.build_dir, 'CMakeCache.txt')):
         os.remove(os.path.join(Global.build_dir, 'CMakeCache.txt'))
     if os.path.isdir(os.path.join(Global.build_dir, 'CMakeFiles')):
-        shutil.rmtree(os.path.join(Global.build_dir, 'CMakeFiles'))
+        shutil.rmtree(os.path.join(Global.build_dir, 'CMakeFiles'), onerror=Global.on_rm_error)
 
 
 def main():
@@ -127,7 +127,7 @@ def main():
 
     parser.add_argument('--build_dir', action='store', required=False,
                         help='Where project files will be written. Default is "SOURCE_DIE/Build" directory')
-    parser.add_argument('--sync', action='store', required=False,
+    parser.add_argument('--sync', action='store_true', required=False,
                         help='Sync all dependencies')
     parser.add_argument('--vs', action='store', required=False, help='Specify Visual Studio Version')
     parser.add_argument('--mingw', action='store_true', required=False, help='Use MinGW Makefiles')
