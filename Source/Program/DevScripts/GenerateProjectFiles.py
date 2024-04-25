@@ -173,7 +173,7 @@ def main():
         gather_source(args)
     if not args.nogen:
         generate(cmake, generator, arch, args)
-    print('< Generation Finished')
+    print('Generation Finished')
 
 
 if __name__ == '__main__':
