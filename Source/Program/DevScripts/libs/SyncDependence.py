@@ -37,7 +37,7 @@ class Dependence:
 
         # clone
         if os.path.isdir(path) and not Git.is_git_repo(path):
-            shutil.rmtree(path, onerror=Global.on_rm_error)
+            shutil.rmtree(path, onexc=Global.on_rm_error)
             Git.clone(root_path, self.git, self.name)
         elif not os.path.isdir(path):
             Git.clone(root_path, self.git, self.name)

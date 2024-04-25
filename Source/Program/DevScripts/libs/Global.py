@@ -19,6 +19,6 @@ def set_build_dir(in_build_dir):
     build_dir = in_build_dir
 
 
-def on_rm_error(func, path, exc_info):
+def on_rm_error(func, path, _):
     os.chmod(path, stat.S_IWRITE)
     os.unlink(path)

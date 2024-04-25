@@ -53,12 +53,6 @@ def find_cmake():
         cmake_version = parse_cmake_version(proc.stdout.decode('utf-8'))
         if cmake_version >= CMakeVersion(3, 25, 0):
             return 'cmake'
-    proc = subprocess.run(f'{Global.source_dir}/3rdparty/cmake/cmake --version', shell=True, stdout=subprocess.DEVNULL,
-                          stderr=subprocess.DEVNULL)
-    if proc and proc.returncode == 0:
-        cmake_version = parse_cmake_version(proc.stdout.decode('utf-8'))
-        if cmake_version >= CMakeVersion(3, 25, 0):
-            return f'{Global.source_dir}/3rdparty/cmake/cmake'
 
     if cmake_version is None:
         raise RuntimeError(f'Could not find cmake')
@@ -109,7 +103,7 @@ def clean():
     if os.path.isfile(os.path.join(Global.build_dir, 'CMakeCache.txt')):
         os.remove(os.path.join(Global.build_dir, 'CMakeCache.txt'))
     if os.path.isdir(os.path.join(Global.build_dir, 'CMakeFiles')):
-        shutil.rmtree(os.path.join(Global.build_dir, 'CMakeFiles'), onerror=Global.on_rm_error)
+        shutil.rmtree(os.path.join(Global.build_dir, 'CMakeFiles'), onexc=Global.on_rm_error)
 
 
 def main():
