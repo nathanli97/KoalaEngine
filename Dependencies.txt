@@ -1,0 +1,11 @@
+# Dependencies file for KOALA ENGINE
+# Supported syntax: Name='XXX', Git='xxxxxx', Commit='xxxxxxxx'
+#                   Name='XXX', Git='xxxxxx', Commit='xxxxxxxx', Branch='xxxxxxxx'
+# NOTE1: Don't modify the order of parameters! e.g. "Name='XXX', Commit='xxxxxxxx', Git='xxxxxx'" is invalid
+# NOTE2: Use only single quote. double quote or no quotes is invalid.
+Name='eigen3', Git='https://gitlab.com/libeigen/eigen.git', Commit='5635d37f46acc2985aa66d9385665a76c3b9d5c7'
+Name='fmt', Git='https://github.com/fmtlib/fmt.git', Commit='e69e5f977d458f2650bb346dadf2ad30c5320281'
+Name='spdlog', Git='https://github.com/gabime/spdlog.git', Commit='7c02e204c92545f869e2f04edaab1f19fe8b19fd'
+Name='glfw', Git='https://github.com/glfw/glfw.git', Commit='7b6aead9fb88b3623e3b3725ebb42670cbe4c579'
+Name='vma', Git='https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git', Commit='5677097bafb8477097c6e3354ce68b7a44fd01a4'
+Name='catch2', Git='https://github.com/catchorg/Catch2', Commit='b5373dadca40b7edc8570cf9470b9b1cb1934d40'

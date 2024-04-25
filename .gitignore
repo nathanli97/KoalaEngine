@@ -5,6 +5,6 @@ __pycache__
 /Build
 _deps
 .vscode
-3rdparty/vswhere
-3rdparty/cmake
 *.gen.*
+3rdparty/
+DownloadCache/

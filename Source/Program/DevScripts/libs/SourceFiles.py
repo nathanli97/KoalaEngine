@@ -1,5 +1,7 @@
 import os
 
+from libs import Global
+
 
 def gather_source_files(root: str, args, dirpath=None, allowed_file_postfix=None):
     if allowed_file_postfix is None:
@@ -35,9 +37,9 @@ def generate_sourcefiles_cmake(path, files, include_dir=None):
     pass
 
 
-def gather_source(root, args):
+def gather_source(args):
     print(f'Gathering source files...')
-    source_dir = os.path.join(root, 'Source')
+    source_dir = os.path.join(Global.source_dir, 'Source')
     for item in os.listdir(source_dir):
         path = os.path.join(source_dir, item)
         if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'CMakeLists.txt')):
