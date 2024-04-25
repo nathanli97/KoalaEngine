@@ -33,7 +33,9 @@ class Dependence:
         if not Git.is_git_repo(path):
             if args.verbose:
                 print(f'Cloning {self.git} into 3rdparty/{self.name}...')
-            Git.run_git(f'clone {self.git} {self.name}', os.path.join(Global.source_dir, '3rdparty'))
+                Git.run_git(f'clone {self.git} {self.name}', os.path.join(Global.source_dir, '3rdparty'), capture_output=False)
+            else:
+                Git.run_git(f'clone {self.git} {self.name}', os.path.join(Global.source_dir, '3rdparty'))
         else:
             if len(self.branch) > 0:
                 Git.checkout(path, self.branch)

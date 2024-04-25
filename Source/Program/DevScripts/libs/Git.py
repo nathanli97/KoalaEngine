@@ -1,8 +1,7 @@
 import os
-import platform
 import subprocess
 
-from libs import Global, Lib7Zip, Download
+from libs import Global
 
 git = ''
 
@@ -11,26 +10,26 @@ def available():
     return len(git) > 0
 
 
-def find_git(force_local_git=False):
+def find_git():
     global git
-    git_exe = os.path.join(Global.source_dir, '3rdparty', 'Git', 'cmd', 'git.exe')
-    if not force_local_git:
-        proc = subprocess.run('git -v', shell=True, capture_output=True)
-        if proc is not None and proc.returncode == 0:
-            git = 'git'
-    if os.path.isfile(git_exe):
-        git = git_exe
+    proc = subprocess.run('git -v', shell=True, capture_output=True)
+    if proc is not None and proc.returncode == 0:
+        git = 'git'
 
 
-def run_git(cmd: str or list, cwd=Global.source_dir):
+def run_git(cmd: str or list, cwd=Global.source_dir, capture_output=True):
     command = ''
     if isinstance(cmd, list):
         command = ' '.join(cmd)
     else:
         command = cmd
     assert available()
-    proc = subprocess.run(f'{git} {command}', shell=True, capture_output=True, check=True, cwd=cwd)
-    return proc.stdout.decode('utf-8')
+    if capture_output:
+        proc = subprocess.run(f'{git} {command}', shell=True, capture_output=True, check=True, cwd=cwd)
+        return proc.stdout.decode('utf-8')
+    else:
+        proc = subprocess.run(f'{git} {command}', shell=True, check=True, cwd=cwd)
+        return None
 
 
 def is_git_repo(path: str):
@@ -52,17 +51,5 @@ def checkout(path: str, commit_or_branch: str):
 
 def setup_git(args):
     global git
-    if not args.download_all:
-        find_git()
-        if available():
-            return
-        if platform.platform() != 'Windows':
-            raise RuntimeError('Git is not found in your system')  #Currently auto-downloaded git only works on Windows.
-    Lib7Zip.setup(args)
-    print('Setting up Git for windows...')
-    git_url = 'https://github.com/git-for-windows/git/releases/download/v2.44.0.windows.1/MinGit-2.44.0-busybox-64-bit.zip'
-    path = Download.download_to_cache(git_url, 'MinGit-2.44.0-busybox-64-bit.zip')
-    dst_path = os.path.join(Global.source_dir, '3rdparty', 'Git')
-    Lib7Zip.unzip_file(path, dst_path)
-    git = os.path.join(dst_path, 'cmd', 'git.exe')
-    assert os.path.isfile(git)
+    find_git()
+    assert available()
