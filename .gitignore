@@ -6,5 +6,5 @@ __pycache__
 _deps
 .vscode
 *.gen.*
-3rdparty/
+ThirdParty/
 DownloadCache/

@@ -9,7 +9,7 @@ vswhere_url = "https://github.com/microsoft/vswhere/releases/download/3.1.7/vswh
 
 
 def find_latest_vs():
-    proc = subprocess.run(f'"{Global.source_dir}/3rdparty/vswhere/vswhere.exe"', capture_output=True)
+    proc = subprocess.run(f'"{Global.source_dir}/ThirdParty/vswhere/vswhere.exe"', capture_output=True)
     latest_vs_version = 0
 
     if proc is None or proc.returncode != 0:
@@ -29,11 +29,11 @@ def find_latest_vs():
 def select_generator_visualstudio(given_version=None):
     # Find VS
     if given_version is None:
-        if not os.path.isfile(os.path.join(Global.source_dir, "3rdparty", "vswhere", "vswhere.exe")):
-            os.makedirs(os.path.join(Global.source_dir, "3rdparty", "vswhere"), exist_ok=True)
+        if not os.path.isfile(os.path.join(Global.source_dir, "ThirdParty", "vswhere", "vswhere.exe")):
+            os.makedirs(os.path.join(Global.source_dir, "ThirdParty", "vswhere"), exist_ok=True)
             download_file(
                 vswhere_url,
-                os.path.join(Global.source_dir, "3rdparty", "vswhere", "vswhere.exe")
+                os.path.join(Global.source_dir, "ThirdParty", "vswhere", "vswhere.exe")
             )
         vs_version = find_latest_vs()
         if vs_version == 0:

@@ -1,9 +1,9 @@
 import os
 
-from libs import Global
+from libs import Global, Logger
 
 
-def gather_source_files(root: str, args, dirpath=None, allowed_file_postfix=None):
+def gather_source_files(root: str, dirpath=None, allowed_file_postfix=None):
     if allowed_file_postfix is None:
         allowed_file_postfix = ('.h', '.hpp', '.cc', '.ccx', '.cpp', '.inc', '.c')
     files = []
@@ -13,13 +13,12 @@ def gather_source_files(root: str, args, dirpath=None, allowed_file_postfix=None
     for item in os.listdir(curr_path):
         item_abspath = os.path.join(curr_path, item)
         if os.path.isdir(item_abspath):
-            files.extend(gather_source_files(root, args, os.path.join(dirpath, item), allowed_file_postfix))
+            files.extend(gather_source_files(root, os.path.join(dirpath, item), allowed_file_postfix))
         elif os.path.isfile(item_abspath):
             if item_abspath.endswith(allowed_file_postfix):
                 item_relpath = os.path.join(dirpath, item).replace('\\', '/')
                 files.append(item_relpath)
-                if args.verbose:
-                    print(f'\tGathered: {item_relpath}')
+                Logger.verbose(f'\tGathered: {item_relpath}')
     return files
 
 
@@ -37,13 +36,13 @@ def generate_sourcefiles_cmake(path, files, include_dir=None):
     pass
 
 
-def gather_source(args):
+def gather_source():
     print(f'Gathering source files...')
     source_dir = os.path.join(Global.source_dir, 'Source')
     for item in os.listdir(source_dir):
         path = os.path.join(source_dir, item)
         if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'CMakeLists.txt')):
-            files = gather_source_files(path, args)
+            files = gather_source_files(path)
             include_dir = None
             if os.path.isdir(os.path.join(path, 'Include')):
                 include_dir = 'Include'

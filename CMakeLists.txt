@@ -11,12 +11,12 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 
 
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/glfw)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/eigen3)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/fmt)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/spdlog)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/vma)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/catch2)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glfw)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/eigen3)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/fmt)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/spdlog)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/vma)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/catch2)
 
 set_target_properties(glfw PROPERTIES FOLDER "ThirdParty")
 set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")

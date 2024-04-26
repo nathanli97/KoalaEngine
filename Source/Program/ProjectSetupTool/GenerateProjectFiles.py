@@ -6,7 +6,7 @@ import re
 import shutil
 import subprocess
 
-from libs import Global, SyncDependence
+from libs import Global, SyncDependence, Logger, Git
 from libs.SourceFiles import gather_source
 from libs.VisualStudio import select_generator_visualstudio, select_arch_visualstudio
 
@@ -91,11 +91,12 @@ def generate(cmake, generator, arch, args):
     if args.test:
         command += f' -DBUILD_TESTS=1'
     if args.verbose:
-        print(f'Running {command}')
+        Logger.verbose(f'Running {command}')
         subprocess.run(command, shell=True, check=True)
     else:
         print(f'Running cmake for project files generation...')
-        subprocess.run(command, shell=True, check=True, stdout=subprocess.DEVNULL)
+        with open(os.path.join(Global.build_dir, 'CMake_ProjectGeneration.log'), 'w', encoding='utf8') as file:
+            subprocess.run(command, shell=True, check=True, stdout=file)
 
 
 def clean():
@@ -121,8 +122,6 @@ def main():
 
     parser.add_argument('--build_dir', action='store', required=False,
                         help='Where project files will be written. Default is "SOURCE_DIE/Build" directory')
-    parser.add_argument('--sync', action='store_true', required=False,
-                        help='Sync all dependencies')
     parser.add_argument('--vs', action='store', required=False, help='Specify Visual Studio Version')
     parser.add_argument('--mingw', action='store_true', required=False, help='Use MinGW Makefiles')
     parser.add_argument('--unixmake', action='store_true', required=False, help='Use Unix Makefiles')
@@ -135,14 +134,13 @@ def main():
     parser.add_argument('--no_gather_files', action='store_true', required=False,
                         help='Donot Gather source files and update SourceFiles.gen.cmake file(s)')
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
-    parser.add_argument('--nogen', action='store_true', required=False, help='Do not generate project files!')
     parser.add_argument('--test', action='store_true', required=False, help='Generate project files for unit tests')
-    parser.add_argument('--download_all', action='store_true', required=False, help='Fetch all tools (like Git and 7Zip) when sync dependencies. Currently only works on Windows.')
 
     args = parser.parse_args()
+    Git.setup_git()
 
-    if args.download_all:
-        args.sync = True
+    if args.verbose:
+        Logger.enable_verbose()
 
     if args.build_dir:
         Global.set_build_dir(args.build_dir)
@@ -154,19 +152,18 @@ def main():
     if generator.startswith('Visual Studio'):
         arch = select_arch_visualstudio(args)
 
-    if SyncDependence.need_sync_dependencies(args) or args.sync:
-        SyncDependence.sync_dependencies(args)
-    else:
-        print('Skipped sync dependencies due to dependencies are all up to date')
-    print(f'Generating project files for {generator}')
-    print(f'Project files will be written to "{Global.build_dir}"')
+    if not os.path.isfile(os.path.join(Global.source_dir, 'ThirdParty/.sync_ok')):
+        if SyncDependence.need_sync_dependencies():
+            Logger.error('Need to sync the dependencies before generating project files! Please run Setup.')
+            exit(1)
+    Logger.info(f'Generating project files for {generator}')
+    Logger.info(f'Project files will be written to "{Global.build_dir}"')
 
     if not args.noclean:
         clean()
     if not args.no_gather_files:
-        gather_source(args)
-    if not args.nogen:
-        generate(cmake, generator, arch, args)
+        gather_source()
+    generate(cmake, generator, arch, args)
     print('Generation Finished')
 
 

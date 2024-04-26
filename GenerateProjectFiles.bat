@@ -1,2 +1,2 @@
 @echo off
-python.exe Source/Program/DevScripts/GenerateProjectFiles.py %*
+python.exe Source/Program/ProjectSetupTool/GenerateProjectFiles.py %*

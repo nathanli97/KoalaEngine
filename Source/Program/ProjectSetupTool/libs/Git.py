@@ -41,8 +41,8 @@ def get_commit(path: str) -> str:
     return commit.strip()
 
 
-def clone(path: str, url: str, name: str):
-    run_git(f'clone {url} {name}', path, capture_output=False)
+def clone(run_on_path: str, url: str, name: str):
+    run_git(f'clone {url} {name}', run_on_path, capture_output=False)
 
 
 def fetch(path: str):
@@ -55,7 +55,9 @@ def checkout(path: str, commit_or_branch: str):
     return ret
 
 
-def setup_git(args):
+def setup_git():
     global git
+    if available():
+        return
     find_git()
     assert available()
