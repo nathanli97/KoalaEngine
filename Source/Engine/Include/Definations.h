@@ -76,6 +76,11 @@
   #define ASSERTS(X, MSG)
 #endif
 
+namespace Koala
+{
+  inline void check(bool i) {ASSERT(i);}
+}
+
 #if __cplusplus >= 201402L || defined(_MSC_VER) && _MSC_VER >= 1929L
   #define NODISCARD [[nodiscard]]
   #define DEPRECATED [[deprecated]]

@@ -24,7 +24,7 @@ namespace Koala {
     class Engine
     {
     public:
-        static bool Start(int argc, char** argv)
+        static bool Launch(int argc, char** argv)
         {
             if (!Engine::Get().Initialize(argc, argv))
             {
