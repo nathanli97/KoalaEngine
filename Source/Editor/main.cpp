@@ -2,7 +2,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Engine.h"
-#include <Core/CountedRef.h>
+#include <Core/CountedPtr.h>
 
 int main(int argc, char** argv)
 {

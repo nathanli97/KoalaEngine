@@ -110,6 +110,9 @@ def clean():
 def main():
     Global.set_source_dir(os.getcwd())
 
+    if not os.path.isdir(Global.build_dir):
+        os.makedirs(Global.build_dir)
+
     if os.path.isfile(os.path.join(Global.source_dir, 'GenerateProjectFiles.py')):
         Global.set_source_dir(os.path.join(
             Global.source_dir,
