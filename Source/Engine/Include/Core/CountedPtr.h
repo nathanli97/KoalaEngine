@@ -21,15 +21,20 @@
 
 namespace Koala
 {
-    // NOTE: This is non thread-safe version of CountedPtr
-    // TODO: Support TS
-
+    // The Counted Pointer.
+    // It can hold (and take over of the control of) a normal ptr.
+    // Like STL's smart pointer, it will release the object automatically when nowhere is referencing the given object.
+    // Assumes the pointer is allocated via C++'s new operator. Custom deallocator is not supported.
+    //
     // NOTE If we write:
     //   const ICountedPtr<int> ptr; THIS MEANS th target(int) stored in this pointer is constant, not this pointer is constant.
     //   Sample:
     //   const ICountedPtr<int> ptr   <=== EQUALS ===> const int* ptr;
     //   ptr = other_int_ptr; // OK.     This is *not* a pointer constant.
     //   *ptr = 2;            // NOT OK. This is constant int.
+    //
+    // NOTE: This is non thread-safe version of CountedPtr
+    // TODO: Support thread-safe
     template<typename T>
     class ICountedPtr
     {
@@ -142,6 +147,7 @@ namespace Koala
             return *this;
         }
 
+        // Construct a ICountedPtr, Take over the control of given object pointer.
         ICountedPtr& operator=(T* &&rhs) noexcept
         {
             // Handle self release
@@ -160,14 +166,16 @@ namespace Koala
 
             if (rhs == nullptr)
             {
-                // Reset to pointer mode
+                // Reset to pointer mode, set nullptr.
                 count = UINT64_MAX;
                 object = nullptr;
             }
             
             return *this;
         }
-        
+
+        // Dereference the pointer and get the actual object.
+        // Only call when IsValid() == True.
         T& operator*()
         {
             return *(operator->());
@@ -176,22 +184,35 @@ namespace Koala
         {
             return *(operator->());
         }
+
+        // Get the actual pointer of object.
+        // Return nullptr if this pointer is invalid.
         T* operator->()
         {
             if (IsPtr())
             {
-                return GetTarget() ? GetTarget()->AsTarget() : nullptr;
+                return IsValid() ? GetTarget()->AsTarget() : nullptr;
             }
             else
             {
                 return AsTarget();
             }
         }
-
         const T* operator->() const
         {
             NON_CONST_MEMBER_CALL_CONST_RET(operator->());
         }
+        // Return true if and only if this pointer is valid (has pointed to a valid object)
+        bool IsValid() const
+        {
+            if (IsPtr())
+                return GetTarget();
+            else
+                // Target mode always remains invalid. because a target always holds a 'object' and the count is >= 1.
+                return true;
+        }
+        // bool() wrapper of IsValid().
+        operator bool() const noexcept { return IsValid(); }
     private:
         // ========== Pointer Mode Only Functions ========
         // WARNING: Only call the following functions when this is pointer. Otherwise, behavior is undefined.

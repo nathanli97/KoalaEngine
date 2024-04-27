@@ -41,27 +41,35 @@ TEST_CASE("Release case", "[CountedPtr]")
     {
         ICountedPtr<MyStruct> ptr(new MyStruct(isReleased));
         REQUIRE(ptr.GetCounter() == 1);
+        REQUIRE(ptr);
         {
             ICountedPtr<MyStruct> ptr2 = ptr;
             REQUIRE(ptr.GetCounter() == 2);
+            REQUIRE(ptr);
             {
                 ICountedPtr<MyStruct> ptr3 = ptr2;
                 REQUIRE(ptr.GetCounter() == 3);
+                REQUIRE(ptr);
                 {
                     ICountedPtr<MyStruct> ptr4 = ptr3;
                     REQUIRE(ptr.GetCounter() == 4);
+                    REQUIRE(ptr);
                 }
                 REQUIRE(ptr.GetCounter() == 3);
                 REQUIRE(isReleased == false);
+                REQUIRE(ptr);
             }
             REQUIRE(ptr.GetCounter() == 2);
             REQUIRE(isReleased == false);
+            REQUIRE(ptr);
         }
         REQUIRE(ptr.GetCounter() == 1);
         REQUIRE(isReleased == false);
+        REQUIRE(ptr);
     }
 
     REQUIRE(isReleased == true);
+    
 }
 
 TEST_CASE("Memory check", "[CountedPtr]")
@@ -96,5 +104,6 @@ TEST_CASE("Memory check", "[CountedPtr]")
 
         ptr = nullptr;
         REQUIRE(ptr.GetCounter() == 0);
+        REQUIRE(!ptr);
     }
 }
