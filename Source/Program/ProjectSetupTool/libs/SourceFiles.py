@@ -22,7 +22,7 @@ def gather_source_files(root: str, dirpath=None, allowed_file_postfix=None):
     return files
 
 
-def generate_sourcefiles_cmake(path, files, include_dir=None):
+def generate_sourcefiles_cmake(path, file_groups, include_dir=None):
     with open(path, 'wt', encoding='utf-8') as f:
         f.write(
             '# Auto Generated Files -- Dont modify directly! -- Please run GenerateProjectFiles to update!\n')
@@ -31,8 +31,10 @@ def generate_sourcefiles_cmake(path, files, include_dir=None):
         f.write('#\n')
         if include_dir is not None:
             f.write(f'set(MODULE_INCLUDE_PATH "${{CMAKE_CURRENT_SOURCE_DIR}}/{include_dir}")\n')
-        files_txt = ' '.join(files)
-        f.write(f'set(MODULE_SOURCE_FILES {files_txt})\n')
+        for key in file_groups:
+            files = file_groups[key]
+            files_txt = ' '.join(files)
+            f.write(f'set(MODULE_{key.upper()}_FILES {files_txt})\n')
     pass
 
 
@@ -42,9 +44,18 @@ def gather_source():
     for item in os.listdir(source_dir):
         path = os.path.join(source_dir, item)
         if os.path.isdir(path) and os.path.isfile(os.path.join(path, 'CMakeLists.txt')):
-            files = gather_source_files(path)
+            files = {}
             include_dir = None
             if os.path.isdir(os.path.join(path, 'Include')):
                 include_dir = 'Include'
-            generate_sourcefiles_cmake(os.path.join(path, 'SourceFiles.gen.cmake'), files, include_dir)
-
+                include_files = gather_source_files(path, include_dir,
+                                                    allowed_file_postfix=(
+                                                        '.h', '.hpp', '.inc')
+                                                    )
+                files['Include'] = include_files
+            if os.path.isdir(os.path.join(path, 'Source')):
+                files['Source'] = gather_source_files(path, 'Source')
+                generate_sourcefiles_cmake(os.path.join(path, 'SourceFiles.gen.cmake'), files, include_dir)
+            else:
+                files['Source'] = gather_source_files(path)
+                generate_sourcefiles_cmake(os.path.join(path, 'SourceFiles.gen.cmake'), files, include_dir)

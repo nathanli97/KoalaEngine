@@ -2,11 +2,12 @@ import argparse
 import os
 import shutil
 
-from libs import SyncDependence, Global, Logger, Git
+from libs import SyncDependence, Global, Logger, Git, Vulkan
 
 
 def main():
     Global.set_source_dir(os.getcwd())
+
     thirdparty_path = os.path.join(Global.source_dir, 'ThirdParty')
 
     parser = argparse.ArgumentParser(
@@ -20,9 +21,10 @@ def main():
     args = parser.parse_args()
     Git.setup_git()
 
-
     if args.verbose:
         Logger.enable_verbose()
+
+    Vulkan.find_vulkan()
 
     if args.clean:
         shutil.rmtree('ThirdParty', onexc=Global.on_rm_error)

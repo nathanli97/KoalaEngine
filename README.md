@@ -27,3 +27,11 @@ After cloned this project to your PC, please run Setup.bat to sync all needed th
 And then, run GenerateProjectFiles.bat to generate project files.
 
 After project files are generated, you can find Koala.sln file in `Build` directory. Use VisualStudio or Rider to open it to start development.
+
+# Before you start to development...
+
+Please read CODERULES.md for CodingStyles.
+
+# FAQ
+
+(TBD)

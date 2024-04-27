@@ -11,6 +11,9 @@ def set_source_dir(in_source_dir):
     global source_dir
     global build_dir
     source_dir = in_source_dir
+
+    if not os.path.isfile(os.path.join(source_dir, 'CMakeLists.txt')):
+        raise RuntimeError('Please run this script in the KoalaEngine\'s directory.')
     build_dir = os.path.join(source_dir, "Build")
 
 

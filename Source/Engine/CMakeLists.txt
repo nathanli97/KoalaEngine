@@ -5,7 +5,7 @@ add_compile_definitions(RHI_ENABLE_VALIDATION=1)
 
 set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator)
 
-add_library(KoalaEngine STATIC ${MODULE_SOURCE_FILES})
+add_library(KoalaEngine STATIC ${MODULE_SOURCE_FILES} ${MODULE_INCLUDE_FILES})
 
 set_target_properties(KoalaEngine PROPERTIES FOLDER "Engine")
 
@@ -25,11 +25,17 @@ target_compile_features(KoalaEngine PUBLIC cxx_std_17)
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}/Include/
         PREFIX "Include"
-        FILES ${INCLUDE_FILES}
+        FILES ${MODULE_INCLUDE_FILES}
 )
 
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}/Source/
         PREFIX "Source"
-        FILES ${SOURCE_H_FILES} ${SOURCE_INL_FILES} ${SOURCE_C_FILES} ${SOURCE_CPP_FILES}
+        FILES ${MODULE_SOURCE_FILES}
+)
+
+source_group(
+        TREE ${CMAKE_CURRENT_SOURCE_DIR}
+        PREFIX "CMakeFiles"
+        FILES CMakeLists.txt
 )

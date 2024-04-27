@@ -5,8 +5,9 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 
-from libs import Global, SyncDependence, Logger, Git
+from libs import Global, SyncDependence, Logger, Git, Vulkan
 from libs.SourceFiles import gather_source
 from libs.VisualStudio import select_generator_visualstudio, select_arch_visualstudio
 
@@ -96,7 +97,11 @@ def generate(cmake, generator, arch, args):
     else:
         print(f'Running cmake for project files generation...')
         with open(os.path.join(Global.build_dir, 'CMake_ProjectGeneration.log'), 'w', encoding='utf8') as file:
-            subprocess.run(command, shell=True, check=True, stdout=file)
+            try:
+                subprocess.run(command, shell=True, check=True, stdout=file, stderr=file)
+            except subprocess.CalledProcessError:
+                Logger.error(f'Failed to generate project files. For more details, see {Global.build_dir}/CMake_ProjectGeneration.log')
+                sys.exit(1)
 
 
 def clean():
@@ -149,6 +154,7 @@ def main():
         Global.set_build_dir(args.build_dir)
 
     cmake = find_cmake()
+    Vulkan.find_vulkan()
     generator = select_generator(args)
     arch = None
 
