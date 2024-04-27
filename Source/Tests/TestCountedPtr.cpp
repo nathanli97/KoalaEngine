@@ -15,6 +15,7 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <functional>
 #include <catch2/catch_test_macros.hpp>
 #include <Core/CountedPtr.h>
 
@@ -106,4 +107,26 @@ TEST_CASE("Memory check", "[CountedPtr]")
         REQUIRE(ptr.GetCounter() == 0);
         REQUIRE(!ptr);
     }
+}
+
+TEST_CASE("Custom dealloctor", "[CountedPtr]")
+{
+    using namespace Koala;
+    int* ptr = (int*)::malloc(sizeof(int));
+    *ptr = 0x12345678;
+
+    bool isReleased = false;
+    auto dealloctorFunc= [&isReleased, ptr](int* in_ptr)
+    {
+        REQUIRE(ptr == in_ptr);
+        REQUIRE(isReleased == false); // NO double free
+        ::free(in_ptr);
+        isReleased = true;
+    };
+
+    {
+        ICountedPtr<int, std::function<void(int*)>> my_ptr(ptr,dealloctorFunc);
+    }
+
+    REQUIRE(isReleased == true);
 }

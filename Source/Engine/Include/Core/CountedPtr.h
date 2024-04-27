@@ -21,21 +21,26 @@
 
 namespace Koala
 {
+    // The type of custom dealloctor. It can use to 
+    template <typename T>
+    using DealloctorFunc = void(T*);
+    
     // The Counted Pointer.
     // It can hold (and take over of the control of) a normal ptr.
     // Like STL's smart pointer, it will release the object automatically when nowhere is referencing the given object.
     // Assumes the pointer is allocated via C++'s new operator. Custom deallocator is not supported.
     //
     // NOTE If we write:
-    //   const ICountedPtr<int> ptr; THIS MEANS th target(int) stored in this pointer is constant, not this pointer is constant.
+    //   const ICountedPtr<int> ptr; THIS MEANS th target(int) stored in this pointer is constant,
+    //                               not this pointer is constant.
     //   Sample:
-    //   const ICountedPtr<int> ptr   <=== EQUALS ===> const int* ptr;
-    //   ptr = other_int_ptr; // OK.     This is *not* a pointer constant.
-    //   *ptr = 2;            // NOT OK. This is constant int.
+    //      const ICountedPtr<int> ptr   <=== EQUALS ===> const int* ptr;
+    //      ptr = other_int_ptr;    // OK.     This is *not* a pointer constant.
+    //      *ptr = 2;               // NOT OK. This is constant int.
     //
     // NOTE: This is non thread-safe version of CountedPtr
-    // TODO: Support thread-safe
-    template<typename T>
+    // TODO: Support thread-safe, delayed release.
+    template<typename T, typename DealloctorFuncType=nullptr_t>
     class ICountedPtr
     {
     public:
@@ -77,9 +82,10 @@ namespace Koala
             object = nullptr;
             return *this;
         }
-        ICountedPtr(T* inObject):
+        ICountedPtr(T* inObject, DealloctorFuncType inDealloctorFunc = nullptr):
             object(static_cast<void*>(const_cast<std::remove_cv_t<T>*>(inObject))),
-            count(1)
+            count(1),
+            dealloctorFunc(inDealloctorFunc)
         {
             if (inObject == nullptr)
             {
@@ -261,15 +267,27 @@ namespace Koala
         // Release Target
         NODISCARD FORCEINLINE_DEBUGABLE void Release() const
         {
-            auto typedTarget = AsTarget();
+            auto typedTarget = const_cast<std::remove_cv_t<T>*>(AsTarget());
             // We assume the target is allocated by C++ new operator
-            // TODO: Support custom deallocator, and delayed release.
-            delete typedTarget;
+            // TODO: Support delayed release.
+            if constexpr (!std::is_same_v<DealloctorFuncType, nullptr_t>)
+            {
+                if (dealloctorFunc)
+                {
+                    dealloctorFunc(typedTarget);
+                }
+            }
+            else
+            {
+                delete typedTarget;
+            }
         }
         
         // NOTE To support 'const ICountedPtr<Type>' here, we need modify the following members.
         // REMEMBER 'const ICountedPtr<Type>' is a constant pointer (a pointer that pointed to a constant value), not a pointer constant.
         mutable size_t count{UINT64_MAX}; // count == UINT64_MAX means this is target itself.
         mutable void* object{nullptr};
+
+        DealloctorFuncType dealloctorFunc{nullptr};
     };
 }
