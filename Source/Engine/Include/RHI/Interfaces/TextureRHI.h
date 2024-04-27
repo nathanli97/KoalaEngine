@@ -17,28 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/Interfaces/TextureRHI.h"
-
-#ifdef INCLUDE_RHI_VULKAN
-#include "Runtime.h"
 #include "RHI/TextureResources.h"
-
 
 namespace Koala::RHI
 {
-    struct VulkanTextureRHI: public ITextureRHI
-    {
-        VkImage imageRef;
-        VmaAllocation allocRef;
-    };
-
-    class VulkanTextureInterface: public ITextureInterface
+    
+    class ITextureInterface
     {
     public:
-        VulkanTextureInterface(VulkanRuntime& inVkRuntime):vk(inVkRuntime) {}
-        TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
-    private:
-        VulkanRuntime &vk;
+        virtual ~ITextureInterface() = default;
+        virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
     };
 }
-#endif

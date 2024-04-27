@@ -130,3 +130,38 @@ TEST_CASE("Custom dealloctor", "[CountedPtr]")
 
     REQUIRE(isReleased == true);
 }
+
+TEST_CASE("CountedPtr with sub-classes", "[CountedPtr]")
+{
+    using namespace Koala;
+
+    struct Base
+    {
+        virtual int func()
+        {
+            return 0;
+        }
+    };
+    struct Child: public Base
+    {
+        virtual int func_child()
+        {
+            return 1;
+        }
+    };
+    struct Other {};
+
+    auto ptr = MakeShared<Child>();
+    ICountedPtr<Base> ptr_base = ptr;
+
+    // Can be accessed!
+    REQUIRE(ptr->func_child() == 1);
+
+    // Can not be compiled!
+    //ptr_base->func_child();
+
+    // HA?
+    // ptr = MakeShared<Other>();
+    
+    REQUIRE(0 == 0);
+}

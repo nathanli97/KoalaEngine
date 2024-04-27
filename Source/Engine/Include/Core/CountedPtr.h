@@ -19,9 +19,11 @@
 #pragma once
 #include "Definations.h"
 
+#include <utility>
+
 namespace Koala
 {
-    // The type of custom dealloctor. It can use to 
+    // The type of custom dealloctor.
     template <typename T>
     using DealloctorFunc = void(T*);
     
@@ -40,10 +42,11 @@ namespace Koala
     //
     // NOTE: This is non thread-safe version of CountedPtr
     // TODO: Support thread-safe, delayed release.
-    template<typename T, typename DealloctorFuncType=nullptr_t>
+    template<typename InType, typename DealloctorFuncType=nullptr_t>
     class ICountedPtr
     {
     public:
+        typedef InType Type;
         NODISCARD FORCEINLINE bool IsPtr() const {return count == UINT64_MAX;}
         NODISCARD FORCEINLINE_DEBUGABLE size_t GetCounter()
         {
@@ -58,32 +61,18 @@ namespace Koala
         }
         ~ICountedPtr()
         {
-            if (IsPtr())
-            {
-                if (GetTarget())
-                    GetTarget()->DecrementCounter();
-            } else
-            {
-                DecrementCounter();
-            }
+            HandleSelfRelease();
         }
         ICountedPtr(nullptr_t): count(UINT64_MAX),object(nullptr){}
         ICountedPtr& operator=(nullptr_t)
         {
-            if (IsPtr())
-            {
-                if (GetTarget())
-                    GetTarget()->DecrementCounter();
-            } else
-            {
-                DecrementCounter();
-            }
+            HandleSelfRelease();
             count = UINT64_MAX;
             object = nullptr;
             return *this;
         }
-        ICountedPtr(T* inObject, DealloctorFuncType inDealloctorFunc = nullptr):
-            object(static_cast<void*>(const_cast<std::remove_cv_t<T>*>(inObject))),
+        ICountedPtr(Type* inObject, DealloctorFuncType inDealloctorFunc = nullptr):
+            object(static_cast<void*>(const_cast<std::remove_cv_t<Type>*>(inObject))),
             count(1),
             dealloctorFunc(inDealloctorFunc)
         {
@@ -111,62 +100,78 @@ namespace Koala
         }
         ICountedPtr(ICountedPtr&& rhs) noexcept
         {
-            object = rhs.object;
-            count = rhs.count;
-
-            rhs.object = nullptr;
-            rhs.count = UINT64_MAX;
+            MoveToThis(std::forward<ICountedPtr&&>(rhs));
         }
-
         ICountedPtr& operator=(const ICountedPtr& rhs) noexcept
         {
             if (this != &rhs)
             {
-                // Handle self release
-                if (IsPtr())
-                {
-                    if (GetTarget())
-                        GetTarget()->DecrementCounter();
-                }
-                else /* if (!IsPtr()) */
-                {
-                    // I'm target itself.
-                    DecrementCounter();
-                }
-
+                HandleSelfRelease();
+                
                 // Call constructor.
                 new(this) ICountedPtr(rhs);
             }
             return *this;
         }
-        
         ICountedPtr& operator=(ICountedPtr&& rhs) noexcept
         {
             if (this != &rhs)
             {
-                object = rhs.object;
-                count = rhs.count;
-
-                rhs.object = nullptr;
-                rhs.count = UINT64_MAX;
+                MoveToThis(std::forward<ICountedPtr&&>(rhs));
             }
             return *this;
         }
-
-        // Construct a ICountedPtr, Take over the control of given object pointer.
-        ICountedPtr& operator=(T* &&rhs) noexcept
+        
+        template<
+            typename T, typename Deallocator = nullptr_t,
+            std::enable_if_t<std::conjunction_v<std::is_convertible<T, Type>, std::negation<std::is_same<T, Type>>>, bool> = true
+        >
+        ICountedPtr& operator=(const ICountedPtr<T, Deallocator>& rhs) noexcept
         {
-            // Handle self release
-            if (IsPtr())
+            HandleSelfRelease();
+            new(this) ICountedPtr<T,Deallocator>(rhs);
+            return *this;
+        }
+        template<
+            typename T, typename Deallocator = nullptr_t,
+            std::enable_if_t<std::conjunction_v<std::is_convertible<T, Type>, std::negation<std::is_same<T, Type>>>, bool> = true
+        >
+        ICountedPtr& operator=(ICountedPtr<T, Deallocator>&& rhs) noexcept
+        {
+            MoveToThis<ICountedPtr<T, Deallocator>>(std::forward<ICountedPtr<T, Deallocator>>(rhs));
+            return *this;
+        }
+        template<
+            typename T, typename Deallocator = nullptr_t,
+            std::enable_if_t<std::conjunction_v<std::is_convertible<T, Type>, std::negation<std::is_same<T, Type>>>, bool> = true
+        >
+        ICountedPtr(ICountedPtr<T, Deallocator>&& rhs) noexcept
+        {
+            MoveToThis<ICountedPtr<T, Deallocator>>(std::forward<ICountedPtr<T, Deallocator>>(rhs));
+        }
+        template<
+            typename T, typename Deallocator = nullptr_t,
+            std::enable_if_t<std::conjunction_v<std::is_convertible<T, Type>, std::negation<std::is_same<T, Type>>>, bool> = true
+        >
+        ICountedPtr(const ICountedPtr<T, Deallocator>& rhs)
+        {
+            if (rhs.IsPtr())
             {
-                if (GetTarget())
-                    GetTarget()->DecrementCounter();
+                SetTarget<const ICountedPtr<T, Deallocator>>(rhs.GetTarget());
+                if (rhs.GetTarget())
+                    rhs.GetTarget()->IncrementCounter();
             }
-            else /* if (!IsPtr()) */
+            else
             {
-                // I'm target itself.
-                DecrementCounter();
+                SetTarget<const ICountedPtr<T, Deallocator>>(&rhs);
+                rhs.IncrementCounter();
             }
+        }
+        
+        // Construct a ICountedPtr, Take over the control of given object pointer.
+        ICountedPtr& operator=(Type* &&rhs) noexcept
+        {
+            HandleSelfRelease();
 
             SetObject(rhs);
 
@@ -182,18 +187,18 @@ namespace Koala
 
         // Dereference the pointer and get the actual object.
         // Only call when IsValid() == True.
-        T& operator*()
+        Type& operator*()
         {
             return *(operator->());
         }
-        const T& operator*() const
+        const Type& operator*() const
         {
             return *(operator->());
         }
 
         // Get the actual pointer of object.
         // Return nullptr if this pointer is invalid.
-        T* operator->()
+        Type* operator->()
         {
             if (IsPtr())
             {
@@ -204,7 +209,7 @@ namespace Koala
                 return AsTarget();
             }
         }
-        const T* operator->() const
+        const Type* operator->() const
         {
             NON_CONST_MEMBER_CALL_CONST_RET(operator->());
         }
@@ -220,17 +225,30 @@ namespace Koala
         // bool() wrapper of IsValid().
         operator bool() const noexcept { return IsValid(); }
     private:
+        template<typename T1, typename T2> friend class ICountedPtr;
+        
         // ========== Pointer Mode Only Functions ========
         // WARNING: Only call the following functions when this is pointer. Otherwise, behavior is undefined.
         NODISCARD FORCEINLINE_DEBUGABLE ICountedPtr* GetTarget() const { return static_cast<ICountedPtr*>(object); }
-        NODISCARD FORCEINLINE_DEBUGABLE void SetTarget(ICountedPtr* other) const
+        // WARNING: This implementation of SetTarget didn't check if type T is same as type Type(self type.)
+        // This is to support child ptr can be assigned to parent class ptr.
+        // I assume that the passed-in type T has same memory layout as this type (Type).
+        // So I did this: Assign ICounterPtr<Child>* to ICounterPtr<Base>*.  THIS relayed on the *same* memory layouts
+        // between ICounterPtr<Child> and ICounterPtr<Base>.
+        // (In theory, two template class with differ template variable is two non-related classes, they didn't have any relationship)
+        // Later we need rethink & rewrite this logic to work 'normally'
+        template <typename T> NODISCARD FORCEINLINE_DEBUGABLE void SetTarget(T* other) const
         {
-            object = static_cast<void*>(other);
+            using RemoveCVType = std::remove_cv_t<T>;
+            if constexpr (std::negation_v<std::is_same<RemoveCVType, T>>)
+            {
+                object = static_cast<void*>(const_cast<RemoveCVType*>(other));
+            }
+            else
+            {
+                object = static_cast<void*>(other);
+            }
             count = UINT64_MAX;
-        }
-        NODISCARD FORCEINLINE_DEBUGABLE void SetTarget(const ICountedPtr* other) const
-        {
-            SetTarget(const_cast<ICountedPtr*>(other));
         }
         
         // ========== Target Mode Only Functions ========
@@ -239,15 +257,15 @@ namespace Koala
         
         // AsTarget() functions. AsTarget() will return the target pointer itself (which stored in target-mode CountedPtr.)
         // IF this is constant pointer:
-        NODISCARD FORCEINLINE_DEBUGABLE const T* AsTarget() const { return static_cast<const T*>(object); }
+        NODISCARD FORCEINLINE_DEBUGABLE const Type* AsTarget() const { return static_cast<const Type*>(object); }
         // IF this is not a constant pointer:
-        NODISCARD FORCEINLINE_DEBUGABLE T* AsTarget() { return static_cast<T*>(object); }
+        NODISCARD FORCEINLINE_DEBUGABLE Type* AsTarget() { return static_cast<Type*>(object); }
 
         
         // Set object ptr, and reset counter to 1.
-        NODISCARD FORCEINLINE_DEBUGABLE void SetObject(T* inObject)
+        NODISCARD FORCEINLINE_DEBUGABLE void SetObject(Type* inObject)
         {
-            object = static_cast<void*>(const_cast<std::remove_cv_t<T>*>(inObject));
+            object = static_cast<void*>(const_cast<std::remove_cv_t<Type>*>(inObject));
             count = 1;
         }
         
@@ -267,7 +285,7 @@ namespace Koala
         // Release Target
         NODISCARD FORCEINLINE_DEBUGABLE void Release() const
         {
-            auto typedTarget = const_cast<std::remove_cv_t<T>*>(AsTarget());
+            auto typedTarget = const_cast<std::remove_cv_t<Type>*>(AsTarget());
             // We assume the target is allocated by C++ new operator
             // TODO: Support delayed release.
             if constexpr (!std::is_same_v<DealloctorFuncType, nullptr_t>)
@@ -282,6 +300,30 @@ namespace Koala
                 delete typedTarget;
             }
         }
+        // ========== Ptr/Target Mode Shared Functions ========
+        FORCEINLINE_DEBUGABLE void HandleSelfRelease()
+        {
+            if (IsPtr())
+            {
+                if (GetTarget())
+                    GetTarget()->DecrementCounter();
+            }
+            else /* if (!IsPtr()) */
+            {
+                // I'm target itself.
+                DecrementCounter();
+            }
+        }
+
+        template<typename T>
+        FORCEINLINE_DEBUGABLE void MoveToThis(T &&in)
+        {
+            object = in.object;
+            count = in.count;
+
+            in.object = nullptr;
+            in.count = UINT64_MAX;
+        }
         
         // NOTE To support 'const ICountedPtr<Type>' here, we need modify the following members.
         // REMEMBER 'const ICountedPtr<Type>' is a constant pointer (a pointer that pointed to a constant value), not a pointer constant.
@@ -290,4 +332,10 @@ namespace Koala
 
         DealloctorFuncType dealloctorFunc{nullptr};
     };
+
+    template <typename T, typename... Args>
+    ICountedPtr<T> MakeShared(Args&&... args)
+    {
+        return ICountedPtr<T>(new T(std::forward<Args>(args)...));
+    }
 }

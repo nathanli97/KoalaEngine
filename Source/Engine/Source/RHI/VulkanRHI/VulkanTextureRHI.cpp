@@ -23,7 +23,7 @@
 #include "Definations.h"
 #include "Core/Logger.h"
 #include "Renderer/PixelFormat.h"
-#include "RHI/TextureRHI.h"
+#include "RHI/TextureResources.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include "VulkanRHI.h"
 
@@ -100,7 +100,7 @@ namespace Koala::RHI
         ASSERTS(0, "You have invalid SampleCount: Vulkan not supported");
         return VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
     }
-    TextureRHIRef VulkanRHI::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
+    TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
         VkImageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -123,18 +123,19 @@ namespace Koala::RHI
         }
 
         vmaAllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-        
-        VulkanTextureRHI *textureRHI{new VulkanTextureRHI};
-        
-        VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->imageRef, &textureRHI->allocRef, nullptr);
 
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to allocate texture with {}", string_VkResult(result));
-            return nullptr;
-        }
+//        TextureRHIRef textureRHI = MakeShared<VulkanTextureRHI>();
         
-        return textureRHI;
+        
+        // VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->imageRef, &textureRHI->allocRef, nullptr);
+
+        // if (result != VK_SUCCESS)
+        // {
+        //     logger.error("Failed to allocate texture with {}", string_VkResult(result));
+        //     return nullptr;
+        // }
+        
+        return nullptr;
     }
 
 }

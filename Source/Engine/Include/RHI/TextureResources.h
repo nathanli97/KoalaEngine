@@ -17,6 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "Core/CountedPtr.h"
 #include "Math/Rect.h"
 #include "Renderer/PixelFormat.h"
 
@@ -30,10 +31,6 @@ namespace Koala::RHI
         uint32_t depth{};
         int numMips{0};
         
-        
-        
-
-
         // TODO： Multisample support -- not supported yet
         int numSamples{0};
 
@@ -49,5 +46,5 @@ namespace Koala::RHI
     {
         virtual ~ITextureRHI() = default;
     };
-    typedef ITextureRHI* TextureRHIRef;
+    typedef ICountedPtr<ITextureRHI> TextureRHIRef;
 }

@@ -16,6 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "VulkanTextureRHI.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include "VulkanRHI.h"
 
@@ -63,7 +64,6 @@ namespace Koala::RHI {
             CreateSwapChainViews();
     }
 
-
     void VulkanRHI::CleanSwapChain()
     {
         for (auto &view: vk.swap_chain.image_views)
@@ -81,6 +81,11 @@ namespace Koala::RHI {
         vk.swap_chain.images.clear();
     }
 
+    ITextureInterface* VulkanRHI::GetTextureInterface()
+    {
+        static VulkanTextureInterface vkTextureInterface(vk);
+        return &vkTextureInterface;
+    }
 
 }
 #endif

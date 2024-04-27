@@ -17,7 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/TextureRHI.h"
+#include "RHI/TextureResources.h"
 
 #ifdef INCLUDE_RHI_VULKAN
 #include "Runtime.h"
@@ -31,8 +31,7 @@ public:
     bool Initialize_RenderThread() override;
     void Shutdown_RenderThread() override;
     const char* GetGPUName() override;
-    TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
-
+    ITextureInterface* GetTextureInterface() override;
 
     // ===== Caller: MainThread =======
     bool PreInit_MainThread() override;
