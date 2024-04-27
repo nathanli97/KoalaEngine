@@ -24,7 +24,8 @@ def main():
     if args.verbose:
         Logger.enable_verbose()
 
-    Vulkan.find_vulkan()
+    # Currently we doesn't need 
+    # Vulkan.find_vulkan()
 
     if args.clean:
         shutil.rmtree('ThirdParty', onexc=Global.on_rm_error)

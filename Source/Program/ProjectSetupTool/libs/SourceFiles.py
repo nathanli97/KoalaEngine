@@ -3,22 +3,21 @@ import os
 from libs import Global, Logger
 
 
-def gather_source_files(root: str, dirpath=None, allowed_file_postfix=None):
+def gather_source_files(root: str, dirpath='', allowed_file_postfix=None):
     if allowed_file_postfix is None:
         allowed_file_postfix = ('.h', '.hpp', '.cc', '.ccx', '.cpp', '.inc', '.c')
     files = []
-    if dirpath is None:
-        dirpath = ''
     curr_path = os.path.join(root, dirpath)
     for item in os.listdir(curr_path):
-        item_abspath = os.path.join(curr_path, item)
-        if os.path.isdir(item_abspath):
-            files.extend(gather_source_files(root, os.path.join(dirpath, item), allowed_file_postfix))
-        elif os.path.isfile(item_abspath):
-            if item_abspath.endswith(allowed_file_postfix):
-                item_relpath = os.path.join(dirpath, item).replace('\\', '/')
-                files.append(item_relpath)
-                Logger.verbose(f'\tGathered: {item_relpath}')
+        abspath = os.path.join(curr_path, item)
+        relpath = os.path.join(dirpath, item)
+        if os.path.isdir(abspath):
+            files.extend(gather_source_files(root, relpath, allowed_file_postfix))
+        elif os.path.isfile(abspath):
+            if abspath.endswith(allowed_file_postfix):
+                relpath_fixed = relpath.replace('\\', '/')
+                files.append(relpath_fixed)
+                Logger.verbose(f'\tGathered: {relpath_fixed}')
     return files
 
 
