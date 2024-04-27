@@ -19,10 +19,12 @@
 #include <catch2/catch_test_macros.hpp>
 #include <Core/CountedPtr.h>
 
+#include <memory>
 TEST_CASE("Empty ptr", "[CountedPtr]") {
     using namespace Koala;
 
     ICountedPtr<int> ptr;
+    std::shared_ptr<int> sss;
     REQUIRE(0 == 0);
 }
 

@@ -20,13 +20,74 @@
 #include "Definations.h"
 
 #include <utility>
-
+#define KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER UINT64_MAX
 namespace Koala
 {
-    // The type of custom dealloctor.
-    template <typename T>
-    using DealloctorFunc = void(T*);
-    
+    struct CounterPtrStorage
+    {
+        mutable size_t counter{0};
+        mutable void *object{nullptr};
+
+        CounterPtrStorage() = default;
+        NODISCARD FORCEINLINE CounterPtrStorage(CounterPtrStorage&& other) noexcept
+        {
+            counter = other.counter;
+            object = other.object;
+            other.ResetToNullReference();
+        }
+        template <typename T> T GetAs() const
+        {
+            return static_cast<T>(object);
+        }
+        FORCEINLINE void ResetToNullReference() const
+        {
+            counter = KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER;
+            object = nullptr;
+        }
+        NODISCARD FORCEINLINE bool IsReference() const {return counter == KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER;}
+        NODISCARD FORCEINLINE bool IsTarget() const {return !IsReference();}
+        CounterPtrStorage* GetAsReference() const {return static_cast<CounterPtrStorage*>(object);}
+        CounterPtrStorage* GetReferenceToTarget() const
+        {
+            if (IsTarget())
+                return const_cast<CounterPtrStorage*>(this);
+            else
+            {
+                return GetAsReference() ? GetAsReference() : nullptr;
+            }
+        }
+        size_t GetTargetCounter() const
+        {
+            auto target = GetReferenceToTarget();
+            return target ? target->counter : 0;
+        }
+        FORCEINLINE void SetTargetReference(CounterPtrStorage* referenceToTarget) const
+        {
+            counter = KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER;
+            object = static_cast<void*>(referenceToTarget);
+        }
+        FORCEINLINE void IncrementCounterAsThisIsTarget() const
+        {
+            check(IsTarget());
+            ++counter;
+        }
+        FORCEINLINE void DecrementCounterAsThisIsTarget() const
+        {
+            check(IsTarget());
+            --counter;
+        }
+        FORCEINLINE void FreeObjectAsThisIsTarget() const
+        {
+            check(IsTarget());
+            free(object);
+        }
+        template<typename ObjectType>
+        FORCEINLINE void DeleteObjectAsThisIsTarget() const
+        {
+            check(IsTarget());
+            delete static_cast<ObjectType>(object);
+        }
+    };
     // The Counted Pointer.
     // It can hold (and take over of the control of) a normal ptr.
     // Like STL's smart pointer, it will release the object automatically when nowhere is referencing the given object.
@@ -47,55 +108,42 @@ namespace Koala
     {
     public:
         typedef InType Type;
-        NODISCARD FORCEINLINE bool IsPtr() const {return count == UINT64_MAX;}
-        NODISCARD FORCEINLINE_DEBUGABLE size_t GetCounter()
+        NODISCARD FORCEINLINE_DEBUGABLE size_t GetCounter() const
         {
-            if (IsPtr())
-            {
-                return GetTarget() ? GetTarget()->count : 0;
-            }
-            else
-            {
-                return count;
-            }
+            return storage.GetTargetCounter();
         }
         ~ICountedPtr()
         {
             HandleSelfRelease();
         }
-        ICountedPtr(nullptr_t): count(UINT64_MAX),object(nullptr){}
+        ICountedPtr(nullptr_t): storage(){}
         ICountedPtr& operator=(nullptr_t)
         {
             HandleSelfRelease();
-            count = UINT64_MAX;
-            object = nullptr;
             return *this;
         }
         ICountedPtr(Type* inObject, DealloctorFuncType inDealloctorFunc = nullptr):
-            object(static_cast<void*>(const_cast<std::remove_cv_t<Type>*>(inObject))),
-            count(1),
+            storage(),
             dealloctorFunc(inDealloctorFunc)
         {
             if (inObject == nullptr)
             {
                 // Reset to pointer mode
-                count = UINT64_MAX;
-                object = nullptr;
+                storage.ResetToNullReference();
             }
         }
-        ICountedPtr(): count(UINT64_MAX),object(nullptr) {}
+        ICountedPtr() {}
         ICountedPtr(const ICountedPtr& rhs)
         {
-            if (rhs.IsPtr())
+            if (rhs.storage.IsReference())
             {
-                SetTarget(rhs.GetTarget());
-                if (rhs.GetTarget())
-                    rhs.GetTarget()->IncrementCounter();
+                storage.SetTargetReference(rhs.storage.GetReferenceToTarget());
+                if (rhs.storage.GetReferenceToTarget())
+                    rhs.storage.GetReferenceToTarget()->IncrementCounterAsThisIsTarget();
             }
-            else
+            else /* rhs.storage.IsTarget() */
             {
-                SetTarget(&rhs);
-                rhs.IncrementCounter();
+                storage.SetTargetReference(&rhs.storage);
             }
         }
         ICountedPtr(ICountedPtr&& rhs) noexcept
@@ -147,7 +195,7 @@ namespace Koala
         >
         ICountedPtr(ICountedPtr<T, Deallocator>&& rhs) noexcept
         {
-            MoveToThis<ICountedPtr<T, Deallocator>>(std::forward<ICountedPtr<T, Deallocator>>(rhs));
+            MoveToThis<ICountedPtr<T, Deallocator>>(std::move<ICountedPtr<T, Deallocator>&&>(rhs));
         }
         template<
             typename T, typename Deallocator = nullptr_t,
@@ -155,16 +203,15 @@ namespace Koala
         >
         ICountedPtr(const ICountedPtr<T, Deallocator>& rhs)
         {
-            if (rhs.IsPtr())
+            if (rhs.storage.IsReference())
             {
-                SetTarget<const ICountedPtr<T, Deallocator>>(rhs.GetTarget());
-                if (rhs.GetTarget())
-                    rhs.GetTarget()->IncrementCounter();
+                storage.SetTargetReference(rhs.storage.GetReferenceToTarget());
+                if (rhs.storage.GetReferenceToTarget())
+                    rhs.storage.GetReferenceToTarget()->IncrementCounterAsThisIsTarget();
             }
-            else
+            else /* rhs.storage.IsTarget() */
             {
-                SetTarget<const ICountedPtr<T, Deallocator>>(&rhs);
-                rhs.IncrementCounter();
+                storage.SetTargetReference(&rhs.storage);
             }
         }
         
@@ -178,8 +225,7 @@ namespace Koala
             if (rhs == nullptr)
             {
                 // Reset to pointer mode, set nullptr.
-                count = UINT64_MAX;
-                object = nullptr;
+                storage.ResetToNullReference();
             }
             
             return *this;
@@ -200,14 +246,7 @@ namespace Koala
         // Return nullptr if this pointer is invalid.
         Type* operator->()
         {
-            if (IsPtr())
-            {
-                return IsValid() ? GetTarget()->AsTarget() : nullptr;
-            }
-            else
-            {
-                return AsTarget();
-            }
+           return GetTargetObject();
         }
         const Type* operator->() const
         {
@@ -216,76 +255,42 @@ namespace Koala
         // Return true if and only if this pointer is valid (has pointed to a valid object)
         bool IsValid() const
         {
-            if (IsPtr())
-                return GetTarget();
-            else
-                // Target mode always remains invalid. because a target always holds a 'object' and the count is >= 1.
-                return true;
+            return storage.GetReferenceToTarget();
         }
         // bool() wrapper of IsValid().
         operator bool() const noexcept { return IsValid(); }
     private:
         template<typename T1, typename T2> friend class ICountedPtr;
         
-        // ========== Pointer Mode Only Functions ========
-        // WARNING: Only call the following functions when this is pointer. Otherwise, behavior is undefined.
-        NODISCARD FORCEINLINE_DEBUGABLE ICountedPtr* GetTarget() const { return static_cast<ICountedPtr*>(object); }
-        // WARNING: This implementation of SetTarget didn't check if type T is same as type Type(self type.)
-        // This is to support child ptr can be assigned to parent class ptr.
-        // I assume that the passed-in type T has same memory layout as this type (Type).
-        // So I did this: Assign ICounterPtr<Child>* to ICounterPtr<Base>*.  THIS relayed on the *same* memory layouts
-        // between ICounterPtr<Child> and ICounterPtr<Base>.
-        // (In theory, two template class with differ template variable is two non-related classes, they didn't have any relationship)
-        // Later we need rethink & rewrite this logic to work 'normally'
-        template <typename T> NODISCARD FORCEINLINE_DEBUGABLE void SetTarget(T* other) const
+        NODISCARD FORCEINLINE_DEBUGABLE const Type* GetTargetObject() const
         {
-            using RemoveCVType = std::remove_cv_t<T>;
-            if constexpr (std::negation_v<std::is_same<RemoveCVType, T>>)
-            {
-                object = static_cast<void*>(const_cast<RemoveCVType*>(other));
-            }
+            if (storage.IsTarget())
+                return storage.GetAs<const Type*>();
             else
             {
-                object = static_cast<void*>(other);
+                if (storage.GetReferenceToTarget())
+                    return storage.GetReferenceToTarget()->GetAs<const Type*>();
+                return nullptr;
             }
-            count = UINT64_MAX;
         }
-        
-        // ========== Target Mode Only Functions ========
-        // WARNING: Only call the following functions when this is target itself. Otherwise, behavior is undefined.
-
-        
-        // AsTarget() functions. AsTarget() will return the target pointer itself (which stored in target-mode CountedPtr.)
-        // IF this is constant pointer:
-        NODISCARD FORCEINLINE_DEBUGABLE const Type* AsTarget() const { return static_cast<const Type*>(object); }
         // IF this is not a constant pointer:
-        NODISCARD FORCEINLINE_DEBUGABLE Type* AsTarget() { return static_cast<Type*>(object); }
+        NODISCARD FORCEINLINE_DEBUGABLE Type* GetTargetObject()
+        {
+            NON_CONST_MEMBER_CALL_CONST_RET(GetTargetObject());
+        }
 
         
         // Set object ptr, and reset counter to 1.
-        NODISCARD FORCEINLINE_DEBUGABLE void SetObject(Type* inObject)
+        FORCEINLINE_DEBUGABLE void SetObject(Type* inObject)
         {
-            object = static_cast<void*>(const_cast<std::remove_cv_t<Type>*>(inObject));
-            count = 1;
+            storage.object = static_cast<void*>(const_cast<std::remove_cv_t<Type>*>(inObject));
+            storage.counter = 1;
         }
-        
-        // Increment counter. 
-        NODISCARD FORCEINLINE_DEBUGABLE void IncrementCounter() const
+
+        // Release Target in storage
+        FORCEINLINE_DEBUGABLE void Release() const
         {
-            check(!IsPtr());
-            ++count;
-        }
-        // Decrement counter. When decremented counter is zero, it will release target automatically.
-        NODISCARD FORCEINLINE_DEBUGABLE void DecrementCounter() const
-        {
-            check(!IsPtr());
-            if(--count == 0)
-                Release();
-        }
-        // Release Target
-        NODISCARD FORCEINLINE_DEBUGABLE void Release() const
-        {
-            auto typedTarget = const_cast<std::remove_cv_t<Type>*>(AsTarget());
+            auto typedTarget = const_cast<std::remove_cv_t<Type>*>(GetTargetObject());
             // We assume the target is allocated by C++ new operator
             // TODO: Support delayed release.
             if constexpr (!std::is_same_v<DealloctorFuncType, nullptr_t>)
@@ -300,35 +305,31 @@ namespace Koala
                 delete typedTarget;
             }
         }
-        // ========== Ptr/Target Mode Shared Functions ========
         FORCEINLINE_DEBUGABLE void HandleSelfRelease()
         {
-            if (IsPtr())
+            if (storage.IsReference())
             {
-                if (GetTarget())
-                    GetTarget()->DecrementCounter();
+                if(storage.GetReferenceToTarget())
+                    storage.GetReferenceToTarget()->DecrementCounterAsThisIsTarget();
             }
-            else /* if (!IsPtr()) */
+            else
             {
-                // I'm target itself.
-                DecrementCounter();
+                // storage is target.
+                storage.DecrementCounterAsThisIsTarget();
             }
         }
 
         template<typename T>
         FORCEINLINE_DEBUGABLE void MoveToThis(T &&in)
         {
-            object = in.object;
-            count = in.count;
-
-            in.object = nullptr;
-            in.count = UINT64_MAX;
+            storage = std::move(in.storage);
+            
+            in.storage.ResetToNullReference();
         }
         
         // NOTE To support 'const ICountedPtr<Type>' here, we need modify the following members.
         // REMEMBER 'const ICountedPtr<Type>' is a constant pointer (a pointer that pointed to a constant value), not a pointer constant.
-        mutable size_t count{UINT64_MAX}; // count == UINT64_MAX means this is target itself.
-        mutable void* object{nullptr};
+        mutable CounterPtrStorage storage{};
 
         DealloctorFuncType dealloctorFunc{nullptr};
     };
