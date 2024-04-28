@@ -25,9 +25,10 @@ namespace Koala
 {
     struct CounterPtrStorage
     {
-        mutable size_t counter{0};
+        mutable size_t counter{KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER};
         mutable void *object{nullptr};
 
+        NODISCARD FORCEINLINE bool IsValid() const {return object != nullptr;}
         CounterPtrStorage() = default;
         NODISCARD FORCEINLINE CounterPtrStorage(CounterPtrStorage&& other) noexcept
         {
@@ -68,24 +69,36 @@ namespace Koala
         }
         FORCEINLINE void IncrementCounterAsThisIsTarget() const
         {
+            check(IsValid());
             check(IsTarget());
             ++counter;
         }
         FORCEINLINE void DecrementCounterAsThisIsTarget() const
         {
+            check(IsValid());
             check(IsTarget());
             --counter;
         }
+        FORCEINLINE bool IsCounterEqualZeroAsThisIsTarget() const
+        {
+            check(IsValid());
+            check(IsTarget());
+            return counter == 0;
+        }
         FORCEINLINE void FreeObjectAsThisIsTarget() const
         {
+            check(IsValid());
             check(IsTarget());
             free(object);
+            ResetToNullReference();
         }
         template<typename ObjectType>
         FORCEINLINE void DeleteObjectAsThisIsTarget() const
         {
+            check(IsValid());
             check(IsTarget());
             delete static_cast<ObjectType>(object);
+            ResetToNullReference();
         }
     };
     // The Counted Pointer.
@@ -131,6 +144,10 @@ namespace Koala
                 // Reset to pointer mode
                 storage.ResetToNullReference();
             }
+            else
+            {
+                SetObject(inObject);
+            }
         }
         ICountedPtr() {}
         ICountedPtr(const ICountedPtr& rhs)
@@ -144,6 +161,7 @@ namespace Koala
             else /* rhs.storage.IsTarget() */
             {
                 storage.SetTargetReference(&rhs.storage);
+                rhs.storage.IncrementCounterAsThisIsTarget();
             }
         }
         ICountedPtr(ICountedPtr&& rhs) noexcept
@@ -212,6 +230,7 @@ namespace Koala
             else /* rhs.storage.IsTarget() */
             {
                 storage.SetTargetReference(&rhs.storage);
+                rhs.storage.IncrementCounterAsThisIsTarget();
             }
         }
         
@@ -235,10 +254,12 @@ namespace Koala
         // Only call when IsValid() == True.
         Type& operator*()
         {
+            check(IsValid());
             return *(operator->());
         }
         const Type& operator*() const
         {
+            check(IsValid());
             return *(operator->());
         }
 
@@ -255,7 +276,7 @@ namespace Koala
         // Return true if and only if this pointer is valid (has pointed to a valid object)
         bool IsValid() const
         {
-            return storage.GetReferenceToTarget();
+            return storage.IsValid();
         }
         // bool() wrapper of IsValid().
         operator bool() const noexcept { return IsValid(); }
@@ -287,10 +308,11 @@ namespace Koala
             storage.counter = 1;
         }
 
-        // Release Target in storage
+        // Release Target in storage. Only execute when storage is in target mode.
         FORCEINLINE_DEBUGABLE void Release() const
         {
-            auto typedTarget = const_cast<std::remove_cv_t<Type>*>(GetTargetObject());
+            typedef std::remove_cv_t<Type>* RemovedCVType;
+            auto typedTarget = const_cast<RemovedCVType>(GetTargetObject());
             // We assume the target is allocated by C++ new operator
             // TODO: Support delayed release.
             if constexpr (!std::is_same_v<DealloctorFuncType, nullptr_t>)
@@ -302,20 +324,44 @@ namespace Koala
             }
             else
             {
-                delete typedTarget;
+                if (storage.IsTarget() )
+                    storage.DeleteObjectAsThisIsTarget<RemovedCVType>();
+                else
+                {
+                    check(0);
+                    // The following code should never be reached.
+                    // if (storage.GetReferenceToTarget())
+                    //     storage.GetReferenceToTarget()->DeleteObjectAsThisIsTarget<RemovedCVType>();
+                }
             }
         }
         FORCEINLINE_DEBUGABLE void HandleSelfRelease()
         {
+            if (!IsValid())
+                return;
             if (storage.IsReference())
             {
                 if(storage.GetReferenceToTarget())
+                {
                     storage.GetReferenceToTarget()->DecrementCounterAsThisIsTarget();
+                    if (storage.GetReferenceToTarget()->IsCounterEqualZeroAsThisIsTarget())
+                    {
+                        // When counter == 1, means in this time only one CountedPtr is holding the target.
+                        //                    and there is no 'Reference' (or say, Pointer) is referencing this target.
+                        //                    and this CounterPtr::storage must in target mode.
+                        //                    So, In theory, the running code should never reach here.
+                        //                    Leaving a check and fail-safe code to avoid crash.
+                        check(0);
+                        Release();
+                    }
+                }
             }
             else
             {
                 // storage is target.
                 storage.DecrementCounterAsThisIsTarget();
+                if (storage.IsCounterEqualZeroAsThisIsTarget())
+                    Release();
             }
         }
 

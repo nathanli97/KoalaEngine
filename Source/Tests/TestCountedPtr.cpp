@@ -83,7 +83,8 @@ TEST_CASE("Memory check", "[CountedPtr]")
     {
         int memory = 0x12345678;
         MyStruct() {}
-        int GetInt() {return memory;}
+        int GetInt() {return memory;} const
+        void SetInt(int in) { memory = in; }
     };
     
     {
@@ -98,12 +99,13 @@ TEST_CASE("Memory check", "[CountedPtr]")
                 ICountedPtr<MyStruct> ptr3 = ptr2;
                 REQUIRE(ptr.GetCounter() == 3);
                 REQUIRE(ptr->GetInt() == 0x12345678);
+                ptr->SetInt(0x87654321);
             }
             REQUIRE(ptr.GetCounter() == 2);
-            REQUIRE(ptr->GetInt() == 0x12345678);
+            REQUIRE(ptr->GetInt() == 0x87654321);
         }
         REQUIRE(ptr.GetCounter() == 1);
-        REQUIRE(ptr->GetInt() == 0x12345678);
+        REQUIRE(ptr->GetInt() == 0x87654321);
 
         ptr = nullptr;
         REQUIRE(ptr.GetCounter() == 0);
@@ -139,9 +141,14 @@ TEST_CASE("CountedPtr with sub-classes", "[CountedPtr]")
 
     struct Base
     {
+        int some_int {0};
         virtual int func()
         {
             return 0;
+        }
+        virtual void SetSomeInt()
+        {
+            some_int = 1;
         }
     };
     struct Child: public Base
@@ -150,18 +157,29 @@ TEST_CASE("CountedPtr with sub-classes", "[CountedPtr]")
         {
             return 1;
         }
+        virtual void SetSomeInt() override
+        {
+            some_int = 2;
+        }
     };
     struct Other {};
 
     auto ptr = MakeShared<Child>();
     ICountedPtr<Base> ptr_base = ptr;
+    REQUIRE(ptr_base.IsValid());
+    REQUIRE(ptr.IsValid());
 
-    // Can be accessed!
     REQUIRE(ptr->func_child() == 1);
+    REQUIRE(ptr_base->func() == 0);
+    
+    ptr_base->Base::SetSomeInt();
+    REQUIRE(ptr->some_int == 1);
+    REQUIRE(ptr->some_int == 1);
 
-    // Can not be compiled!
-    //ptr_base->func_child();
-
+    ptr->SetSomeInt();
+    REQUIRE(ptr->some_int == 2);
+    REQUIRE(ptr->some_int == 2);
+    
     // HA?
     // ptr = MakeShared<Other>();
     
