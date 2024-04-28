@@ -12,7 +12,7 @@ def available():
 
 def find_git():
     global git
-    proc = subprocess.run('git -v', shell=True, capture_output=True)
+    proc = subprocess.run('git --version', shell=True, capture_output=True)
     if proc is not None and proc.returncode == 0:
         git = 'git'
 
