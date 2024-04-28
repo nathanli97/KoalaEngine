@@ -44,7 +44,7 @@ namespace Koala {
         // Can be used as RenderTarget
         RenderTarget = 1 << 4,
         // Can be sampled on GPU shaders
-        RenderResource = 1 << 5,
+        ShaderResource = 1 << 5,
 
         // This texture should only be used in GPU (After creation)
         GPUOnly = 1 << 6,

@@ -59,7 +59,7 @@ namespace Koala::RHI
         VkImageUsageFlags flags{0};
         ASSERT(usage != ETextureUsage::Unknown);
 
-        if (usage & ETextureUsage::RenderResource)
+        if (usage & ETextureUsage::ShaderResource)
         {
             flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
@@ -100,17 +100,39 @@ namespace Koala::RHI
         ASSERTS(0, "You have invalid SampleCount: Vulkan not supported");
         return VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
     }
+    static VkImageType DepthToVkImageType(int depth)
+    {
+        switch (depth)
+        {
+        case 1:
+            return VK_IMAGE_TYPE_1D;
+        case 2:
+            return VK_IMAGE_TYPE_2D;
+        case 3:
+            return VK_IMAGE_TYPE_3D;
+        default:
+            check(0);
+            return VK_IMAGE_TYPE_MAX_ENUM;
+        }
+    }
     TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
+        check(info.depth <= 3);
         VkImageCreateInfo createInfo{};
         createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         createInfo.format = PixelFormatToVkFormat(info.pixelFormat);
+        createInfo.imageType = DepthToVkImageType(info.depth);
         createInfo.extent.width = info.size.x;
         createInfo.extent.height = info.size.y;
         createInfo.extent.depth = info.depth;
-        createInfo.usage = TextureUsageToVkImageUsageFlags(info.usage);
         createInfo.mipLevels = info.numMips;
         createInfo.samples = NumSamplesToVkSampleCount(info.numSamples);
+        createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        createInfo.usage = TextureUsageToVkImageUsageFlags(info.usage);
+        createInfo.arrayLayers = info.numTextureArray;
+
+
 
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
         
@@ -124,18 +146,17 @@ namespace Koala::RHI
 
         vmaAllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-//        TextureRHIRef textureRHI = MakeShared<VulkanTextureRHI>();
+        auto textureRHI = MakeShared<VulkanTextureRHI>();
         
-        
-        // VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->imageRef, &textureRHI->allocRef, nullptr);
+        VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr);
 
-        // if (result != VK_SUCCESS)
-        // {
-        //     logger.error("Failed to allocate texture with {}", string_VkResult(result));
-        //     return nullptr;
-        // }
+        if (result != VK_SUCCESS)
+        {
+            logger.error("Failed to allocate texture with {}", string_VkResult(result));
+            return nullptr;
+        }
         
-        return nullptr;
+        return textureRHI;
     }
 
 }

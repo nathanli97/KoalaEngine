@@ -28,13 +28,16 @@ namespace Koala::RHI
         EPixelFormat pixelFormat{PF_R8G8B8A8};
         ETextureUsages usage{ETextureUsage::Unknown};
         UInt32Point size{};
-        uint32_t depth{};
         int numMips{0};
         
         // TODO： Multisample support -- not supported yet
         int numSamples{0};
+        
+        int numTextureArray{0};
+        uint8_t depth{};
 
-        RHITextureCreateInfo(EPixelFormat inPF, UInt32Point inSize, int inDepth, int inMips, int inNumSamples)
+
+        RHITextureCreateInfo(EPixelFormat inPF, UInt32Point inSize, uint8_t inDepth, int inMips, int inNumSamples)
             : pixelFormat(inPF),
             size(inSize),
             depth(inDepth),

@@ -28,8 +28,9 @@ namespace Koala::RHI
 {
     struct VulkanTextureRHI: public ITextureRHI
     {
-        VkImage imageRef;
-        VmaAllocation allocRef;
+        VkImage image;
+        VmaAllocation vmaAllocation;
+        VkImageView imageView;
     };
 
     class VulkanTextureInterface: public ITextureInterface
