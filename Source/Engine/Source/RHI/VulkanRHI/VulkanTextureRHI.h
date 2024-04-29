@@ -31,6 +31,16 @@ namespace Koala::RHI
         VkImage image;
         VmaAllocation vmaAllocation;
         VkImageView imageView;
+        
+        RHITextureCreateInfo cachedTextureCreateInfo;
+
+        struct
+        {
+            VkFormat format;
+            VkImageType imageType;
+            VkSampleCountFlagBits samples;
+            VkImageUsageFlags usage;
+        } cachedTextureInfo;
     };
 
     class VulkanTextureInterface: public ITextureInterface
@@ -39,6 +49,7 @@ namespace Koala::RHI
         VulkanTextureInterface(VulkanRuntime& inVkRuntime):vk(inVkRuntime) {}
         TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
     private:
+        void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
         VulkanRuntime &vk;
     };
 }

@@ -23,26 +23,50 @@
 
 namespace Koala::RHI
 {
+    enum ETextureChannel
+    {
+        ChannelR,
+        ChannelG,
+        ChannelB,
+        ChannelA,
+        Identity,
+        One,
+        Zero
+    };
     struct RHITextureCreateInfo
     {
         EPixelFormat pixelFormat{PF_R8G8B8A8};
         ETextureUsages usage{ETextureUsage::Unknown};
         UInt32Point size{};
+        int beginMipLevel{0};
         int numMips{0};
         
         // TODO： Multisample support -- not supported yet
         int numSamples{0};
-        
+
+        int beginTextureArrayIndex{0};
         int numTextureArray{0};
         uint8_t depth{};
-
-
-        RHITextureCreateInfo(EPixelFormat inPF, UInt32Point inSize, uint8_t inDepth, int inMips, int inNumSamples)
-            : pixelFormat(inPF),
-            size(inSize),
-            depth(inDepth),
-            numMips(inMips),
-            numSamples(inNumSamples) {}
+        
+        struct ChannelSwizzleInfo
+        {
+            ETextureChannel r = ETextureChannel::Identity;
+            ETextureChannel g = ETextureChannel::Identity;
+            ETextureChannel b = ETextureChannel::Identity;
+            ETextureChannel a = ETextureChannel::Identity;
+            NODISCARD bool IsIdentity() const
+            {
+                return r == ChannelR && g == ChannelB && b == ChannelB && a == ChannelA ||
+                    r == ETextureChannel::Identity && g == ETextureChannel::Identity && b == ETextureChannel::Identity && a == ETextureChannel::Identity;
+            }
+            FORCEINLINE void SetIdentity()
+            {
+                r = ETextureChannel::Identity;
+                g = ETextureChannel::Identity;
+                b = ETextureChannel::Identity;
+                a = ETextureChannel::Identity;
+            }
+        } channelSwizzleInfo;
     };
 
     struct ITextureRHI

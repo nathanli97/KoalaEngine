@@ -42,6 +42,8 @@ public:
     {
         return vk.vma_allocator;
     }
+
+    static void HandleVulkanFuncFailed(VkResult result, const char * func, const char * file, size_t line);
 private:
     VulkanRuntime vk{};
     GLFWRuntime glfw{};

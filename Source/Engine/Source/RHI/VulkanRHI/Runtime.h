@@ -29,7 +29,8 @@
 #include <vulkan/vulkan.h>
 
 #define VK_APIVERSION VK_API_VERSION_1_3
-
+#define VK_CHECK_RESULT_SUCCESS(Func) { VkResult result = Func; if (result != VK_SUCCESS){ VulkanRHI::HandleVulkanFuncFailed(result, #Func, __FILE__, __LINE__); }}
+// #define VK_CHECK_RESULT_NOT_LESS_THEN_SUCCESS(Func) { VkResult result = Func; if (result < VK_SUCCESS){ VulkanRHI::HandleVulkanFuncFailed(result, #Func, __FILE__, __LINE__); }}
 
 namespace Koala::RHI
 {

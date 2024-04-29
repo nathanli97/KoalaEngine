@@ -16,12 +16,16 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include <vulkan/vk_enum_string_helper.h>
+
 #include "VulkanTextureRHI.h"
+#include "Core/Logger.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include "VulkanRHI.h"
 
 
 namespace Koala::RHI {
+    static Logger logger("VulkanRHI");
     bool VulkanRHI::PreInit_MainThread()
     {
         return GLFWInitialize();
@@ -85,6 +89,13 @@ namespace Koala::RHI {
     {
         static VulkanTextureInterface vkTextureInterface(vk);
         return &vkTextureInterface;
+    }
+
+    void VulkanRHI::HandleVulkanFuncFailed(VkResult result, const char* func, const char* file, size_t line)
+    {
+        auto message = string_VkResult(result);
+        logger.error("The call '{}' failed with error {} in file {}, line {}", func, message, file, line);
+        std::abort();
     }
 
 }

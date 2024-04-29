@@ -29,8 +29,8 @@
 
 namespace Koala::RHI
 {
-    static Koala::Logger logger("RHITexture");
-    static VkFormat PixelFormatToVkFormat(EPixelFormat pixelFormat)
+    static Koala::Logger logger("VulkanRHITexture");
+    static FORCEINLINE VkFormat PixelFormatToVkFormat(EPixelFormat pixelFormat)
     {
         ASSERT(pixelFormat < PF_MAX);
         switch (pixelFormat)
@@ -54,7 +54,7 @@ namespace Koala::RHI
             return VK_FORMAT_MAX_ENUM;
         }
     }
-    static VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
+    static FORCEINLINE VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
     {
         VkImageUsageFlags flags{0};
         ASSERT(usage != ETextureUsage::Unknown);
@@ -81,7 +81,7 @@ namespace Koala::RHI
         }
         return flags;
     }
-    static VkSampleCountFlagBits NumSamplesToVkSampleCount(int numSamples)
+    static FORCEINLINE VkSampleCountFlagBits NumSamplesToVkSampleCount(int numSamples)
     {
         if (numSamples == 1)
             return VK_SAMPLE_COUNT_1_BIT;
@@ -100,7 +100,7 @@ namespace Koala::RHI
         ASSERTS(0, "You have invalid SampleCount: Vulkan not supported");
         return VK_SAMPLE_COUNT_FLAG_BITS_MAX_ENUM;
     }
-    static VkImageType DepthToVkImageType(int depth)
+    static FORCEINLINE VkImageType DepthToVkImageType(int depth)
     {
         switch (depth)
         {
@@ -114,6 +114,28 @@ namespace Koala::RHI
             check(0);
             return VK_IMAGE_TYPE_MAX_ENUM;
         }
+    }
+    static FORCEINLINE VkComponentSwizzle TextureChannelToVkComponentSwizzle(ETextureChannel channel)
+    {
+        switch (channel)
+        {
+        case ETextureChannel::Identity:
+            return VK_COMPONENT_SWIZZLE_IDENTITY;
+        case ETextureChannel::ChannelR:
+            return VK_COMPONENT_SWIZZLE_R;
+        case ETextureChannel::ChannelG:
+            return VK_COMPONENT_SWIZZLE_G;
+        case ETextureChannel::ChannelB:
+            return VK_COMPONENT_SWIZZLE_B;
+        case ETextureChannel::ChannelA:
+            return VK_COMPONENT_SWIZZLE_A;
+        case ETextureChannel::One:
+            return VK_COMPONENT_SWIZZLE_ONE;
+        case ETextureChannel::Zero:
+            return VK_COMPONENT_SWIZZLE_ZERO;
+        }
+        check(false);
+        return VK_COMPONENT_SWIZZLE_MAX_ENUM;
     }
     TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
@@ -131,9 +153,7 @@ namespace Koala::RHI
         createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         createInfo.usage = TextureUsageToVkImageUsageFlags(info.usage);
         createInfo.arrayLayers = info.numTextureArray;
-
-
-
+        
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
         
         if (info.usage & GPUOnly)
@@ -148,16 +168,54 @@ namespace Koala::RHI
 
         auto textureRHI = MakeShared<VulkanTextureRHI>();
         
-        VkResult result = vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr);
-
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to allocate texture with {}", string_VkResult(result));
-            return nullptr;
-        }
+        textureRHI->cachedTextureInfo.format = createInfo.format;
+        textureRHI->cachedTextureInfo.samples = createInfo.samples;
+        textureRHI->cachedTextureInfo.usage = createInfo.usage;
+        textureRHI->cachedTextureInfo.imageType = createInfo.imageType;
+        
+        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr));
         
         return textureRHI;
     }
 
+    void VulkanTextureInterface::CreateImageView(VkImageView& outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags) {
+        VkImageViewCreateInfo vkImageViewCreateInfo{};
+        vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        vkImageViewCreateInfo.image = image.image;
+
+        if (image.cachedTextureCreateInfo.depth == 1)
+            vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
+        else if (image.cachedTextureCreateInfo.depth == 2)
+            vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        else if (image.cachedTextureCreateInfo.depth == 3)
+            vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+        else
+            check(false);
+
+        vkImageViewCreateInfo.format = image.cachedTextureInfo.format;
+
+        if (!bUseSwizzle)
+        {
+            vkImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        }
+        else
+        {
+            vkImageViewCreateInfo.components.r = TextureChannelToVkComponentSwizzle(image.cachedTextureCreateInfo.channelSwizzleInfo.r);
+            vkImageViewCreateInfo.components.g = TextureChannelToVkComponentSwizzle(image.cachedTextureCreateInfo.channelSwizzleInfo.g);
+            vkImageViewCreateInfo.components.b = TextureChannelToVkComponentSwizzle(image.cachedTextureCreateInfo.channelSwizzleInfo.b);
+            vkImageViewCreateInfo.components.a = TextureChannelToVkComponentSwizzle(image.cachedTextureCreateInfo.channelSwizzleInfo.a);
+        }
+        
+        vkImageViewCreateInfo.subresourceRange.aspectMask = vkImageAspectFlags; //  COLOR/DEPTH/STENCIL, etc
+        vkImageViewCreateInfo.subresourceRange.baseMipLevel = image.cachedTextureCreateInfo.beginMipLevel;
+        vkImageViewCreateInfo.subresourceRange.levelCount = image.cachedTextureCreateInfo.numMips;
+        vkImageViewCreateInfo.subresourceRange.baseArrayLayer = image.cachedTextureCreateInfo.beginTextureArrayIndex;
+        vkImageViewCreateInfo.subresourceRange.layerCount = image.cachedTextureCreateInfo.numTextureArray;
+
+        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vk.device, &vkImageViewCreateInfo, nullptr, &outImageView))
+    }
 }
 #endif
