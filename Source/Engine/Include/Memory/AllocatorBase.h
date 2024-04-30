@@ -1,4 +1,4 @@
-//Copyright 2024 Li Xingru
+﻿//Copyright 2024 Li Xingru
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //associated documentation files (the “Software”), to deal in the Software without restriction,
@@ -16,16 +16,17 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
 #pragma once
-
 #include "Definations.h"
-#include "CmdParser.h"
-#include "Engine.h"
-#include "EngineVersion.h"
-#include "Core/KoalaLogger.h"
-#include "Core/Check.h"
-#include "Core/StringTools.h"
-#include "PyScripting/PyIntegrate.h"
-#include "PyScripting/PyExecute.h"
+#include "Core/Singleton.h"
+
+namespace Koala
+{
+    struct IAllocatorBase: public ISingleton
+    {
+        virtual ~IAllocatorBase() = default;
+
+        virtual void* Malloc(size_t inSize) = 0;
+        virtual void Free(void* inPtr) = 0;
+    };
+}

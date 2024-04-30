@@ -23,7 +23,7 @@
 
 namespace Koala
 {
-    class ISingleton
+    struct ISingleton
     {
     public:
         template <typename T>

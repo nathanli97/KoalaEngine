@@ -31,13 +31,13 @@ namespace Koala::Renderer {
             break;
         case EProjectorType::OrthographicProjectorType:
             OrthographicProjector::CalculateProjMatrix(project_matrix,
-                comm_param.near, comm_param.far,
+                comm_param.near_plane, comm_param.far_plane,
                 proj_param.ortho.left, proj_param.ortho.right, proj_param.ortho.bottom, proj_param.ortho.top);
             break;
         case EProjectorType::PerspectiveProjectorType:
             PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(project_matrix,
                 proj_param.persp.fov, proj_param.persp.aspect,
-                comm_param.near, comm_param.far);
+                comm_param.near_plane, comm_param.far_plane);
             break;
         default:
             ASSERT(projector_type < ProjectorTypeNum);

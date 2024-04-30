@@ -18,6 +18,7 @@
 
 #pragma once
 #include "Definations.h"
+#include "Check.h"
 
 #include <utility>
 #define KOALA_COUNTER_PTR_STORAGE_INVALID_COUNTER UINT64_MAX
@@ -35,6 +36,16 @@ namespace Koala
             counter = other.counter;
             object = other.object;
             other.ResetToNullReference();
+        }
+        CounterPtrStorage& operator=(CounterPtrStorage&& rhs) noexcept
+        {
+            if (&rhs != this)
+            {
+                counter = rhs.counter;
+                object = rhs.object;
+                rhs.ResetToNullReference();
+            }
+            return *this;
         }
         template <typename T> T GetAs() const
         {
@@ -204,7 +215,7 @@ namespace Koala
         >
         ICountedPtr& operator=(ICountedPtr<T, Deallocator>&& rhs) noexcept
         {
-            MoveToThis<ICountedPtr<T, Deallocator>>(std::forward<ICountedPtr<T, Deallocator>>(rhs));
+            MoveToThis(std::forward<ICountedPtr<T, Deallocator>>(rhs));
             return *this;
         }
         template<
@@ -213,7 +224,7 @@ namespace Koala
         >
         ICountedPtr(ICountedPtr<T, Deallocator>&& rhs) noexcept
         {
-            MoveToThis<ICountedPtr<T, Deallocator>>(std::move<ICountedPtr<T, Deallocator>&&>(rhs));
+            MoveToThis(std::forward<ICountedPtr<T, Deallocator>&&>(rhs));
         }
         template<
             typename T, typename Deallocator = nullptr_t,
@@ -280,6 +291,14 @@ namespace Koala
         }
         // bool() wrapper of IsValid().
         operator bool() const noexcept { return IsValid(); }
+        const Type* GetPointer() const
+        {
+            return GetTargetObject();
+        }
+        Type* GetPointer()
+        {
+            NON_CONST_MEMBER_CALL_CONST_RET(GetPointer());
+        }
     private:
         template<typename T1, typename T2> friend class ICountedPtr;
         
@@ -366,9 +385,9 @@ namespace Koala
         }
 
         template<typename T>
-        FORCEINLINE_DEBUGABLE void MoveToThis(T &&in)
+        FORCEINLINE_DEBUGABLE void MoveToThis(T&& in)
         {
-            storage = std::move(in.storage);
+            storage = std::forward<CounterPtrStorage&&>(in.storage);
             
             in.storage.ResetToNullReference();
         }

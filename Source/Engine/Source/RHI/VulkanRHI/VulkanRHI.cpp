@@ -19,7 +19,7 @@
 #include <vulkan/vk_enum_string_helper.h>
 
 #include "VulkanTextureRHI.h"
-#include "Core/Logger.h"
+#include "Core/KoalaLogger.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include "VulkanRHI.h"
 

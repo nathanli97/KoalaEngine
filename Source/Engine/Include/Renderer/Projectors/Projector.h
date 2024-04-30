@@ -36,7 +36,7 @@ namespace Koala::Renderer {
         // Params
         // The params shared on multiple projection methods.
         struct {
-            float near, far;
+            float near_plane, far_plane;
         } comm_param;
 
         // Proj method-specified projection params.

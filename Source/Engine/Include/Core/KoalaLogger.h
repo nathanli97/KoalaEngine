@@ -20,39 +20,46 @@
 #pragma once
 #include <string>
 #include <utility>
+#include <memory>
+
 #include <spdlog/spdlog.h>
+#include <spdlog/sinks/stdout_sinks.h>
 
 namespace Koala
 {
     class Logger
     {
     public:
-        inline explicit Logger (std::string  log_cat): cat(std::move(log_cat)) {}
-        template <typename ...T>
-        inline void debug(const std::string& in_fmt, T... args)
+        inline explicit Logger (const std::string &log_cat)
         {
-            auto fmt = "[{}] " + in_fmt;
-            spdlog::debug(fmt, cat, args...);
-        };
-        template <typename ...T>
-        void info(const std::string& in_fmt, T... args)
+            auto static sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
+            logger = new spdlog::logger(log_cat, sink);
+        }
+        ~Logger()
         {
-            auto fmt = "[{}] " + in_fmt;
-            spdlog::info(fmt, cat, args...);
-        };
+            delete logger;
+        }
         template <typename ...T>
-        void warning(const std::string& in_fmt, T... args)
+        inline void debug(const std::string& fmt, T... args)
         {
-            auto fmt = "[{}] " + in_fmt;
-            spdlog::warn(fmt, cat, args...);
-        };
+            logger->debug(fmt, args...);
+        }
         template <typename ...T>
-        void error(const std::string& in_fmt, T... args)
+        void info(const std::string& fmt, T... args)
         {
-            auto fmt = "[{}] " + in_fmt;
-            spdlog::error(fmt, cat, args...);
-        };
+            logger->info(fmt, args...);
+        }
+        template <typename ...T>
+        void warning(const std::string& fmt, T... args)
+        {
+            logger->warn(fmt, args...);
+        }
+        template <typename ...T>
+        void error(const std::string& fmt, T... args)
+        {
+            logger->error(fmt, args...);
+        }
     private:
-        std::string cat;
+        spdlog::logger *logger = nullptr;
     };
 }

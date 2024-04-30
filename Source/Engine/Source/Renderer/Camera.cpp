@@ -23,8 +23,8 @@ namespace Koala::Renderer
     {
         if (IsProjectionDirty())
         {
-            projector->comm_param.far = far;
-            projector->comm_param.near = near;
+            projector->comm_param.far_plane = far_plane;
+            projector->comm_param.near_plane = near_plane;
 
             if (camera_mode == ECameraMode::OrthographicCamera)
             {

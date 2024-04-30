@@ -16,16 +16,28 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
 #pragma once
-
 #include "Definations.h"
-#include "CmdParser.h"
-#include "Engine.h"
-#include "EngineVersion.h"
-#include "Core/KoalaLogger.h"
-#include "Core/Check.h"
-#include "Core/StringTools.h"
-#include "PyScripting/PyIntegrate.h"
-#include "PyScripting/PyExecute.h"
+#include "KoalaLogger.h"
+
+namespace Koala
+{
+    // Check only run in non-shipping build.
+    FORCEINLINE void check(bool i) {ASSERT(i);}
+    FORCEINLINE void check(bool i, const char* message) { ASSERTS(i, message); }
+
+    // Always check. If failed, will call abort() on shipping-build.
+    FORCEINLINE void ensure(bool i, const char* msg = nullptr)
+    {
+#if !defined(NDEBUG)
+        check(i, msg);
+#else
+        if (!i)
+        {
+            static Logger logger("FATAL");
+            logger.error(msg);
+            std::abort();
+        }
+#endif
+    }
+}

@@ -14,11 +14,14 @@ target_include_directories(KoalaEngine
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
 
+target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES})
+
 if (MINGW)
-    target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES} spdlog::spdlog_header_only)
+    target_link_libraries(KoalaEngine PUBLIC spdlog::spdlog_header_only)
 else ()
-    target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES} spdlog::spdlog)
+    target_link_libraries(KoalaEngine PUBLIC spdlog::spdlog)
 endif ()
+
 
 target_compile_features(KoalaEngine PUBLIC cxx_std_17)
 

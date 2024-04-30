@@ -24,6 +24,6 @@ namespace Koala::RHI
 {
     struct RenderCapability
     {
-        std::string gpu_name;
+        std::string gpuName;
     };
 }

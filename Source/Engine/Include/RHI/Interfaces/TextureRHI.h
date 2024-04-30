@@ -27,5 +27,7 @@ namespace Koala::RHI
     public:
         virtual ~ITextureInterface() = default;
         virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
+        // Create a new Texture View for given texture
+        virtual TextureViewRef CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType) = 0;
     };
 }

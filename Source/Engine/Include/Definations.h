@@ -20,6 +20,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
+#include "Core/KoalaLogger.h"
 
 // forceinline definitions
 #ifdef FORCEINLINE
@@ -76,9 +78,81 @@
   #define ASSERTS(X, MSG)
 #endif
 
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wattributes"
+#endif
+
 namespace Koala
 {
-  inline void check(bool i) {ASSERT(i);}
+    template<typename T,
+        typename std::enable_if<!std::is_class<T>::value, bool>::type = true
+    >
+    FORCEINLINE void DestructElement(T &element) {}
+    template<typename T,
+        typename std::enable_if<std::is_class<T>::value, bool>::type = true
+    >
+    FORCEINLINE void DestructElement(T &element) {
+        element.~T();
+    }
+    template<typename T,
+        typename ValueType,
+        typename std::enable_if<std::is_rvalue_reference<ValueType>::value, bool>::type = true
+    >
+    FORCEINLINE void ConstructElement(T &element, ValueType value) {
+        element = std::move(value);
+    }
+    template<typename T,
+        typename ValueType,
+        typename std::enable_if<std::is_scalar<T>::value, bool>::type = true
+    >
+    FORCEINLINE void ConstructElement(T &element, ValueType &&value) {
+        element = value;
+    }
+    template<bool...> struct bool_pack;
+    template<bool... bs>
+    using all_true = std::is_same<bool_pack<bs..., true>, bool_pack<true, bs...>>;
+    template<typename T,
+        typename... ValueType,
+        typename std::enable_if<std::is_class<T>::value &&
+        all_true<(!std::is_reference_v<ValueType>)...>::value
+        , bool>::type = true
+    >
+    FORCEINLINE void ConstructElement(T &element, ValueType... values) {
+        new(&element) T(values...);
+    }
+}
+
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
+/**
+ * Calculate how many memory pad size needed for alignment
+ * @param alignedTo Aligned to this size. Must be power of 2.
+ * @param currSize Current size
+ * @return Pad size in bytes. If = 0, then {currSize} is already aligned with {alignedTo}.
+ * Return 0 if {aligned_to} <= 1
+ */
+template <typename T>
+FORCEINLINE constexpr uint16_t CalculateAlignedPadSize(uint16_t alignedTo, T currSize) {
+    if (alignedTo <= 1) {
+        return 0;
+    }
+    uint16_t t = currSize % alignedTo;
+    return (t == alignedTo) ? 0 : alignedTo - t;
+}
+/**
+ * Calculate how many memory size needed for alignment
+ * @param alignedTo Aligned to this size. Must be power of 2.
+ * @param currSize Current size
+ * @return Aligned size. If memory is already aligned with {alignedTo}, return {currSize}. Otherwise, return (enlarged) aligned memory size.
+ * Return {currSize} if {alignedTo} <= 1
+ */
+template <typename T>
+FORCEINLINE constexpr T CalculateAlignedSize(uint16_t alignedTo, T currSize) {
+    T pad = CalculateAlignedPadSize(alignedTo, currSize);
+    return currSize + pad;
 }
 
 #if __cplusplus >= 201402L || defined(_MSC_VER) && _MSC_VER >= 1929L

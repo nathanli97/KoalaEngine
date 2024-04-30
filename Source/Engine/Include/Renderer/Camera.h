@@ -36,7 +36,7 @@ namespace Koala::Renderer {
         // FOV angle. in rad. only used in perspective projection.
         float fov{0};
         float aspect{0};
-        float near{0}, far{0};
+        float near_plane{0}, far_plane{0};
 
         // Orthographic params
         float bottom{0}, top{0}, left{0}, right{0};
@@ -60,8 +60,8 @@ namespace Koala::Renderer {
                     return false;
                 }
 
-                return !IsNearlyEqual(far, projector->comm_param.far) ||
-                    !IsNearlyEqual(near, projector->comm_param.near) ||
+                return !IsNearlyEqual(far_plane, projector->comm_param.far_plane) ||
+                    !IsNearlyEqual(near_plane, projector->comm_param.near_plane) ||
                     !IsNearlyEqual(fov, projector->proj_param.persp.fov) ||
                     !IsNearlyEqual(aspect, projector->proj_param.persp.aspect);
             } else // camera_mode == OrthographicCamera
@@ -72,8 +72,8 @@ namespace Koala::Renderer {
                     return false;
                 }
 
-                return !IsNearlyEqual(far, projector->comm_param.far) ||
-                    !IsNearlyEqual(near, projector->comm_param.near) ||
+                return !IsNearlyEqual(far_plane, projector->comm_param.far_plane) ||
+                    !IsNearlyEqual(near_plane, projector->comm_param.near_plane) ||
                     !IsNearlyEqual(bottom, projector->proj_param.ortho.bottom) ||
                     !IsNearlyEqual(top, projector->proj_param.ortho.top) ||
                     !IsNearlyEqual(left, projector->proj_param.ortho.left) ||

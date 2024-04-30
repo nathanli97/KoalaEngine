@@ -31,8 +31,18 @@ namespace Koala::RHI
         ChannelA,
         Identity,
         One,
-        Zero
+        Zero,
+        TextureChannelMax
     };
+
+    enum ETextureViewType
+    {
+        Color,
+        Depth,
+        Stencil,
+        TextureViewTypeMax
+    };
+    
     struct RHITextureCreateInfo
     {
         EPixelFormat pixelFormat{PF_R8G8B8A8};
@@ -69,9 +79,22 @@ namespace Koala::RHI
         } channelSwizzleInfo;
     };
 
-    struct ITextureRHI
+    struct TextureRHI
     {
-        virtual ~ITextureRHI() = default;
+        virtual ~TextureRHI() = default;
+        virtual size_t GetSize() = 0;
+        virtual uint8_t GetDepth() = 0;
+        virtual uint32_t GetMipNum() = 0;
+        virtual uint32_t GetMipBeginLevel() = 0;
+        virtual UInt64Point GetExtent() = 0;
+        virtual ETextureUsages GetTextureUsage() = 0;
     };
-    typedef ICountedPtr<ITextureRHI> TextureRHIRef;
+
+    struct TextureView
+    {
+        virtual ~TextureView() = default;
+    };
+    
+    typedef TextureRHI*  TextureRHIRef;
+    typedef TextureView* TextureViewRef;
 }
