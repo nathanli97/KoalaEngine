@@ -41,23 +41,49 @@ namespace Koala::RHI
             VkImageUsageFlags usage;
         } cachedTextureInfo;
 
+        FORCEINLINE_DEBUGABLE size_t GetSize() override
+        {
+            return 0;
+        }
+        FORCEINLINE_DEBUGABLE uint8_t GetDepth() override
+        {
+            return cachedTextureCreateInfo.depth;
+        }
+        FORCEINLINE_DEBUGABLE uint32_t GetMipNum() override
+        {
+            return cachedTextureCreateInfo.numMips;
+        }
+        FORCEINLINE_DEBUGABLE uint32_t GetMipBeginLevel() override
+        {
+            return cachedTextureCreateInfo.beginMipLevel;
+        }
+        FORCEINLINE_DEBUGABLE UInt32Point GetExtent() override
+        {
+            return cachedTextureCreateInfo.size;
+        }
+        FORCEINLINE_DEBUGABLE ETextureUsages GetTextureUsage() override
+        {
+            return cachedTextureCreateInfo.usage;
+        }
     };
 
     struct VulkanTextureView: public TextureView
     {
+        std::shared_ptr<VulkanTextureRHI> linkedTexture;
         ETextureViewType viewType;
         VkImageView imageView;
+        FORCEINLINE_DEBUGABLE TextureRHIRef GetTexture() override {return linkedTexture;}
     };
 
     class VulkanTextureInterface: public ITextureInterface
     {
     public:
-        VulkanTextureInterface(VulkanRuntime& inVkRuntime):vk(inVkRuntime) {}
+        VulkanTextureInterface(VulkanRuntime& inVkRuntime):vkRuntime(inVkRuntime) {}
         TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
-        inline TextureViewRef CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType) override { return nullptr; }
+        TextureViewRef CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType, bool bUseSwizzle) override;
     private:
         void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
-        VulkanRuntime &vk;
+        VulkanRuntime &vkRuntime;
     };
 }
 #endif

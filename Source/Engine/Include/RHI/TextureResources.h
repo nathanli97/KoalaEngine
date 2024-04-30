@@ -17,7 +17,6 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "Core/CountedPtr.h"
 #include "Math/Rect.h"
 #include "Renderer/PixelFormat.h"
 
@@ -86,15 +85,23 @@ namespace Koala::RHI
         virtual uint8_t GetDepth() = 0;
         virtual uint32_t GetMipNum() = 0;
         virtual uint32_t GetMipBeginLevel() = 0;
-        virtual UInt64Point GetExtent() = 0;
+        virtual UInt32Point GetExtent() = 0;
         virtual ETextureUsages GetTextureUsage() = 0;
-    };
 
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
+    };
+    typedef std::shared_ptr<TextureRHI>  TextureRHIRef;
+    
     struct TextureView
     {
         virtual ~TextureView() = default;
+        virtual TextureRHIRef GetTexture() = 0;
+
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
     };
     
-    typedef TextureRHI*  TextureRHIRef;
-    typedef TextureView* TextureViewRef;
+    
+    typedef std::shared_ptr<TextureView> TextureViewRef;
 }

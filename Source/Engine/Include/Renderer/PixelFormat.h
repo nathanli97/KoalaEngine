@@ -40,14 +40,15 @@ namespace Koala {
         Present = 1 << 1,
         CopySrc = 1 << 2,
         CopyDst = 1 << 3,
+        CPUWrite = 1 << 4,
 
         // Can be used as RenderTarget
-        RenderTarget = 1 << 4,
+        RenderTarget = 1 << 5,
         // Can be sampled on GPU shaders
-        ShaderResource = 1 << 5,
+        ShaderResource = 1 << 6,
 
         // This texture should only be used in GPU (After creation)
-        GPUOnly = 1 << 6,
+        GPUOnly = 1 << 7,
     };
     typedef uint32_t ETextureUsages;
 }

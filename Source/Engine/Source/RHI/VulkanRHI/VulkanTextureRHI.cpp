@@ -78,6 +78,11 @@ namespace Koala::RHI
         {
             flags |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
+        if (usage & ETextureUsage::ShaderResource && usage & ETextureUsage::RenderTarget)
+        {
+            // This rendertarget will be used in some subsequent subpasses as input.
+            flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
+        }
         return flags;
     }
     static FORCEINLINE VkSampleCountFlagBits NumSamplesToVkSampleCount(int numSamples)
@@ -132,13 +137,33 @@ namespace Koala::RHI
             return VK_COMPONENT_SWIZZLE_ONE;
         case ETextureChannel::Zero:
             return VK_COMPONENT_SWIZZLE_ZERO;
+        default:
+            check(false);
+            return VK_COMPONENT_SWIZZLE_MAX_ENUM;
         }
-        check(false);
-        return VK_COMPONENT_SWIZZLE_MAX_ENUM;
+
     }
-    static FORCEINLINE VmaMemoryUsage TextureUsageToVulkanMemoryUsage(ETextureUsage usage)
+    static FORCEINLINE VmaMemoryUsage TextureUsageToVmaMemoryUsage(ETextureUsages inUsage)
     {
+        if (inUsage & ETextureUsage::GPUOnly || inUsage & ETextureUsage::Present)
+            return VMA_MEMORY_USAGE_GPU_ONLY;
+        if (
+            inUsage & ETextureUsage::CPURead &&
+            !(inUsage & ETextureUsage::CPUWrite) &&
+            !(inUsage & ETextureUsage::Present)
+            )
+            return VMA_MEMORY_USAGE_GPU_TO_CPU;
+        if (
+            inUsage & ETextureUsage::CPUWrite &&
+            !(inUsage & ETextureUsage::CPURead) &&
+            !(inUsage & ETextureUsage::Present)
+            )
+            return VMA_MEMORY_USAGE_CPU_TO_GPU;
         
+        if (inUsage & ETextureUsage::RenderTarget || inUsage & ETextureUsage::ShaderResource)
+            return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+
+        return VMA_MEMORY_USAGE_AUTO;
     }
     static FORCEINLINE VkImageAspectFlagBits TextureViewTypeToVkImageAspectFlagBits(ETextureViewType viewType)
     {
@@ -152,6 +177,7 @@ namespace Koala::RHI
             return VK_IMAGE_ASPECT_STENCIL_BIT;
         default:
             check(false);
+            return VK_IMAGE_ASPECT_NONE;
         }
     }
     TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
@@ -172,31 +198,33 @@ namespace Koala::RHI
         createInfo.arrayLayers = info.numTextureArray;
         
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
-        vmaAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO;
-        if (info.usage & ETextureUsage::GPUOnly)
-        {
-            vmaAllocationCreateInfo.usage = VMA_MEMORY_USAGE_GPU_ONLY;
-
-            ASSERTS(!(info.usage & CPURead), "Invalid TextureUsage");
-        }
-        else if (info.usage & ETextureUsage::RenderTarget)
-            vmaAllocationCreateInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+        vmaAllocationCreateInfo.usage = TextureUsageToVmaMemoryUsage(info.usage);
 
         vmaAllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-        VulkanTextureRHI *textureRHI = nullptr;
+        auto textureRHI = std::make_shared<VulkanTextureRHI>();
         
         textureRHI->cachedTextureCreateInfo = info;
         textureRHI->cachedTextureInfo.format = createInfo.format;
         textureRHI->cachedTextureInfo.samples = createInfo.samples;
         textureRHI->cachedTextureInfo.usage = createInfo.usage;
         textureRHI->cachedTextureInfo.imageType = createInfo.imageType;
-
-        MemoryAllocator::Get().Malloc(123);
         
-        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vk.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
+        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
 
-        return nullptr;
+        return textureRHI;
+    }
+    
+    TextureViewRef VulkanTextureInterface::CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType, bool bUseSwizzle)
+    {
+        auto view = std::make_shared<VulkanTextureView>();
+        auto vulkanTextureRHI = static_cast<VulkanTextureRHI*>(inTexture->GetPlatformNativePointer());
+        view->viewType = inViewType;
+        
+        
+
+        CreateImageView(view->imageView, *vulkanTextureRHI, bUseSwizzle, TextureViewTypeToVkImageAspectFlagBits(inViewType));
+        return view;
     }
 
     void VulkanTextureInterface::CreateImageView(VkImageView& outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags) {
@@ -237,7 +265,7 @@ namespace Koala::RHI
         vkImageViewCreateInfo.subresourceRange.layerCount = image.cachedTextureCreateInfo.numTextureArray;
 
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vk.device, &vkImageViewCreateInfo, nullptr, &outImageView))
+        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vkRuntime.device, &vkImageViewCreateInfo, nullptr, &outImageView))
     }
     
 }
