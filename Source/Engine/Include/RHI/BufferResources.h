@@ -17,18 +17,44 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/TextureResources.h"
+#include <memory>
 
 namespace Koala::RHI
 {
+    enum EBufferUsage
+    {
+        UnknownBuffer = 0,
+        VertexBuffer = 1 << 0,
+        IndexBuffer = 1 << 1,
+        IndirectBuffer = 1 << 2,
+        UniformBuffer = 1 << 3,
+        
+        CPUWriteBuffer = 1 << 4,
+        CPUReadBuffer = 1 << 5,
+        GPUWriteBuffer = 1 << 6, // 'Storage Buffer' in VK. GPU can write data into this buffer. Access to this type of buffer may be slower than read-only buffer.
+        GPUOnlyBuffer = 1 << 7,
+
+        DynamicOffsetBuffer = 1 << 8, // Can provide offset dynamically.
+        TexelBuffer = 1 << 9, // Treat buffer data as image. i.e. we can perfrom sample operations on this buffer.
+
+        NonExclusiveAccessBuffer = 1 << 10, // This buffer can access from multiple device queues. Slower than exclusive mode.
+    };
+    typedef uint32_t EBufferUsages;
     
-    class ITextureInterface
+    struct RHIBufferCreateInfo
+    {
+        uint32_t size;
+        EBufferUsages usage;
+    };
+
+    class BufferRHI
     {
     public:
-        virtual ~ITextureInterface() = default;
-        virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
-        // Create a new Texture View for given texture
-        virtual TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle = true) = 0;
-        virtual void CopyTexture() = 0;
+        virtual ~BufferRHI() = default;
+        virtual size_t GetPlatformSize() = 0;
+    protected:
+        RHIBufferCreateInfo cachedBufferCreateInfo{};
     };
+
+    typedef std::shared_ptr<BufferRHI>  BufferRHIRef;
 }

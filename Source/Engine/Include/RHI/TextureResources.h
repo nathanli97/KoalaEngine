@@ -22,6 +22,7 @@
 
 namespace Koala::RHI
 {
+    class ITextureInterface;
     enum ETextureChannel
     {
         ChannelR,
@@ -34,18 +35,56 @@ namespace Koala::RHI
         TextureChannelMax
     };
 
-    enum ETextureViewType
+    enum ETextureUsage
     {
-        Color,
-        Depth,
-        Stencil,
-        TextureViewTypeMax
+        UnknownTexture = 0,
+        PresentTexture = 1 << 0,
+        CopySrcTexture = 1 << 1,
+        CopyDstTexture = 1 << 2,
+
+        // Can be used as RenderTarget
+        RenderTarget = 1 << 3,
+        // Can be sampled on GPU shaders
+        ShaderResource = 1 << 4,
+
+        ColorTexture = 1 << 5,
+        DepthTexture = 1 << 6,
+        StencilTexture = 1 << 7,
+        
+        CPUWriteTexture = 1 << 8,
+        CPUReadTexture = 1 << 9,
+        GPUWriteTexture = 1 << 10,
+        GPUOnlyTexture = 1 << 11,
+        
+
+        NonExclusiveAccessTexture = 1 << 12, // This image can access from multiple device queues. Slower than exclusive mode.
     };
+
+    typedef uint32_t ETextureUsages;
+
+    NODISCARD FORCEINLINE bool IsValidTextureUsage(ETextureUsages usages)
+    {
+        if (usages == ETextureUsage::UnknownTexture)
+            return false;
+
+        if (usages & ETextureUsage::GPUOnlyTexture)
+        {
+            if (usages & ETextureUsage::CPUReadTexture || usages & ETextureUsage::CPUWriteTexture)
+                return false;
+        }
+
+        if (usages & ETextureUsage::ColorTexture && (usages & ETextureUsage::DepthTexture || usages & ETextureUsage::StencilTexture))
+        {
+            return false;
+        }
+        
+        return true;
+    }
     
     struct RHITextureCreateInfo
     {
         EPixelFormat pixelFormat{PF_R8G8B8A8};
-        ETextureUsages usage{ETextureUsage::Unknown};
+        ETextureUsages usage{ETextureUsage::UnknownTexture};
         UInt32Point size{};
         int beginMipLevel{0};
         int numMips{0};
@@ -78,23 +117,32 @@ namespace Koala::RHI
         } channelSwizzleInfo;
     };
 
-    struct TextureRHI
+    class TextureRHI
     {
+    public:
+        friend class ITextureInterface;
         virtual ~TextureRHI() = default;
-        virtual size_t GetSize() = 0;
-        virtual uint8_t GetDepth() = 0;
-        virtual uint32_t GetMipNum() = 0;
-        virtual uint32_t GetMipBeginLevel() = 0;
-        virtual UInt32Point GetExtent() = 0;
-        virtual ETextureUsages GetTextureUsage() = 0;
+        virtual size_t GetPlatformSize() = 0;
+        
+        FORCEINLINE_DEBUGABLE uint8_t GetDepth() {return cachedTextureCreateInfo.depth;}
+        FORCEINLINE_DEBUGABLE uint32_t GetMipNum() {return cachedTextureCreateInfo.numMips;}
+        FORCEINLINE_DEBUGABLE uint32_t GetMipBeginLevel() {return cachedTextureCreateInfo.beginMipLevel;}
+        FORCEINLINE_DEBUGABLE UInt32Point GetExtent() {return cachedTextureCreateInfo.size;}
+        FORCEINLINE_DEBUGABLE ETextureUsages GetTextureUsage() {return cachedTextureCreateInfo.usage;}
 
         const void* GetPlatformNativePointer() const {return this;}
         void* GetPlatformNativePointer() {return this;}
+
+    protected:
+        RHITextureCreateInfo cachedTextureCreateInfo{};
     };
+
+    
     typedef std::shared_ptr<TextureRHI>  TextureRHIRef;
     
-    struct TextureView
+    class TextureView
     {
+    public:
         virtual ~TextureView() = default;
         virtual TextureRHIRef GetTexture() = 0;
 

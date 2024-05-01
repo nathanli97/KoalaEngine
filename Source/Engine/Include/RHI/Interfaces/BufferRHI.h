@@ -17,18 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/TextureResources.h"
+#include "RHI/BufferResources.h"
 
 namespace Koala::RHI
 {
     
-    class ITextureInterface
+    class IBufferInterface
     {
     public:
-        virtual ~ITextureInterface() = default;
-        virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
-        // Create a new Texture View for given texture
-        virtual TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle = true) = 0;
-        virtual void CopyTexture() = 0;
+        virtual ~IBufferInterface() = default;
+        virtual BufferRHIRef CreateBuffer(const char* debugName, const RHIBufferCreateInfo& info) = 0;
     };
 }

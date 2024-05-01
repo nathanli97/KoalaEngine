@@ -39,25 +39,25 @@ namespace Koala
         {
             delete logger;
         }
-        template <typename ...T>
-        inline void debug(const std::string& fmt, T... args)
+        template <typename ...Args>
+        inline void debug(spdlog::format_string_t<Args...> fmt, Args... args)
         {
-            logger->debug(fmt, args...);
+            logger->debug(fmt, std::forward<Args>(args)...);
         }
-        template <typename ...T>
-        void info(const std::string& fmt, T... args)
+        template <typename ...Args>
+        void info(spdlog::format_string_t<Args...> fmt, Args... args)
         {
-            logger->info(fmt, args...);
+            logger->info(fmt, std::forward<Args>(args)...);
         }
-        template <typename ...T>
-        void warning(const std::string& fmt, T... args)
+        template <typename ...Args>
+        void warning(spdlog::format_string_t<Args...> fmt, Args... args)
         {
-            logger->warn(fmt, args...);
+            logger->warn(fmt, std::forward<Args>(args)...);
         }
-        template <typename ...T>
-        void error(const std::string& fmt, T... args)
+        template <typename ...Args>
+        void error(spdlog::format_string_t<Args...> fmt, Args... args)
         {
-            logger->error(fmt, args...);
+            logger->error(fmt, std::forward<Args>(args)...);
         }
     private:
         spdlog::logger *logger = nullptr;

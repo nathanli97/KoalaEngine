@@ -29,6 +29,7 @@
 namespace Koala::RHI
 {
     class ITextureInterface;
+    class IBufferInterface;
 }
 
 namespace Koala::RHI
@@ -60,6 +61,7 @@ namespace Koala::RHI
         // Return NULL if none of GPU is suitable or not choosed yet.
         virtual const char* GetGPUName() = 0;
         virtual ITextureInterface* GetTextureInterface() = 0;
+        virtual IBufferInterface* GetBufferInterface() = 0;
     };
     std::unordered_set<std::string> GetAvaliableRHIs();
     IRenderHardware* GetRHI(const std::string&);

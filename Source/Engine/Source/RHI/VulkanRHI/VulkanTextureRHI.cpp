@@ -20,61 +20,47 @@
 
 #include <vulkan/vk_enum_string_helper.h>
 #include "Core.h"
-#include "Renderer/PixelFormat.h"
 #include "RHI/TextureResources.h"
-#include "Memory/Allocator.h"
 #ifdef INCLUDE_RHI_VULKAN
+#include "VkFormatMap.h"
 #include "VulkanRHI.h"
 
 namespace Koala::RHI
 {
     static Koala::Logger logger("VulkanRHITexture");
-    static FORCEINLINE VkFormat PixelFormatToVkFormat(EPixelFormat pixelFormat)
-    {
-        ASSERT(pixelFormat < PF_MAX);
-        switch (pixelFormat)
-        {
-        case PF_R8G8B8A8:
-            return VK_FORMAT_R8G8B8A8_SRGB;
-        case PF_R32G32B32A32_Float:
-            return VK_FORMAT_R32G32B32A32_SFLOAT;
-        case PF_R8:
-            return VK_FORMAT_R8_SINT;
-        case PF_DXT1:
-            return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-        case PF_DXT3:
-            return VK_FORMAT_BC2_SRGB_BLOCK;
-        case PF_DXT5:
-            return VK_FORMAT_BC3_SRGB_BLOCK;
-        case PF_BC5:
-            return VK_FORMAT_BC5_SNORM_BLOCK;
-        default:
-            ASSERTS(0, "You have unimplemented PixelFormat in function PixelFormatToVkFormat");
-            return VK_FORMAT_MAX_ENUM;
-        }
-    }
     static FORCEINLINE VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
     {
         VkImageUsageFlags flags{0};
-        ASSERT(usage != ETextureUsage::Unknown);
+        ASSERT(usage != ETextureUsage::UnknownTexture);
 
         if (usage & ETextureUsage::ShaderResource)
         {
             flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
         }
-        if (usage & ETextureUsage::RenderTarget || usage & ETextureUsage::Present)
+        if (usage & ETextureUsage::PresentTexture)
         {
             flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
         }
-        if (usage & ETextureUsage::CopySrc)
+        if (usage & ETextureUsage::RenderTarget && usage & ETextureUsage::ColorTexture)
+        {
+            flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+        if (
+            usage & ETextureUsage::RenderTarget &&
+            (usage & ETextureUsage::DepthTexture || usage & ETextureUsage::StencilTexture)
+        )
+        {
+            flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        if (usage & ETextureUsage::CopySrcTexture)
         {
             flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
         }
-        if (usage & ETextureUsage::CopyDst)
+        if (usage & ETextureUsage::CopyDstTexture)
         {
             flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
         }
-        if (usage & ETextureUsage::CPURead)
+        if (usage & ETextureUsage::GPUWriteTexture)
         {
             flags |= VK_IMAGE_USAGE_STORAGE_BIT;
         }
@@ -145,40 +131,39 @@ namespace Koala::RHI
     }
     static FORCEINLINE VmaMemoryUsage TextureUsageToVmaMemoryUsage(ETextureUsages inUsage)
     {
-        if (inUsage & ETextureUsage::GPUOnly || inUsage & ETextureUsage::Present)
+        if (inUsage & ETextureUsage::GPUOnlyTexture || inUsage & ETextureUsage::PresentTexture)
             return VMA_MEMORY_USAGE_GPU_ONLY;
         if (
-            inUsage & ETextureUsage::CPURead &&
-            !(inUsage & ETextureUsage::CPUWrite) &&
-            !(inUsage & ETextureUsage::Present)
-            )
+            inUsage & ETextureUsage::CPUReadTexture &&
+            !(inUsage & ETextureUsage::CPUWriteTexture) &&
+            !(inUsage & ETextureUsage::PresentTexture))
             return VMA_MEMORY_USAGE_GPU_TO_CPU;
         if (
-            inUsage & ETextureUsage::CPUWrite &&
-            !(inUsage & ETextureUsage::CPURead) &&
-            !(inUsage & ETextureUsage::Present)
-            )
+            inUsage & ETextureUsage::CPUWriteTexture &&
+            !(inUsage & ETextureUsage::CPUReadTexture) &&
+            !(inUsage & ETextureUsage::PresentTexture))
             return VMA_MEMORY_USAGE_CPU_TO_GPU;
         
-        if (inUsage & ETextureUsage::RenderTarget || inUsage & ETextureUsage::ShaderResource)
+        if (
+            (
+                inUsage & ETextureUsage::RenderTarget ||
+                inUsage & ETextureUsage::ShaderResource ||
+                inUsage & ETextureUsage::GPUWriteTexture
+            ) && (!(inUsage & ETextureUsage::CPUReadTexture) && (!(inUsage & ETextureUsage::CPUWriteTexture))))
             return VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
 
         return VMA_MEMORY_USAGE_AUTO;
     }
-    static FORCEINLINE VkImageAspectFlagBits TextureViewTypeToVkImageAspectFlagBits(ETextureViewType viewType)
+    static FORCEINLINE VkImageAspectFlagBits TextureUsagesToVkImageAspectFlagBits(ETextureUsages usage)
     {
-        switch (viewType)
-        {
-        case ETextureViewType::Color:
+        if (usage & ETextureUsage::ColorTexture)
             return VK_IMAGE_ASPECT_COLOR_BIT;
-        case ETextureViewType::Depth:
+        if (usage & ETextureUsage::DepthTexture)
             return VK_IMAGE_ASPECT_DEPTH_BIT;
-        case ETextureViewType::Stencil:
+        if (usage & ETextureUsage::StencilTexture)
             return VK_IMAGE_ASPECT_STENCIL_BIT;
-        default:
-            check(false);
-            return VK_IMAGE_ASPECT_NONE;
-        }
+        ensure(false, "You must specify one of Color/Depth/Stencil in usages!");
+        return VK_IMAGE_ASPECT_NONE;
     }
     TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
@@ -196,6 +181,7 @@ namespace Koala::RHI
         createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         createInfo.usage = TextureUsageToVkImageUsageFlags(info.usage);
         createInfo.arrayLayers = info.numTextureArray;
+        createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
         
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
         vmaAllocationCreateInfo.usage = TextureUsageToVmaMemoryUsage(info.usage);
@@ -215,15 +201,12 @@ namespace Koala::RHI
         return textureRHI;
     }
     
-    TextureViewRef VulkanTextureInterface::CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType, bool bUseSwizzle)
+    TextureViewRef VulkanTextureInterface::CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle)
     {
         auto view = std::make_shared<VulkanTextureView>();
         auto vulkanTextureRHI = static_cast<VulkanTextureRHI*>(inTexture->GetPlatformNativePointer());
-        view->viewType = inViewType;
-        
-        
 
-        CreateImageView(view->imageView, *vulkanTextureRHI, bUseSwizzle, TextureViewTypeToVkImageAspectFlagBits(inViewType));
+        CreateImageView(view->imageView, *vulkanTextureRHI, bUseSwizzle, TextureUsagesToVkImageAspectFlagBits(vulkanTextureRHI->GetTextureUsage()));
         return view;
     }
 

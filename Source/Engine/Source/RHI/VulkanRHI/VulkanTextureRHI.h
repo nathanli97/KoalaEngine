@@ -17,70 +17,51 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/Interfaces/TextureRHI.h"
 
 #ifdef INCLUDE_RHI_VULKAN
+#include "RHI/Interfaces/TextureRHI.h"
 #include "Runtime.h"
 #include "RHI/TextureResources.h"
 
 
 namespace Koala::RHI
 {
-    struct VulkanTextureRHI: public TextureRHI
+    class VulkanTextureInterface;
+    
+    class VulkanTextureRHI: public TextureRHI
     {
-        VkImage image;
-        VmaAllocation vmaAllocation;
+    public:
+        friend class VulkanTextureInterface;
+        VkImage image{};
+        VmaAllocation vmaAllocation{};
         
-        RHITextureCreateInfo cachedTextureCreateInfo;
-
         struct
         {
             VkFormat format;
             VkImageType imageType;
             VkSampleCountFlagBits samples;
             VkImageUsageFlags usage;
-        } cachedTextureInfo;
+        } cachedTextureInfo{};
 
-        FORCEINLINE_DEBUGABLE size_t GetSize() override
-        {
-            return 0;
-        }
-        FORCEINLINE_DEBUGABLE uint8_t GetDepth() override
-        {
-            return cachedTextureCreateInfo.depth;
-        }
-        FORCEINLINE_DEBUGABLE uint32_t GetMipNum() override
-        {
-            return cachedTextureCreateInfo.numMips;
-        }
-        FORCEINLINE_DEBUGABLE uint32_t GetMipBeginLevel() override
-        {
-            return cachedTextureCreateInfo.beginMipLevel;
-        }
-        FORCEINLINE_DEBUGABLE UInt32Point GetExtent() override
-        {
-            return cachedTextureCreateInfo.size;
-        }
-        FORCEINLINE_DEBUGABLE ETextureUsages GetTextureUsage() override
-        {
-            return cachedTextureCreateInfo.usage;
-        }
+        size_t GetPlatformSize() override {return 0;}
     };
 
-    struct VulkanTextureView: public TextureView
+    class VulkanTextureView: public TextureView
     {
-        std::shared_ptr<VulkanTextureRHI> linkedTexture;
-        ETextureViewType viewType;
-        VkImageView imageView;
+    public:
+        std::shared_ptr<VulkanTextureRHI> linkedTexture{};
+        VkImageView imageView{};
         FORCEINLINE_DEBUGABLE TextureRHIRef GetTexture() override {return linkedTexture;}
     };
 
     class VulkanTextureInterface: public ITextureInterface
     {
     public:
-        VulkanTextureInterface(VulkanRuntime& inVkRuntime):vkRuntime(inVkRuntime) {}
+        VulkanTextureInterface(VulkanRuntime& inRuntime):vkRuntime(inRuntime) {}
         TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
-        TextureViewRef CreateTextureView(TextureRHIRef inTexture, ETextureViewType inViewType, bool bUseSwizzle) override;
+        TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle) override;
+        void CopyTexture() override {}
+
     private:
         void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
         VulkanRuntime &vkRuntime;

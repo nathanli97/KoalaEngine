@@ -17,18 +17,31 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/TextureResources.h"
+
+#ifdef INCLUDE_RHI_VULKAN
+#include "RHI/Interfaces/BufferRHI.h"
+#include "Runtime.h"
 
 namespace Koala::RHI
 {
+    class VulkanBufferInterface;
     
-    class ITextureInterface
+    class VulkanBufferRHI: public BufferRHI
     {
     public:
-        virtual ~ITextureInterface() = default;
-        virtual TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) = 0;
-        // Create a new Texture View for given texture
-        virtual TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle = true) = 0;
-        virtual void CopyTexture() = 0;
+        friend class VulkanBufferInterface;
+        size_t GetPlatformSize() override;
+        VmaAllocation vmaAllocation{};
+        VkBuffer buffer{};
+    };
+    class VulkanBufferInterface: public IBufferInterface
+    {
+    public:
+        VulkanBufferInterface(VulkanRuntime& inRuntime): vkRuntime(inRuntime) {}
+        BufferRHIRef CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info) override;
+    private:
+        VulkanRuntime &vkRuntime;
     };
 }
+
+#endif

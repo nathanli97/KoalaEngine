@@ -28,7 +28,7 @@ set_target_properties(Catch2WithMain PROPERTIES FOLDER "ThirdParty")
 
 
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Source/Engine)
 add_subdirectory(Source/Editor)

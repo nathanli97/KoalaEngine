@@ -21,10 +21,18 @@
 
 namespace Koala {
     enum EPixelFormat {
-        PF_R32G32B32A32_Float,
+        PF_R8, // Single channel
+        PF_R8G8,
+        PF_R8G8B8,
         PF_R8G8B8A8,
-        // Single channel
-        PF_R8,
+        PF_R16,
+        PF_R16G16,
+        PF_R16G16B16,
+        PF_R16G16B16A16,
+        PF_R32,
+        PF_R32G32,
+        PF_R32G32B32,
+        PF_R32G32B32A32,
         // Compressed format, currectly not supported
         PF_DXT1,
         PF_DXT3,
@@ -32,23 +40,4 @@ namespace Koala {
         PF_BC5,
         PF_MAX
     };
-
-    enum ETextureUsage
-    {
-        Unknown = 0,
-        CPURead = 1 << 0,
-        Present = 1 << 1,
-        CopySrc = 1 << 2,
-        CopyDst = 1 << 3,
-        CPUWrite = 1 << 4,
-
-        // Can be used as RenderTarget
-        RenderTarget = 1 << 5,
-        // Can be sampled on GPU shaders
-        ShaderResource = 1 << 6,
-
-        // This texture should only be used in GPU (After creation)
-        GPUOnly = 1 << 7,
-    };
-    typedef uint32_t ETextureUsages;
 }
