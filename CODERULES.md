@@ -6,10 +6,7 @@ This is code rules(for C++) for KoalaEngine.
 # Naming Conventions
 
 - All class/struct/enum_type name **must** use UpperCamelCase naming.
-- All enum_type name **must** start with 'E'. The members in enum **must** UpperCamelCase and not start with enum_type name. 
-
-For example: `enum EMyEnum {Something;};` is a OK naming, `enum MyEnum {MyEnumSomething;};` is a not OK naming.
-
+- All enum_type name **must** start with 'E'.
 - All constants **must** use UpperCamelCase naming. 
 - All function name **must** use UpperCamelCase naming.
 - All data member of class/struct, local variable **must** use lowerCamelCase naming. 
