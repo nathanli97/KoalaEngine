@@ -30,7 +30,7 @@ namespace Koala::RHI
     {
     public:
         friend class VulkanBufferInterface;
-        size_t GetPlatformSize() override;
+        size_t GetPlatformSize() override {return 0;}
         VmaAllocation vmaAllocation{};
         VkBuffer buffer{};
     };

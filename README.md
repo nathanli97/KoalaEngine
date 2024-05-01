@@ -18,7 +18,7 @@ First, you need to install the following softwares:
 
 - Python3.
 
-- Git for windows.
+- Git.
 
 - Vulkan SDK.
 
@@ -28,6 +28,35 @@ And then, run GenerateProjectFiles.bat to generate project files.
 
 After project files are generated, you can find Koala.sln file in `Build` directory. Use VisualStudio or Rider to open it to start development.
 
+# Quick Start (Linux, only Ubuntu is supported now)
+
+NOTE: Currently, this project is only compiled with Ubuntu 24.04LTS. So the following building instruction for Ubuntu dist only.
+
+Before you build this engine, you need make sure you have installed the following packages (via apt):
+
+```
+build-essential git libgl-dev libpython3.12-dev libwayland-dev libxkbcommon-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl-dev
+```
+
+And download latest VulkanSDK from [LunarG's website](https://vulkan.lunarg.com/sdk/home#linux)
+
+The latest version of VulkanSDK(1.3.280.1) has been verified can be used to build. Please download and unzip it.
+
+And open a shell, execute the following command to setup build environment:
+
+```bash
+source {PathToYourVulkanSDK}/1.3.280.1/setup-env.sh
+```
+
+In the **same** shell, execute the following command in Koala repo:
+
+```bash
+bash ./Setup.sh && bash ./GenerateProjectFiles.sh
+```
+
+then, you can enter the 'koala/Build' directory and start the build by `make`.
+
+On the same shell, you can open your IDE to development (like CLion).
 # Before you start to development...
 
 Please read CODERULES.md for CodingStyles.
