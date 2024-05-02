@@ -17,15 +17,41 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <map>
+#include <string>
+
+#include "Core/Check.h"
+#include "Core/Singleton.h"
+#include "ConsoleVariableBase.h"
+#include "Core/Module.h"
+
 
 namespace Koala
 {
-    enum class EThreadName
+    template <typename InType>
+    class TConsoleVariable;
+
+    class IConsoleVariable;
+    
+    class CVarManager final : protected IModule
     {
-        UnknownThread,
-        MainThread,
-        GameThread = MainThread,
-        RenderThread,
-        RHIThread,
+    public:
+        KOALA_IMPLEMENT_SINGLETON(CVarManager)
+        template<typename T>
+        friend class TConsoleVariable;
+
+        bool Initialize_MainThread() override { return true; }
+        bool Shutdown_MainThread() override { return true; }
+        void Tick(float delta_time) override {}
+    protected:
+        void RegisterConsoleVariable(IConsoleVariable* inCVar)
+        {
+            std::lock_guard lock(lockForMapNameToCVar);
+            check(!mapNameToCVar.contains(inCVar->name));
+            mapNameToCVar.emplace(inCVar->name, inCVar);
+        }
+    private:
+        std::map<std::string, IConsoleVariable*> mapNameToCVar;
+        std::mutex lockForMapNameToCVar;
     };
 }

@@ -65,7 +65,7 @@ namespace Koala
                 mapThreadIdToName.emplace(id, inThread);
         }
         // Get Current Thread Name.
-        // WARNING: Only call after engine initialized.
+        // WARNING: Only call after engine early-initialized.
         EThreadName GetCurrentThread() const
         {
             auto id = std::this_thread::get_id();
