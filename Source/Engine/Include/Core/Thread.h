@@ -30,34 +30,4 @@ namespace Koala {
         virtual ~IThread() = default;
         virtual void Run() = 0;
     };
-    class ThreadManager
-    {
-    public:
-        static ThreadManager& Get()
-        {
-            static ThreadManager manager;
-            return manager;
-        }
-        void CreateThread(IThread* thread)
-        {
-            threads.emplace_back(
-                [thread]
-                {
-                    thread->Run();
-                }
-                );
-        }
-        ~ThreadManager()
-        {
-            for (auto & thread: threads)
-            {
-                if (thread.joinable())
-                    thread.join();
-            }
-            threads.clear();
-        }
-    private:
-        ThreadManager() = default;
-        std::list<std::thread> threads;
-    };
 }

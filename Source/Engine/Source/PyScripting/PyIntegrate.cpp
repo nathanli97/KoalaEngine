@@ -28,9 +28,9 @@
 #include "FileSystem/SystemPath.h"
 namespace Koala::Scripting
 {
-    void *LoadScriptFromDisk(const std::string& module_name)
+    void *LoadScriptFromDisk(const std::string& moduleName)
     {
-        auto& script_path = module_name;
+        auto& script_path = moduleName;
 
         PyObject *name = PyUnicode_DecodeFSDefault(script_path.c_str());
         PyObject *module = PyImport_Import(name);

@@ -29,7 +29,7 @@ namespace Koala
         for (auto it = modules.begin(); it != modules.end(); ++it)
         {
             IModule * module = *it;
-            module->Initialize();
+            module->Initialize_MainThread();
         }
     }
 
@@ -47,7 +47,7 @@ namespace Koala
         for (auto it = modules.rbegin(); it != modules.rend(); ++it)
         {
             IModule * module = *it;
-            module->Shutdown();
+            module->Shutdown_MainThread();
         }
     }
 }

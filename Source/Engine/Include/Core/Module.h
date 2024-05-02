@@ -31,8 +31,8 @@ namespace Koala {
 
         // Module startup/shutdown functions.
         // Those functions will be called in MainThread.
-        virtual bool Initialize() = 0;
-        virtual bool Shutdown() = 0;
+        virtual bool Initialize_MainThread() = 0;
+        virtual bool Shutdown_MainThread() = 0;
 
         // Module Tick function.
         // Tick function will be called once every frame.
@@ -43,6 +43,7 @@ namespace Koala {
     class ModuleManager: public ISingleton
     {
     public:
+        KOALA_IMPLEMENT_SINGLETON(ModuleManager)
         // Register a new module
         // the modules will initializes in registered order.
         void RegisterModule(IModule* module);

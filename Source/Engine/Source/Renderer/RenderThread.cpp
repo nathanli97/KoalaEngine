@@ -28,12 +28,12 @@
 namespace Koala
 {
     Logger logger("RenderThread");
-    bool RenderThread::Initialize()
+    bool RenderThread::Initialize_MainThread()
     {
-        auto renderer = IModule::Get<Config>().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
+        auto renderer = Config::Get().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
         auto avaliable_renderers = RHI::GetAvaliableRHIs();
 
-        if (avaliable_renderers.count(renderer) == 0)
+        if (!avaliable_renderers.contains(renderer))
         {
             logger.error("Requested renderer unavaliable: {}", renderer);
 
@@ -45,7 +45,7 @@ namespace Koala
         return true;
     }
 
-    bool RenderThread::Shutdown()
+    bool RenderThread::Shutdown_MainThread()
     {
         render->PostShutdown_MainThread();
         return true;

@@ -16,25 +16,14 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "ConsoleVariableBase.h"
+#include "ThreadManager.h"
 
-
-#pragma once
-#include <type_traits>
-
-#define KOALA_IMPLEMENT_SINGLETON(Type) static Type& Get() { return ISingleton::Get<Type>(); }
 namespace Koala
 {
-    struct ISingleton
+    EThreadName IConsoleVariable::GetCurrentThreadId()
     {
-    public:
-        template <typename T>
-        static T& Get()
-        {
-            static_assert(std::is_base_of_v<ISingleton, T>, "T must be a derived class of ISingleton class.");
-            static T instance;
-            return instance;
-        }
-    protected:
-        ISingleton() = default;
-    };
+        return ThreadManager::Get().GetCurrentThread();
+    }
+
 }

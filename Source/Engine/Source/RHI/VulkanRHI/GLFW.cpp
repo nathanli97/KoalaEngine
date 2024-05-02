@@ -35,7 +35,7 @@ namespace Koala::RHI
 
     bool VulkanRHI::GLFWInitialize()
     {
-        auto &config = IModule::Get<Config>();
+        auto &config = Config::Get();
 
         int window_width = std::stoi(config.GetSettingStrWithAutoSaving("render.window.width", "1280", true));
         int window_height = std::stoi(config.GetSettingStrWithAutoSaving("render.window.height", "960", true));

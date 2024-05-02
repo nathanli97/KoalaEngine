@@ -19,8 +19,16 @@
 
 
 #pragma once
+#include "Definations.h"
 
 namespace Koala {
+    enum class EEngineStage
+    {
+        UnInitialized,
+        EarlyInitStage,
+        InitStage,
+        Running
+    };
     class Engine
     {
     public:
@@ -38,6 +46,10 @@ namespace Koala {
             Engine::Get().Shutdown();
             return true;
         }
+        NODISCARD EEngineStage GetEngineRunningStage() const
+        {
+            return engineStage;
+        }
         static Engine& Get()
         {
             static Engine engine;
@@ -54,9 +66,14 @@ namespace Koala {
         }
     private:
         bool Initialize(int argc, char** argv);
+        // Early init stage. All sub-systems, all threads should be created here.
+        bool EarlyInitializeStage(int argc, char** argv);
+        void CreateSubThreads();
+        bool InitializeStage();
         void Tick();
         void Shutdown();
 
+        EEngineStage engineStage {EEngineStage::UnInitialized};
         // TODO: This flag variable may be need to protect by LOCK
         bool requested_engine_stop = false;
     };

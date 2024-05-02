@@ -26,20 +26,51 @@
 #include "RHI/RHI.h"
 
 
+
 namespace Koala
 {
-    Logger logger_engine("Engine");
+    Logger loggerEngine("Engine");
     bool Engine::Initialize(int argc, char** argv)
     {
+        return EarlyInitializeStage(argc, argv) &&
+            InitializeStage();
+    }
+    bool Engine::EarlyInitializeStage(int argc, char** argv)
+    {
         using namespace Koala;
+        Logger loggerEngineEarlyInit("EngineEarlyInitialize");
 
         CmdParser::Initialize(argc, argv);
 
         if (CmdParser::Get().HasArg("debug"))
         {
             spdlog::set_level(spdlog::level::debug);
-            logger_engine.warning("LogLevel set to DEBUG");
+            loggerEngine.warning("LogLevel set to DEBUG");
         }
+
+        // Initialize core modules
+        Config::Get().Initialize_MainThread();
+        if (CmdParser::Get().HasArg("PrintCFG"))
+        {
+            Config::Get().PrintAllConfigurations();
+        }
+
+        RenderThread::Get().Initialize_MainThread();
+        ModuleManager::Get().InitializeModules();
+        
+        // Sub-threads should be created in end of engine early init stage.
+        CreateSubThreads();
+        return true;
+    }
+
+    void Engine::CreateSubThreads()
+    {
+        RenderThread::Get().CreateThread();
+    }
+
+    bool Engine::InitializeStage()
+    {
+        Logger loggerEngineInit("EngineInitialize");
 
         Scripting::Initialize();
 
@@ -47,61 +78,48 @@ namespace Koala
 
         if (init_script)
         {
-            logger_engine.debug("Executing pre_init script");
+            loggerEngineInit.debug("Executing pre_init script");
             Scripting::ExecuteFunctionNoArg(init_script, "pre_init");
         }
         else
         {
-            logger_engine.error("Init script load failed. Tip: CurrentWorkingDirectory should be koala project's root directory. (Engine will attempt to load script from Source/Engine/Scripts/)");
- //           return false;
+            loggerEngineInit.error("Init script load failed. Tip: CurrentWorkingDirectory should be koala project's root directory. (Engine will attempt to load script from Source/Engine/Scripts/)");
         }
-
-        // Initialize core modules
-        IModule::Get<Config>().Initialize();
-        if (CmdParser::Get().HasArg("printcfg"))
+        
+        if (!RenderThread::Get().WaitForRenderReady())
         {
-            IModule::Get<Config>().PrintAllConfigurations();
-        }
-        // Initialize render-thread
-
-        IModule::Get<RenderThread>().Initialize();
-        IModule::Get<RenderThread>().CreateThread();
-
-        ISingleton::Get<ModuleManager>().InitializeModules();
-
-
-        if (!IModule::Get<RenderThread>().WaitForRenderReady())
-        {
-            logger_engine.error("Rendering System has error");
+            loggerEngineInit.error("Rendering System failed to initialize");
             return false;
         }
 
-        logger_engine.debug("Executing post_init script");
+        loggerEngineInit.debug("Executing post_init script");
         Scripting::ExecuteFunctionNoArg(init_script, "post_init");
         Scripting::UnloadScript(init_script);
 
-        logger_engine.info("Engine initialized");
-        logger_engine.info("Welcome to KoalaEngine {}.{}.{} ({})",
+        loggerEngineInit.info("Engine initialized, Welcome to KoalaEngine {}.{}.{} ({})",
             KOALA_ENGINE_VER_MAJOR,
             KOALA_ENGINE_VER_MINOR,
             KOALA_ENGINE_VER_PATCH,
             KOALA_ENGINE_VER_CODENAME);
+
         return true;
     }
+
+
     void Engine::Tick()
     {
         // TODO: Pass actual deltatime to the function.
-        IModule::Get<RenderThread>().Tick(0);
+        RenderThread::Get().Tick(0);
     }
 
     void Engine::Shutdown()
     {
-        IModule::Get<RenderThread>().WaitForRTStop();
-        IModule::Get<RenderThread>().Shutdown();
-        ISingleton::Get<ModuleManager>().ShutdownModules();
-        IModule::Get<Config>().Shutdown();
+        RenderThread::Get().WaitForRTStop();
+        RenderThread::Get().Shutdown_MainThread();
+        ModuleManager::Get().ShutdownModules();
+        Config::Get().Shutdown_MainThread();
         Scripting::Shutdown();
-        logger_engine.info("Engine is exiting");
+        loggerEngine.info("Engine is exiting");
     }
 
 }

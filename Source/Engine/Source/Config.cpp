@@ -30,7 +30,7 @@
 
 namespace Koala
 {
-    bool Config::Initialize()
+    bool Config::Initialize_MainThread()
     {
         if (!std::filesystem::exists(Path::GetConfigPath()))
         {
@@ -49,7 +49,7 @@ namespace Koala
         return true;
     }
 
-    bool Config::Shutdown()
+    bool Config::Shutdown_MainThread()
     {
         if (HasAutoSavingWhenEngineExiting())
         {
