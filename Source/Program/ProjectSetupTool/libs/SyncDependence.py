@@ -1,5 +1,4 @@
 # This file is used to sync 3rdparty dependencies.
-import json
 import os
 import re
 import shutil
@@ -27,7 +26,7 @@ class Dependence:
             dep.branch = groups[3]
         return dep
 
-    def sync(self, args):
+    def sync(self):
         root_path = os.path.join(Global.source_dir, 'ThirdParty')
 
         if not os.path.isdir(root_path):
@@ -78,13 +77,13 @@ def get_dependencies():
     return deps
 
 
-def sync_dependencies(args):
+def sync_dependencies():
     print(f'Syncing dependencies...')
     deps = get_dependencies()
 
     for dep in deps:
         Logger.verbose(f'Syncing dependence {dep.name}...')
-        dep.sync(args)
+        dep.sync()
     print(f'Dependencies Sync Complete')
 
 

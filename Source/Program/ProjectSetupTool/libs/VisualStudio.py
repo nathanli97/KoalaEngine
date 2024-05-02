@@ -50,9 +50,9 @@ def select_generator_visualstudio(given_version=None):
         raise RuntimeError(f"Unsupported VS version: {vs_version}")
 
 
-def select_arch_visualstudio(args):
-    if args.arch is not None:
-        return args.arch
+def select_arch_visualstudio():
+    if Global.args.arch is not None:
+        return Global.args.arch
 
     arch = platform.machine()
 

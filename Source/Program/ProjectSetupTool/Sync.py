@@ -2,7 +2,7 @@ import argparse
 import os
 import shutil
 
-from libs import SyncDependence, Global, Logger, Git, Vulkan
+from libs import SyncDependence, Global, Logger, Git
 
 
 def main():
@@ -19,6 +19,7 @@ def main():
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
 
     args = parser.parse_args()
+    Global.set_args(args)
     Git.setup_git()
 
     if args.verbose:
@@ -33,7 +34,7 @@ def main():
     if not os.path.isdir(thirdparty_path):
         os.makedirs(thirdparty_path)
 
-    SyncDependence.sync_dependencies(args)
+    SyncDependence.sync_dependencies()
 
     with open(os.path.join(thirdparty_path, '.sync_ok'), 'w') as f:
         pass

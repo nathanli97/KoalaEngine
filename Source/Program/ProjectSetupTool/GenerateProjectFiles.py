@@ -61,19 +61,19 @@ def find_cmake():
         raise RuntimeError(f'CMake version is too old: required 3.25.0, found {cmake_version}')
 
 
-def select_generator(args):
-    if args.mingw:
+def select_generator():
+    if Global.args.mingw:
         return 'MinGW Makefiles'
-    elif args.unixmake:
+    elif Global.args.unixmake:
         return 'Unix Makefiles'
-    elif args.nmake:
+    elif Global.args.nmake:
         return 'NMake Makefiles'
-    elif args.xcode:
+    elif Global.args.xcode:
         return 'Xcode'
-    elif args.msys:
+    elif Global.args.msys:
         return 'MSYS Makefiles'
-    elif args.vs:
-        vs_version = int(args.vs)
+    elif Global.args.vs:
+        vs_version = int(Global.args.vs)
         return select_generator_visualstudio(vs_version)
 
     if platform.system() == "Windows":
@@ -84,14 +84,14 @@ def select_generator(args):
         return 'Xcode'
 
 
-def generate(cmake, generator, arch, args):
+def generate(cmake, generator, arch):
     if arch is not None:
         command = f'{cmake} -B "{Global.build_dir}" -S "{Global.source_dir}" -G "{generator}" -A {arch}'
     else:
         command = f'{cmake} -B "{Global.build_dir}" -S "{Global.source_dir}" -G "{generator}"'
-    if args.test:
+    if Global.args.test:
         command += f' -DBUILD_TESTS=1'
-    if args.verbose:
+    if Global.args.verbose:
         Logger.verbose(f'Running {command}')
         subprocess.run(command, shell=True, check=True)
     else:
@@ -105,11 +105,13 @@ def generate(cmake, generator, arch, args):
 
 
 def clean():
-    print(f'Cleaning CMake related files in {Global.build_dir}...')
+    print(f'Cleaning CMake build related files ...')
     if os.path.isfile(os.path.join(Global.build_dir, 'CMakeCache.txt')):
         os.remove(os.path.join(Global.build_dir, 'CMakeCache.txt'))
     if os.path.isdir(os.path.join(Global.build_dir, 'CMakeFiles')):
         shutil.rmtree(os.path.join(Global.build_dir, 'CMakeFiles'), onexc=Global.on_rm_error)
+    if os.path.isfile(os.path.join(Global.source_dir, 'BuildEnv.gen.cmake')):
+        os.remove(os.path.join(Global.source_dir, 'BuildEnv.gen.cmake'))
 
 
 def main():
@@ -143,8 +145,11 @@ def main():
                         help='Donot Gather source files and update SourceFiles.gen.cmake file(s)')
     parser.add_argument('--verbose', action='store_true', required=False, help='Verbose mode')
     parser.add_argument('--test', action='store_true', required=False, help='Generate project files for unit tests')
+    parser.add_argument('--env_cache', action='store_true', required=False, help='Let cmake use cached environment '
+                                                                                 'variables from this script')
 
     args = parser.parse_args()
+    Global.set_args(args)
     Git.setup_git()
 
     if args.verbose:
@@ -155,11 +160,11 @@ def main():
 
     cmake = find_cmake()
     Vulkan.find_vulkan()
-    generator = select_generator(args)
+    generator = select_generator()
     arch = None
 
     if generator.startswith('Visual Studio'):
-        arch = select_arch_visualstudio(args)
+        arch = select_arch_visualstudio()
 
     if not os.path.isfile(os.path.join(Global.source_dir, 'ThirdParty/.sync_ok')):
         if SyncDependence.need_sync_dependencies():
@@ -172,7 +177,7 @@ def main():
         clean()
     if not args.no_gather_files:
         gather_source()
-    generate(cmake, generator, arch, args)
+    generate(cmake, generator, arch)
     print('Generation Finished')
 
 
