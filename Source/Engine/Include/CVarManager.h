@@ -16,25 +16,42 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-
-
 #pragma once
-#include <type_traits>
+#include <map>
+#include <string>
 
-#define KOALA_IMPLEMENT_SINGLETON(Type) static Type& Get() { return ISingleton::Get<Type>(); }
+#include "Core/Check.h"
+#include "Core/Singleton.h"
+#include "ConsoleVariableBase.h"
+#include "Core/Module.h"
+
+
 namespace Koala
 {
-    struct ISingleton
+    template <typename InType>
+    class TConsoleVariable;
+
+    class IConsoleVariable;
+    
+    class CVarManager final : protected IModule
     {
     public:
-        template <typename T>
-        static T& Get()
-        {
-            static_assert(std::is_base_of_v<ISingleton, T>, "T must be a derived class of ISingleton class.");
-            static T instance;
-            return instance;
-        }
+        KOALA_IMPLEMENT_SINGLETON(CVarManager)
+        template<typename T>
+        friend class TConsoleVariable;
+
+        bool Initialize_MainThread() override { return true; }
+        bool Shutdown_MainThread() override { return true; }
+        void Tick(float delta_time) override {}
     protected:
-        ISingleton() = default;
+        void RegisterConsoleVariable(IConsoleVariable* inCVar)
+        {
+            std::lock_guard lock(lockForMapNameToCVar);
+            check(!mapNameToCVar.contains(inCVar->name));
+            mapNameToCVar.emplace(inCVar->name, inCVar);
+        }
+    private:
+        std::map<std::string, IConsoleVariable*> mapNameToCVar;
+        std::mutex lockForMapNameToCVar;
     };
 }

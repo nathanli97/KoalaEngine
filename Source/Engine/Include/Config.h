@@ -31,8 +31,9 @@ namespace Koala
     class Config : public IModule
     {
     public:
-        bool Initialize() override;
-        bool Shutdown() override;
+        KOALA_IMPLEMENT_SINGLETON(Config)
+        bool Initialize_MainThread() override;
+        bool Shutdown_MainThread() override;
         void Tick(float delta_time) override;
         bool Reload();
         bool Save();

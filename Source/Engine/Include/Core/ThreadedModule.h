@@ -24,7 +24,7 @@
 namespace Koala {
     struct IThreadedModule: public IModule, IThread
     {
-         IThreadedModule(): IModule() {}
+        IThreadedModule(): IModule() {}
 
         void CreateThread();
     private:

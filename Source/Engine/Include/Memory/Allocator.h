@@ -63,6 +63,12 @@ namespace Koala {
 
     namespace Memory
     {
+        inline void * Malloc(size_t inSize) {
+            return MemoryAllocator::Get().Malloc(inSize);
+        }
+        inline void Free(void *inPtr) {
+            MemoryAllocator::Get().Free(inPtr);
+        }
         template<typename Type, typename... Args> Type* New(Args... args)
         {
             Type* memory = MemoryAllocator::Get().MallocPooledTyped<Type>();

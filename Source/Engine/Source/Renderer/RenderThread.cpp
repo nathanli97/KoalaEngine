@@ -28,12 +28,12 @@
 namespace Koala
 {
     Logger logger("RenderThread");
-    bool RenderThread::Initialize()
+    bool RenderThread::Initialize_MainThread()
     {
-        auto renderer = IModule::Get<Config>().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
+        auto renderer = Config::Get().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
         auto avaliable_renderers = RHI::GetAvaliableRHIs();
 
-        if (avaliable_renderers.count(renderer) == 0)
+        if (!avaliable_renderers.contains(renderer))
         {
             logger.error("Requested renderer unavaliable: {}", renderer);
 
@@ -45,7 +45,7 @@ namespace Koala
         return true;
     }
 
-    bool RenderThread::Shutdown()
+    bool RenderThread::Shutdown_MainThread()
     {
         render->PostShutdown_MainThread();
         return true;
@@ -54,7 +54,7 @@ namespace Koala
     void RenderThread::Tick(float delta_time)
     {
         if (!render->Tick_MainThread())
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
     }
 
     void RenderThread::Run()
@@ -71,7 +71,7 @@ namespace Koala
             render->Shutdown_RenderThread();
             logger.info("RenderThread is stopping.");
 
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
 
             thread_has_initerr = true;
 
@@ -94,7 +94,7 @@ namespace Koala
             cv_render_ready_or_initerr.notify_all();
         }
 
-        while (!Engine::Get().IsEngineExitRequested())
+        while (!KoalaEngine::Get().IsEngineExitRequested())
         {
             // TODO: Render!!!!!!!!!!!!!
         }

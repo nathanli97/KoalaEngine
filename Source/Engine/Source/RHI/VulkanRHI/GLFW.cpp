@@ -21,7 +21,7 @@
 #include <string>
 #include <spdlog/spdlog.h>
 
-#include "Engine.h"
+#include "KoalaEngine.h"
 #include "Config.h"
 #include "Core/Module.h"
 #include "VulkanRHI.h"
@@ -35,7 +35,7 @@ namespace Koala::RHI
 
     bool VulkanRHI::GLFWInitialize()
     {
-        auto &config = IModule::Get<Config>();
+        auto &config = Config::Get();
 
         int window_width = std::stoi(config.GetSettingStrWithAutoSaving("render.window.width", "1280", true));
         int window_height = std::stoi(config.GetSettingStrWithAutoSaving("render.window.height", "960", true));
@@ -78,7 +78,7 @@ namespace Koala::RHI
     {
         if (glfwWindowShouldClose(glfw.window))
         {
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
             return false;
         }
 

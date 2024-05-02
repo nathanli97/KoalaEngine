@@ -16,48 +16,14 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#include "ConsoleVariableBase.h"
+#include "ThreadManager.h"
 
-
-#pragma once
-
-namespace Koala {
-    class Engine
+namespace Koala
+{
+    EThreadName IConsoleVariable::GetCurrentThreadId()
     {
-    public:
-        static bool Launch(int argc, char** argv)
-        {
-            if (!Engine::Get().Initialize(argc, argv))
-            {
-                Engine::Get().Shutdown();
-                return false;
-            }
+        return ThreadManager::Get().GetCurrentThread();
+    }
 
-            while(!Engine::Get().IsEngineExitRequested())
-                Engine::Get().Tick();
-
-            Engine::Get().Shutdown();
-            return true;
-        }
-        static Engine& Get()
-        {
-            static Engine engine;
-            return engine;
-        }
-        [[nodiscard]] bool IsEngineExitRequested() const
-        {
-            return requested_engine_stop;
-        }
-
-        void RequestEngineStop()
-        {
-            requested_engine_stop = true;
-        }
-    private:
-        bool Initialize(int argc, char** argv);
-        void Tick();
-        void Shutdown();
-
-        // TODO: This flag variable may be need to protect by LOCK
-        bool requested_engine_stop = false;
-    };
 }

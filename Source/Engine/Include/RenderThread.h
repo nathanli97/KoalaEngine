@@ -30,10 +30,11 @@ namespace Koala::RHI
 namespace Koala {
     class RenderThread: public IThreadedModule {
     public:
+        KOALA_IMPLEMENT_SINGLETON(RenderThread)
         // Caller: MT, BEFORE RT is created
-        bool Initialize() override;
+        bool Initialize_MainThread() override;
         // Caller: MT, AFTER RT is stopped
-        bool Shutdown() override;
+        bool Shutdown_MainThread() override;
 
         // Caller: MT
         void Tick(float delta_time) override;

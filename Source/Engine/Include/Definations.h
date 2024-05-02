@@ -157,12 +157,10 @@ FORCEINLINE constexpr T CalculateAlignedSize(uint16_t alignedTo, T currSize) {
 
 #if __cplusplus >= 201402L || defined(_MSC_VER) && _MSC_VER >= 1929L
   #define NODISCARD [[nodiscard]]
-  #define DEPRECATED [[deprecated]]
-  #define DEPRECATED_MSG(X) [[deprecated(X)]]
+  #define DEPRECATED(MSG) [[deprecated(MSG)]]
 #else
   #define NODISCARD
   #define DEPRECATED(X)
-  #define DEPRECATED_MSG(X)
 #endif
 
 #define NON_CONST_MEMBER_CALL_CONST_RET(Func) \
