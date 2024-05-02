@@ -3,6 +3,12 @@ project(Koala)
 
 option(BUILD_TESTS "Build Tests" OFF)
 
+if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)
+    message(STATUS "Using cached environment from GenerateProjectFiles")
+    include(${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)
+    set_koala_build_env()
+endif ()
+
 find_package(Vulkan REQUIRED)
 find_package(Python REQUIRED Development)
 

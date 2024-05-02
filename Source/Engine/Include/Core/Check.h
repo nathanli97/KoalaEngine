@@ -35,7 +35,7 @@ namespace Koala
         if (!i)
         {
             static Logger logger("FATAL");
-            logger.error(msg);
+            logger.error("{}", msg);
             std::abort();
         }
 #endif
