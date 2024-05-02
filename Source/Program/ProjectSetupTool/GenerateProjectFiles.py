@@ -91,6 +91,11 @@ def generate(cmake, generator, arch):
         command = f'{cmake} -B "{Global.build_dir}" -S "{Global.source_dir}" -G "{generator}"'
     if Global.args.test:
         command += f' -DBUILD_TESTS=1'
+    if os.path.isfile(os.path.join(Global.build_dir, '.clang-format')):
+        os.remove(os.path.join(Global.build_dir, '.clang-format'))
+
+    shutil.copy(os.path.join(Global.source_dir, '.clang-format'), os.path.join(Global.build_dir, '.clang-format'))
+    
     if Global.args.verbose:
         Logger.verbose(f'Running {command}')
         subprocess.run(command, shell=True, check=True)
