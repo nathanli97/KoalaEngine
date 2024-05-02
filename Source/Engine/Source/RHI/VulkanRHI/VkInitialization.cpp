@@ -112,7 +112,7 @@ namespace Koala::RHI
 
         vk_create_info.enabledLayerCount = 0;
 
-#if RHI_ENABLE_VALIDATION
+#if RHI_ENABLE_GPU_DEBUG
         const std::vector<const char *> validation_layers = {
             "VK_LAYER_KHRONOS_validation"
         };

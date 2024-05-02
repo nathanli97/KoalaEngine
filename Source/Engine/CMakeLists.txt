@@ -1,6 +1,9 @@
 include(SourceFiles.gen.cmake)
 
 add_compile_definitions(INCLUDE_RHI_VULKAN=1)
+add_compile_definitions(RHI_ENABLE_GPU_DEBUG=1)
+# the following two definitions is work on if RHI_ENABLE_GPU_DEBUG is enabled
+add_compile_definitions(RHI_ENABLE_GPU_MARKER=1)
 add_compile_definitions(RHI_ENABLE_VALIDATION=1)
 
 set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator)
