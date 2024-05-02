@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(Koala)
 
-option(BUILD_TESTS "Build Tests" ON)
+option(BUILD_TESTS "Build Tests" OFF)
 
 find_package(Vulkan REQUIRED)
 find_package(Python REQUIRED Development)
@@ -16,15 +16,18 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/eigen3)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/fmt)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/spdlog)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/vma)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/catch2)
 
 set_target_properties(glfw PROPERTIES FOLDER "ThirdParty")
 set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
 set_target_properties(fmt-header-only PROPERTIES FOLDER "ThirdParty")
 set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
 set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
-set_target_properties(Catch2 PROPERTIES FOLDER "ThirdParty")
-set_target_properties(Catch2WithMain PROPERTIES FOLDER "ThirdParty")
+
+if (BUILD_TESTS)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/catch2)
+    set_target_properties(Catch2 PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(Catch2WithMain PROPERTIES FOLDER "ThirdParty")
+endif()
 
 
 
