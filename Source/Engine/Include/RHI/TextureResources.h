@@ -124,11 +124,12 @@ namespace Koala::RHI
         virtual ~TextureRHI() = default;
         virtual size_t GetPlatformSize() = 0;
         
-        FORCEINLINE_DEBUGABLE uint8_t GetDepth() {return cachedTextureCreateInfo.depth;}
-        FORCEINLINE_DEBUGABLE uint32_t GetMipNum() {return cachedTextureCreateInfo.numMips;}
-        FORCEINLINE_DEBUGABLE uint32_t GetMipBeginLevel() {return cachedTextureCreateInfo.beginMipLevel;}
-        FORCEINLINE_DEBUGABLE UInt32Point GetExtent() {return cachedTextureCreateInfo.size;}
-        FORCEINLINE_DEBUGABLE ETextureUsages GetTextureUsage() {return cachedTextureCreateInfo.usage;}
+        FORCEINLINE_DEBUGABLE uint8_t GetDepth() const {return cachedTextureCreateInfo.depth;}
+        FORCEINLINE_DEBUGABLE uint32_t GetMipNum() const {return cachedTextureCreateInfo.numMips;}
+        FORCEINLINE_DEBUGABLE uint32_t GetMipBeginLevel() const {return cachedTextureCreateInfo.beginMipLevel;}
+        FORCEINLINE_DEBUGABLE UInt32Point GetExtent() const {return cachedTextureCreateInfo.size;}
+        FORCEINLINE_DEBUGABLE ETextureUsages GetTextureUsage() const {return cachedTextureCreateInfo.usage;}
+        FORCEINLINE_DEBUGABLE const RHITextureCreateInfo& GetCachedCreateInfo() const {return cachedTextureCreateInfo;}
 
         const void* GetPlatformNativePointer() const {return this;}
         void* GetPlatformNativePointer() {return this;}

@@ -19,6 +19,8 @@
 #pragma once
 #include <memory>
 
+#include "Definations.h"
+
 namespace Koala::RHI
 {
     enum EBufferUsage
@@ -52,6 +54,7 @@ namespace Koala::RHI
     public:
         virtual ~BufferRHI() = default;
         virtual size_t GetPlatformSize() = 0;
+        FORCEINLINE_DEBUGABLE const RHIBufferCreateInfo& GetCachedCreateInfo() const {return cachedBufferCreateInfo;}
     protected:
         RHIBufferCreateInfo cachedBufferCreateInfo{};
     };
