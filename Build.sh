@@ -1,2 +1,2 @@
 #!/bin/bash
-cmake --build Build
+cmake --build Build "$@"
