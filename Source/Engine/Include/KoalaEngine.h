@@ -29,30 +29,30 @@ namespace Koala {
         InitStage,
         Running
     };
-    class Engine
+    class KoalaEngine
     {
     public:
         static bool Launch(int argc, char** argv)
         {
-            if (!Engine::Get().Initialize(argc, argv))
+            if (!KoalaEngine::Get().Initialize(argc, argv))
             {
-                Engine::Get().Shutdown();
+                KoalaEngine::Get().Shutdown();
                 return false;
             }
 
-            while(!Engine::Get().IsEngineExitRequested())
-                Engine::Get().Tick();
+            while(!KoalaEngine::Get().IsEngineExitRequested())
+                KoalaEngine::Get().Tick();
 
-            Engine::Get().Shutdown();
+            KoalaEngine::Get().Shutdown();
             return true;
         }
         NODISCARD EEngineStage GetEngineRunningStage() const
         {
             return engineStage;
         }
-        static Engine& Get()
+        static KoalaEngine& Get()
         {
-            static Engine engine;
+            static KoalaEngine engine;
             return engine;
         }
         [[nodiscard]] bool IsEngineExitRequested() const

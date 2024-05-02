@@ -22,7 +22,7 @@
 
 #include "Definations.h"
 #include "CmdParser.h"
-#include "Engine.h"
+#include "KoalaEngine.h"
 #include "EngineVersion.h"
 #include "Core/KoalaLogger.h"
 #include "Core/Check.h"

@@ -16,7 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Engine.h"
+#include "KoalaEngine.h"
 
 
 #include "Config.h"
@@ -29,13 +29,13 @@
 
 namespace Koala
 {
-    Logger loggerEngine("Engine");
-    bool Engine::Initialize(int argc, char** argv)
+    Logger loggerEngine("KoalaEngine");
+    bool KoalaEngine::Initialize(int argc, char** argv)
     {
         return EarlyInitializeStage(argc, argv) &&
             InitializeStage();
     }
-    bool Engine::EarlyInitializeStage(int argc, char** argv)
+    bool KoalaEngine::EarlyInitializeStage(int argc, char** argv)
     {
         using namespace Koala;
         Logger loggerEngineEarlyInit("EngineEarlyInitialize");
@@ -63,12 +63,12 @@ namespace Koala
         return true;
     }
 
-    void Engine::CreateSubThreads()
+    void KoalaEngine::CreateSubThreads()
     {
         RenderThread::Get().CreateThread();
     }
 
-    bool Engine::InitializeStage()
+    bool KoalaEngine::InitializeStage()
     {
         Logger loggerEngineInit("EngineInitialize");
 
@@ -83,7 +83,7 @@ namespace Koala
         }
         else
         {
-            loggerEngineInit.error("Init script load failed. Tip: CurrentWorkingDirectory should be koala project's root directory. (Engine will attempt to load script from Source/Engine/Scripts/)");
+            loggerEngineInit.error("Init script load failed. Tip: CurrentWorkingDirectory should be koala project's root directory. (KoalaEngine will attempt to load script from Source/KoalaEngine/Scripts/)");
         }
         
         if (!RenderThread::Get().WaitForRenderReady())
@@ -96,7 +96,7 @@ namespace Koala
         Scripting::ExecuteFunctionNoArg(init_script, "post_init");
         Scripting::UnloadScript(init_script);
 
-        loggerEngineInit.info("Engine initialized, Welcome to KoalaEngine {}.{}.{} ({})",
+        loggerEngineInit.info("KoalaEngine initialized, Welcome to KoalaEngine {}.{}.{} ({})",
             KOALA_ENGINE_VER_MAJOR,
             KOALA_ENGINE_VER_MINOR,
             KOALA_ENGINE_VER_PATCH,
@@ -106,20 +106,20 @@ namespace Koala
     }
 
 
-    void Engine::Tick()
+    void KoalaEngine::Tick()
     {
         // TODO: Pass actual deltatime to the function.
         RenderThread::Get().Tick(0);
     }
 
-    void Engine::Shutdown()
+    void KoalaEngine::Shutdown()
     {
         RenderThread::Get().WaitForRTStop();
         RenderThread::Get().Shutdown_MainThread();
         ModuleManager::Get().ShutdownModules();
         Config::Get().Shutdown_MainThread();
         Scripting::Shutdown();
-        loggerEngine.info("Engine is exiting");
+        loggerEngine.info("KoalaEngine is exiting");
     }
 
 }

@@ -54,7 +54,7 @@ namespace Koala
     void RenderThread::Tick(float delta_time)
     {
         if (!render->Tick_MainThread())
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
     }
 
     void RenderThread::Run()
@@ -71,7 +71,7 @@ namespace Koala
             render->Shutdown_RenderThread();
             logger.info("RenderThread is stopping.");
 
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
 
             thread_has_initerr = true;
 
@@ -94,7 +94,7 @@ namespace Koala
             cv_render_ready_or_initerr.notify_all();
         }
 
-        while (!Engine::Get().IsEngineExitRequested())
+        while (!KoalaEngine::Get().IsEngineExitRequested())
         {
             // TODO: Render!!!!!!!!!!!!!
         }

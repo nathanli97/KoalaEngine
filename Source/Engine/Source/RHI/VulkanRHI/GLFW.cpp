@@ -21,7 +21,7 @@
 #include <string>
 #include <spdlog/spdlog.h>
 
-#include "Engine.h"
+#include "KoalaEngine.h"
 #include "Config.h"
 #include "Core/Module.h"
 #include "VulkanRHI.h"
@@ -78,7 +78,7 @@ namespace Koala::RHI
     {
         if (glfwWindowShouldClose(glfw.window))
         {
-            Engine::Get().RequestEngineStop();
+            KoalaEngine::Get().RequestEngineStop();
             return false;
         }
 
