@@ -25,6 +25,10 @@ endif ()
 
 target_compile_features(KoalaEngine PUBLIC cxx_std_17)
 
+if (MSVC)
+    target_compile_options(KoalaEngine PRIVATE /MP)
+endif ()
+
 source_group(
         TREE ${CMAKE_CURRENT_SOURCE_DIR}/Include/
         PREFIX "Include"
