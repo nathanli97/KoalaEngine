@@ -24,7 +24,7 @@
 
 
 #include "TextureResources.h"
-#include "Core/Singleton.h"
+#include "Core/SingletonInterface.h"
 
 namespace Koala::RHI
 {

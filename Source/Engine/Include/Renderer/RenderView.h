@@ -18,7 +18,7 @@
 
 #pragma once
 #include "Camera.h"
-#include "Core/Singleton.h"
+#include "Core/SingletonInterface.h"
 #include "Math/Rect.h"
 #include "Projectors/Projector.h"
 

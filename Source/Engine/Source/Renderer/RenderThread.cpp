@@ -31,9 +31,9 @@ namespace Koala
     bool RenderThread::Initialize_MainThread()
     {
         auto renderer = Config::Get().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
-        auto avaliable_renderers = RHI::GetAvaliableRHIs();
+        auto availableRenderRHIs = RHI::GetAvaliableRHIs();
 
-        if (!avaliable_renderers.contains(renderer))
+        if (!availableRenderRHIs.contains(renderer))
         {
             logger.error("Requested renderer unavaliable: {}", renderer);
 
@@ -73,16 +73,16 @@ namespace Koala
 
             KoalaEngine::Get().RequestEngineStop();
 
-            thread_has_initerr = true;
+            bRenderInitFailed = true;
 
             {
-                std::lock_guard lock(mutex_renderthread_stop);
-                cv_renderthread_stop.notify_all();
+                std::lock_guard lock(mutexRenderThreadStop);
+                cvRenderThreadStop.notify_all();
             }
 
             {
-                std::unique_lock lock(mutex_render_ready_or_initerr);
-                cv_render_ready_or_initerr.notify_all();
+                std::unique_lock lock(mutexRenderReadyOrInitErr);
+                cvRenderReadyOrInitErr.notify_all();
             }
             return;
         }
@@ -90,8 +90,8 @@ namespace Koala
         logger.info("RenderThread: RHI Initialized");
 
         {
-            std::lock_guard lock_guard(mutex_render_ready_or_initerr);
-            cv_render_ready_or_initerr.notify_all();
+            std::lock_guard lock_guard(mutexRenderReadyOrInitErr);
+            cvRenderReadyOrInitErr.notify_all();
         }
 
         while (!KoalaEngine::Get().IsEngineExitRequested())
@@ -104,8 +104,8 @@ namespace Koala
         logger.info("RenderThread is stopping.");
 
         {
-            std::lock_guard lock(mutex_renderthread_stop);
-            cv_renderthread_stop.notify_all();
+            std::lock_guard lock(mutexRenderThreadStop);
+            cvRenderThreadStop.notify_all();
         }
     }
 }

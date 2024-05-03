@@ -57,12 +57,12 @@ namespace Koala {
         }
         [[nodiscard]] bool IsEngineExitRequested() const
         {
-            return requested_engine_stop;
+            return bIsRequestedEngineStop;
         }
 
         void RequestEngineStop()
         {
-            requested_engine_stop = true;
+            bIsRequestedEngineStop = true;
         }
     private:
         bool Initialize(int argc, char** argv);
@@ -75,6 +75,6 @@ namespace Koala {
 
         EEngineStage engineStage {EEngineStage::UnInitialized};
         // TODO: This flag variable may be need to protect by LOCK
-        bool requested_engine_stop = false;
+        bool bIsRequestedEngineStop = false;
     };
 }

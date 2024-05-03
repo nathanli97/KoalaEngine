@@ -36,8 +36,8 @@ namespace Koala::Renderer {
         // Params
         // The params shared on multiple projection methods.
         struct {
-            float near_plane, far_plane;
-        } comm_param;
+            float nearPlane, farPlane;
+        } commParam;
 
         // Proj method-specified projection params.
         union {
@@ -48,29 +48,29 @@ namespace Koala::Renderer {
             struct {
                 float left, right, bottom, top;
             } ortho;
-        } proj_param;
+        } projParam;
 
         // Get Projection Matrix.
         NODISCARD FORCEINLINE const Mat4f& GetProjectionMatrix() const;
         // Update proj matrix if needed. then, return result matrix.
         const Mat4f& AcquireProjectionMatrix();
 
-        NODISCARD FORCEINLINE bool IsProjectorTypeValid() const {return projector_type < EProjectorType::ProjectorTypeNum;}
-        NODISCARD FORCEINLINE EProjectorType GetProjectType() const {return projector_type;}
+        NODISCARD FORCEINLINE bool IsProjectorTypeValid() const {return projectorType < EProjectorType::ProjectorTypeNum;}
+        NODISCARD FORCEINLINE EProjectorType GetProjectType() const {return projectorType;}
         FORCEINLINE void SetProjectType(const EProjectorType type)
         {
-            projector_type = type;
+            projectorType = type;
             MarkDirty();
         }
         FORCEINLINE void MarkDirty()
         {
-            is_matrix_dirty = true;
+            bMatrixDirty = true;
         }
     private:
-        Mat4f project_matrix;
+        Mat4f matProjection;
 
-        EProjectorType projector_type{ProjectorTypeNum};
-        bool is_matrix_dirty{true};
+        EProjectorType projectorType{ProjectorTypeNum};
+        bool bMatrixDirty{true};
 
         FORCEINLINE void CalculateProjectionMatrix();
     };

@@ -24,30 +24,30 @@ namespace Koala::Renderer {
     void SceneProjector::CalculateProjectionMatrix()
     {
 
-        switch (projector_type)
+        switch (projectorType)
         {
         case EProjectorType::NoProjectorType:
-            project_matrix.setIdentity();
+            matProjection.setIdentity();
             break;
         case EProjectorType::OrthographicProjectorType:
-            OrthographicProjector::CalculateProjMatrix(project_matrix,
-                comm_param.near_plane, comm_param.far_plane,
-                proj_param.ortho.left, proj_param.ortho.right, proj_param.ortho.bottom, proj_param.ortho.top);
+            OrthographicProjector::CalculateProjMatrix(matProjection,
+                commParam.nearPlane, commParam.farPlane,
+                projParam.ortho.left, projParam.ortho.right, projParam.ortho.bottom, projParam.ortho.top);
             break;
         case EProjectorType::PerspectiveProjectorType:
-            PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(project_matrix,
-                proj_param.persp.fov, proj_param.persp.aspect,
-                comm_param.near_plane, comm_param.far_plane);
+            PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(matProjection,
+                projParam.persp.fov, projParam.persp.aspect,
+                commParam.nearPlane, commParam.farPlane);
             break;
         default:
-            ASSERT(projector_type < ProjectorTypeNum);
+            ASSERT(projectorType < ProjectorTypeNum);
         }
-        is_matrix_dirty = false;
+        bMatrixDirty = false;
     }
 
     void SceneProjector::UpdateProjection()
     {
-        if (is_matrix_dirty)
+        if (bMatrixDirty)
         {
             CalculateProjectionMatrix();
         }
@@ -55,16 +55,16 @@ namespace Koala::Renderer {
 
     const Mat4f& SceneProjector::GetProjectionMatrix() const
     {
-        return project_matrix;
+        return matProjection;
     }
 
     const Mat4f& SceneProjector::AcquireProjectionMatrix()
     {
         UpdateProjection();
-        return project_matrix;
+        return matProjection;
     }
 
-    void PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(Mat4f& out, float fov, float aspect, float z_near, float z_far)
+    void PerspectiveProjector::CalculateProjMatrix_LHNDC_FullZ(Mat4f& out, float fov, float aspect, float zNear, float zFar)
     {
         float fov_sin = ::sinf(fov / 2.0f);
         float fov_cos = ::cosf(fov / 2.0f);
@@ -75,13 +75,13 @@ namespace Koala::Renderer {
         out(0,0) = fov_cot / aspect;
         out(1,1) = fov_cot;
 
-        float delta_z = z_far - z_near;
-        float v22 = -(z_far + z_near) / delta_z;
-        float v23 = -(2 * z_far * z_near) / delta_z;
+        float delta_z = zFar - zNear;
+        float v22 = -(zFar + zNear) / delta_z;
+        float v23 = -(2 * zFar * zNear) / delta_z;
 
-        if (z_far == 0) {
+        if (zFar == 0) {
             v22 = 1;
-            v23 = -2 * z_near;
+            v23 = -2 * zNear;
         }
 
         out(2,2) = v22;
@@ -89,9 +89,9 @@ namespace Koala::Renderer {
         out(3,2) = -1;
     }
 
-    void PerspectiveProjector::CalculateProjMatrix_LHNDC_HalfZ(Mat4f& out, float fov, float aspect, float z_near, float z_far)
+    void PerspectiveProjector::CalculateProjMatrix_LHNDC_HalfZ(Mat4f& out, float fov, float aspect, float zNear, float zFar)
     {
-        // TODO: Handle infinity z_far
+        // TODO: Handle infinity zFar
         float fov_sin = ::sinf(fov / 2.0f);
         float fov_cos = ::cosf(fov / 2.0f);
         float fov_cot = fov_cos / fov_sin;
@@ -101,9 +101,9 @@ namespace Koala::Renderer {
         out(0,0) = fov_cot / aspect;
         out(1,1) = fov_cot;
 
-        float delta_z = z_far - z_near;
-        float v22 = -(z_far) / delta_z;
-        float v23 = -(z_far * z_near) / delta_z;
+        float delta_z = zFar - zNear;
+        float v22 = -(zFar) / delta_z;
+        float v23 = -(zFar * zNear) / delta_z;
 
         out(2,2) = v22;
         out(2,3) = v23;

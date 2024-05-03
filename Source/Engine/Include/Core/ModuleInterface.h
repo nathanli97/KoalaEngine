@@ -21,7 +21,7 @@
 #pragma once
 #include <list>
 
-#include "Singleton.h"
+#include "SingletonInterface.h"
 
 namespace Koala {
     struct IModule: ISingleton {

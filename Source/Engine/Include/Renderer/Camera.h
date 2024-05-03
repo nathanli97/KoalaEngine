@@ -36,13 +36,13 @@ namespace Koala::Renderer {
         // FOV angle. in rad. only used in perspective projection.
         float fov{0};
         float aspect{0};
-        float near_plane{0}, far_plane{0};
+        float nearPlane{0}, farPlane{0};
 
         // Orthographic params
         float bottom{0}, top{0}, left{0}, right{0};
 
         SceneProjector *projector;
-        ECameraMode camera_mode{ECameraMode::OrthographicCamera};
+        ECameraMode cameraMode{ECameraMode::OrthographicCamera};
 
         Camera():projector(new SceneProjector)
         {
@@ -52,7 +52,7 @@ namespace Koala::Renderer {
         void Update() const;
         NODISCARD FORCEINLINE bool IsProjectionDirty() const
         {
-            if (camera_mode == PerspectiveCamera)
+            if (cameraMode == PerspectiveCamera)
             {
                 if (projector->GetProjectType() != EProjectorType::PerspectiveProjectorType)
                 {
@@ -60,11 +60,11 @@ namespace Koala::Renderer {
                     return false;
                 }
 
-                return !IsNearlyEqual(far_plane, projector->comm_param.far_plane) ||
-                    !IsNearlyEqual(near_plane, projector->comm_param.near_plane) ||
-                    !IsNearlyEqual(fov, projector->proj_param.persp.fov) ||
-                    !IsNearlyEqual(aspect, projector->proj_param.persp.aspect);
-            } else // camera_mode == OrthographicCamera
+                return !IsNearlyEqual(farPlane, projector->commParam.farPlane) ||
+                    !IsNearlyEqual(nearPlane, projector->commParam.nearPlane) ||
+                    !IsNearlyEqual(fov, projector->projParam.persp.fov) ||
+                    !IsNearlyEqual(aspect, projector->projParam.persp.aspect);
+            } else // cameraMode == OrthographicCamera
             {
                 if (projector->GetProjectType() != EProjectorType::OrthographicProjectorType)
                 {
@@ -72,12 +72,12 @@ namespace Koala::Renderer {
                     return false;
                 }
 
-                return !IsNearlyEqual(far_plane, projector->comm_param.far_plane) ||
-                    !IsNearlyEqual(near_plane, projector->comm_param.near_plane) ||
-                    !IsNearlyEqual(bottom, projector->proj_param.ortho.bottom) ||
-                    !IsNearlyEqual(top, projector->proj_param.ortho.top) ||
-                    !IsNearlyEqual(left, projector->proj_param.ortho.left) ||
-                    !IsNearlyEqual(right, projector->proj_param.ortho.right);
+                return !IsNearlyEqual(farPlane, projector->commParam.farPlane) ||
+                    !IsNearlyEqual(nearPlane, projector->commParam.nearPlane) ||
+                    !IsNearlyEqual(bottom, projector->projParam.ortho.bottom) ||
+                    !IsNearlyEqual(top, projector->projParam.ortho.top) ||
+                    !IsNearlyEqual(left, projector->projParam.ortho.left) ||
+                    !IsNearlyEqual(right, projector->projParam.ortho.right);
             }
         }
     };

@@ -23,8 +23,8 @@
 #include <unordered_map>
 
 #include "Core/Check.h"
-#include "Core/Singleton.h"
-#include "Core/Thread.h"
+#include "Core/SingletonInterface.h"
+#include "Core/ThreadInterface.h"
 #include "ThreadNames.h"
 
 namespace Koala

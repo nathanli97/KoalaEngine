@@ -28,11 +28,11 @@ namespace Koala::Renderer {
          * @param out the final perspective projection matrix output.
          * @param fov the field of view angle in rad
          * @param aspect the aspect ratio for display. e.g. 16/9
-         * @param z_near the near plane used in clipping
-         * @param z_far the far plane used in clipping
+         * @param zNear the near plane used in clipping
+         * @param zFar the far plane used in clipping
          */
 
-        static void CalculateProjMatrix_LHNDC_FullZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
-        static void CalculateProjMatrix_LHNDC_HalfZ(Mat4f &out, float fov, float aspect, float z_near, float z_far);
+        static void CalculateProjMatrix_LHNDC_FullZ(Mat4f &out, float fov, float aspect, float zNear, float zFar);
+        static void CalculateProjMatrix_LHNDC_HalfZ(Mat4f &out, float fov, float aspect, float zNear, float zFar);
     };
 };

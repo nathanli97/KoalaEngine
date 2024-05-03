@@ -18,7 +18,7 @@
 
 #pragma once
 #include "Definations.h"
-#include "Core/Singleton.h"
+#include "Core/SingletonInterface.h"
 
 namespace Koala
 {

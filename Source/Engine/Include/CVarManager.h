@@ -21,9 +21,9 @@
 #include <string>
 
 #include "Core/Check.h"
-#include "Core/Singleton.h"
+#include "Core/SingletonInterface.h"
 #include "ConsoleVariableBase.h"
-#include "Core/Module.h"
+#include "Core/ModuleInterface.h"
 
 
 namespace Koala

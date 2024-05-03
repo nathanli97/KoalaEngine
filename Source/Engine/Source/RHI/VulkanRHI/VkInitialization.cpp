@@ -20,7 +20,7 @@
 #ifdef INCLUDE_RHI_VULKAN
 #include "Core.h"
 #include "Config.h"
-#include "Core/Module.h"
+#include "Core/ModuleInterface.h"
 
 #include "VulkanRHI.h"
 #include <vulkan/vk_enum_string_helper.h>

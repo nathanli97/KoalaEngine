@@ -37,7 +37,7 @@ namespace Koala
             if (!std::filesystem::create_directories(Path::GetConfigPath()))
             {
                 spdlog::warn("Failed to create config dir. All settings will be enter readonly mode");
-                readonly_mode = true;
+                bReadonlyMode = true;
                 return true;
             }
         }
@@ -62,54 +62,54 @@ namespace Koala
         return true;
     }
 
-    std::optional<std::string> Config::GetSettingStr(std::string key, std::string default_value) const
+    std::optional<std::string> Config::GetSettingStr(std::string key, std::string defaultValue) const
     {
         std::optional<std::string> result;
-        std::lock_guard<std::mutex> lock_guard(global_config_lock);
-        if (engine_configs.count(key) != 0)
+        std::lock_guard<std::mutex> lock(global_config_lock);
+        if (engineConfigs.count(key) != 0)
         {
-            result = engine_configs.at(key);
+            result = engineConfigs.at(key);
         }
-        if (game_configs.count(key) != 0)
+        if (gameConfigs.count(key) != 0)
         {
-            result = game_configs.at(key);
+            result = gameConfigs.at(key);
         }
 
-        if (!result.has_value() && !default_value.empty())
+        if (!result.has_value() && !defaultValue.empty())
         {
-            result = default_value;
+            result = defaultValue;
         }
         return result;
     }
 
-    std::string Config::GetSettingStrWithAutoSaving(std::string key, std::string default_value, bool write_into_engine_config)
+    std::string Config::GetSettingStrWithAutoSaving(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig)
     {
         auto value = GetSettingStr(key);
         if (value.has_value())
             return value.value();
         else
         {
-            SetSettingStr(key, default_value, write_into_engine_config);
-            return default_value;
+            SetSettingStr(key, defaultValue, bWriteIntoEngineConfig);
+            return defaultValue;
         }
     }
 
-    void Config::SetSettingStr(std::string key, std::string value, bool write_into_engine_config)
+    void Config::SetSettingStr(std::string key, std::string value, bool bWriteIntoEngineConfig)
     {
         std::lock_guard<std::mutex> lock_guard(global_config_lock);
-        if (write_into_engine_config)
+        if (bWriteIntoEngineConfig)
         {
-            engine_configs[key] = value;
+            engineConfigs[key] = value;
         }
         else
         {
-            game_configs[key] = value;
+            gameConfigs[key] = value;
         }
     }
 
     void Config::Tick(float delta_time)
     {
-        if (auto_saving)
+        if (bAutoSaving)
             Save();
     }
 
@@ -129,7 +129,7 @@ namespace Koala
         }
         else
         {
-            LoadINI(file_engine_config, engine_configs);
+            LoadINI(file_engine_config, engineConfigs);
         }
 
         if (!file_game_config.is_open())
@@ -139,12 +139,12 @@ namespace Koala
         }
         else
         {
-            LoadINI(file_game_config, game_configs);
+            LoadINI(file_game_config, gameConfigs);
         }
 
-        if (result && readonly_mode)
+        if (result && bReadonlyMode)
         {
-            readonly_mode = false;
+            bReadonlyMode = false;
         }
 
         return result;
@@ -164,8 +164,8 @@ namespace Koala
             return false;
         }
 
-        SaveINI(file_engine_config, engine_configs);
-        SaveINI(file_game_config, game_configs);
+        SaveINI(file_engine_config, engineConfigs);
+        SaveINI(file_game_config, gameConfigs);
 
         return true;
     }
@@ -263,12 +263,12 @@ namespace Koala
     {
         std::lock_guard<std::mutex> lock_guard(global_config_lock);
         spdlog::warn("Printing all configurations!");
-        for (auto const &config: engine_configs)
+        for (auto const &config: engineConfigs)
         {
             spdlog::warn("[ENG] {}={}", config.first, config.second);
         }
 
-        for (auto const &config: game_configs)
+        for (auto const &config: gameConfigs)
         {
             spdlog::warn("[GAME] {}={}", config.first, config.second);
         }
