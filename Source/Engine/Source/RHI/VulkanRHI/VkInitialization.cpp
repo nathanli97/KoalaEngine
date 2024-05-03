@@ -80,7 +80,7 @@ static VkDebugUtilsMessengerEXT GVkDebugMessenger{};
 
 namespace Koala::RHI
 {
-    const static std::vector<const char *> VK_DeviceRequiredExtensions = {
+    static std::vector<const char *> VK_DeviceRequiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
     bool VulkanRHI::InitVulkanInstance()
@@ -178,17 +178,25 @@ namespace Koala::RHI
 
             uint32_t deviceExtensionCount = 0;
             vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, nullptr);
-            std::vector<VkExtensionProperties> available_extensions(deviceExtensionCount);
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, available_extensions.data());
+            std::vector<VkExtensionProperties> availableExtensions(deviceExtensionCount);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, availableExtensions.data());
             for (const std::string &requiredExtensionName : VK_DeviceRequiredExtensions) {
-                if (std::find_if(available_extensions.cbegin(),
-                                 available_extensions.cend(),
+                if (std::find_if(availableExtensions.cbegin(),
+                                 availableExtensions.cend(),
                                  [&](const VkExtensionProperties &extensionProperties) -> bool {
                                    return requiredExtensionName == extensionProperties.extensionName;
-                                 }) == available_extensions.cend()) {
+                                 }) == availableExtensions.cend()) {
                     bIsDeviceSuitable = false;
                     break;
                 }
+            }
+
+            const std::string vkExtNamePortabilitySubset = "VK_KHR_portability_subset";
+            if (std::find_if(availableExtensions.cbegin(), availableExtensions.cend(), [&](const VkExtensionProperties &extensionProperties) -> bool {
+                                   return vkExtNamePortabilitySubset == extensionProperties.extensionName;
+                             }) != availableExtensions.cend())
+            {
+                VK_DeviceRequiredExtensions.push_back("VK_KHR_portability_subset");
             }
 
             if (!bIsDeviceSuitable)
