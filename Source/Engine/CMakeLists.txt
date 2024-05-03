@@ -6,7 +6,7 @@ add_compile_definitions(RHI_ENABLE_GPU_DEBUG=1)
 add_compile_definitions(RHI_ENABLE_GPU_MARKER=1)
 add_compile_definitions(RHI_ENABLE_VALIDATION=1)
 
-set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator)
+set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator volk_headers)
 
 add_library(KoalaEngine STATIC ${MODULE_SOURCE_FILES} ${MODULE_INCLUDE_FILES})
 

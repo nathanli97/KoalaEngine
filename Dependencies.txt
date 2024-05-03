@@ -9,3 +9,4 @@ Name='spdlog', Git='https://github.com/gabime/spdlog.git', Commit='7c02e204c9254
 Name='glfw', Git='https://github.com/glfw/glfw.git', Commit='7b6aead9fb88b3623e3b3725ebb42670cbe4c579'
 Name='vma', Git='https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git', Commit='5677097bafb8477097c6e3354ce68b7a44fd01a4'
 Name='catch2', Git='https://github.com/catchorg/Catch2', Commit='b5373dadca40b7edc8570cf9470b9b1cb1934d40'
+Name='volk', Git='https://github.com/zeux/volk.git', Commit='3a8068a57417940cf2bf9d837a7bb60d015ca2f1'

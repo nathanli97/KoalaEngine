@@ -27,14 +27,6 @@
 
 static Koala::Logger logger("RHI");
 #if RHI_ENABLE_VALIDATION
-void VulkanDestroyDebugUtilsMessengerEXT(VkInstance instance,
-                                         VkDebugUtilsMessengerEXT debugMessenger,
-                                         const VkAllocationCallbacks *pAllocator) {
-    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        func(instance, debugMessenger, pAllocator);
-    }
-}
 static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -64,17 +56,6 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
 
     return VK_FALSE;
 }
-VkResult VulkanCreateDebugUtilsMessengerEXT(VkInstance instance,
-                                            const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-                                            const VkAllocationCallbacks *pAllocator,
-                                            VkDebugUtilsMessengerEXT *pDebugMessenger) {
-    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-    if (func != nullptr) {
-        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-    } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
-    }
-}
 static VkDebugUtilsMessengerEXT GVkDebugMessenger{};
 #endif
 
@@ -87,6 +68,7 @@ namespace Koala::RHI
     {
         logger.info("Initializating Vulkan(using VK API v{}.{}.{})... ", VK_VERSION_MAJOR(VK_APIVERSION), VK_VERSION_MINOR(VK_APIVERSION), VK_VERSION_PATCH(VK_APIVERSION));
         VkApplicationInfo vkApplicationInfo{};
+        VK_CHECK_RESULT_SUCCESS(volkInitialize());
 
         auto &config = Config::Get();
         auto app_name = config.GetSettingAndWriteDefault("app.name", "Koala Engine", true);
@@ -130,6 +112,7 @@ namespace Koala::RHI
         vkInstanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
         vkInstanceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
         VK_CHECK_RESULT_SUCCESS(vkCreateInstance(&vkInstanceCreateInfo, nullptr, &vk.instance));
+        volkLoadInstance(vk.instance);
 #if RHI_ENABLE_VALIDATION
         VkDebugUtilsMessengerCreateInfoEXT vkDebugUtilsMessengerCreateInfoExt{};
         vkDebugUtilsMessengerCreateInfoExt.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -141,7 +124,7 @@ namespace Koala::RHI
                 | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         vkDebugUtilsMessengerCreateInfoExt.pfnUserCallback = VulkanDebugCallBack;
         vkDebugUtilsMessengerCreateInfoExt.pUserData = nullptr;
-        VK_CHECK_RESULT_SUCCESS(VulkanCreateDebugUtilsMessengerEXT(vk.instance,
+        VK_CHECK_RESULT_SUCCESS(vkCreateDebugUtilsMessengerEXT(vk.instance,
                                                &vkDebugUtilsMessengerCreateInfoExt,
                                                nullptr,
                                                &GVkDebugMessenger));
@@ -358,8 +341,8 @@ namespace Koala::RHI
 #endif
 
         VK_CHECK_RESULT_SUCCESS(vkCreateDevice(vk.physicalDevice, &deviceCreateInfo, nullptr, &vk.device));
-
-
+        volkLoadDevice(vk.device);
+        
         vkGetDeviceQueue(vk.device, vk.queueInfo.presentQueueIndex.value(), 0, &vk.presentQueue);
         vkGetDeviceQueue(vk.device, vk.queueInfo.computeQueueIndex.value(), 0, &vk.computeQueue);
         vkGetDeviceQueue(vk.device, vk.queueInfo.graphicsQueueIndex.value(), 0, &vk.graphicsQueue);
@@ -369,11 +352,16 @@ namespace Koala::RHI
 
     bool VulkanRHI::InitMemoryAlloctor()
     {
+        VmaVulkanFunctions vmaVulkanFunctions{};
+        vmaVulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+        vmaVulkanFunctions.vkGetDeviceProcAddr = vkGetDeviceProcAddr;
+        
         VmaAllocatorCreateInfo allocatorCreateInfo = {};
         allocatorCreateInfo.vulkanApiVersion = VK_APIVERSION;
         allocatorCreateInfo.physicalDevice = vk.physicalDevice;
         allocatorCreateInfo.device = vk.device;
         allocatorCreateInfo.instance = vk.instance;
+        allocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
 
         VK_CHECK_RESULT_SUCCESS(vmaCreateAllocator(&allocatorCreateInfo, &vk.vmaAllocator));
 
@@ -583,7 +571,7 @@ namespace Koala::RHI
 #if RHI_ENABLE_VALIDATION
         if (GVkDebugMessenger)
         {
-            VulkanDestroyDebugUtilsMessengerEXT(vk.instance, GVkDebugMessenger, nullptr);
+            vkDestroyDebugUtilsMessengerEXT(vk.instance, GVkDebugMessenger, nullptr);
         }
 #endif
 

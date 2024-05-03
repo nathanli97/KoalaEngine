@@ -62,10 +62,11 @@ namespace Koala::RHI {
     bool VulkanRHI::VulkanInitialize()
     {
         return InitVulkanInstance() &&
-            ChooseRenderDevice() &&
-            InitVulkanDeviceAndQueue() &&
-            CreateSwapChain() &&
-            CreateSwapChainViews();
+                ChooseRenderDevice() &&
+                InitVulkanDeviceAndQueue() &&
+                InitMemoryAlloctor() &&
+                CreateSwapChain() &&
+                CreateSwapChainViews();
     }
 
     void VulkanRHI::CleanSwapChain()
