@@ -30,7 +30,7 @@ namespace Koala
     Logger logger("RenderThread");
     bool RenderThread::Initialize_MainThread()
     {
-        auto renderer = Config::Get().GetSettingStrWithAutoSaving("render.renderer", "vulkan", true);
+        auto renderer = Config::Get().GetSettingAndWriteDefault("render.renderer", "vulkan", true);
         auto availableRenderRHIs = RHI::GetAvaliableRHIs();
 
         if (!availableRenderRHIs.contains(renderer))

@@ -34,8 +34,8 @@ namespace Koala
             std::string arg = argv[i];
             cmdline += argv[i];
             cmdline += " ";
-            const bool argWithShort = StringTool::startswith(arg, "-");
-            const bool argWithLong = StringTool::startswith(arg, "--");
+            const bool argWithShort = arg.starts_with("-");
+            const bool argWithLong = arg.starts_with("--");
             if (
                 argWithShort ||
                 argWithLong

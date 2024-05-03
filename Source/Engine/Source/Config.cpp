@@ -26,17 +26,18 @@
 #include <spdlog/spdlog.h>
 
 #include "CmdParser.h"
-#include "Core/StringTools.h"
+#include "Core/KoalaLogger.h"
 
 namespace Koala
 {
+    Logger loggerConfig("Configuration");
     bool Config::Initialize_MainThread()
     {
         if (!std::filesystem::exists(Path::GetConfigPath()))
         {
             if (!std::filesystem::create_directories(Path::GetConfigPath()))
             {
-                spdlog::warn("Failed to create config dir. All settings will be enter readonly mode");
+                loggerConfig.warning("Failed to create config dir. All settings will be enter readonly mode");
                 bReadonlyMode = true;
                 return true;
             }
@@ -44,28 +45,20 @@ namespace Koala
 
         if (!Reload())
         {
-            spdlog::warn("Failed to load settings.");
+            loggerConfig.warning("Failed to load settings.");
         }
         return true;
     }
 
     bool Config::Shutdown_MainThread()
     {
-        if (HasAutoSavingWhenEngineExiting())
-        {
-            if(!Save())
-            {
-                spdlog::error("Failed to save settings.");
-            }
-        }
-
         return true;
     }
 
-    std::optional<std::string> Config::GetSettingStr(std::string key, std::string defaultValue) const
+    std::optional<std::string> Config::GetSetting(std::string key, std::string defaultValue) const
     {
         std::optional<std::string> result;
-        std::lock_guard<std::mutex> lock(global_config_lock);
+        std::shared_lock lock(globalConfigLock);
         if (engineConfigs.count(key) != 0)
         {
             result = engineConfigs.at(key);
@@ -82,21 +75,21 @@ namespace Koala
         return result;
     }
 
-    std::string Config::GetSettingStrWithAutoSaving(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig)
+    std::string Config::GetSettingAndWriteDefault(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig)
     {
-        auto value = GetSettingStr(key);
+        auto value = GetSetting(key);
         if (value.has_value())
             return value.value();
         else
         {
-            SetSettingStr(key, defaultValue, bWriteIntoEngineConfig);
+            SetSetting(key, defaultValue, bWriteIntoEngineConfig);
             return defaultValue;
         }
     }
 
-    void Config::SetSettingStr(std::string key, std::string value, bool bWriteIntoEngineConfig)
+    void Config::SetSetting(std::string key, std::string value, bool bWriteIntoEngineConfig)
     {
-        std::lock_guard<std::mutex> lock_guard(global_config_lock);
+        std::unique_lock lock_guard(globalConfigLock);
         if (bWriteIntoEngineConfig)
         {
             engineConfigs[key] = value;
@@ -107,24 +100,20 @@ namespace Koala
         }
     }
 
-    void Config::Tick(float delta_time)
-    {
-        if (bAutoSaving)
-            Save();
-    }
+    void Config::Tick(float delta_time) {}
 
     bool Config::Reload()
     {
         bool result = true;
-        auto path_engine_configfile = Path::GetConfigPath() / "EngineConfig.ini";
-        auto path_game_configfile = Path::GetConfigPath() / "GameConfig.ini";
+        auto pathEngineConfigfile = Path::GetConfigPath() / "EngineConfig.ini";
+        auto pathGameConfigfile = Path::GetConfigPath() / "GameConfig.ini";
 
-        std::ifstream file_engine_config(path_engine_configfile);
-        std::ifstream file_game_config(path_game_configfile);
+        std::ifstream file_engine_config(pathEngineConfigfile);
+        std::ifstream file_game_config(pathGameConfigfile);
 
         if (!file_engine_config.is_open())
         {
-            spdlog::error("Failed to load engine configuration from file {}", path_engine_configfile.string());
+            loggerConfig.error("Failed to load engine configuration from file {}", pathEngineConfigfile.string());
             result = false;
         }
         else
@@ -134,7 +123,7 @@ namespace Koala
 
         if (!file_game_config.is_open())
         {
-            spdlog::error("Failed to load game configuration from file {}", path_game_configfile.string());
+            loggerConfig.error("Failed to load game configuration from file {}", pathGameConfigfile.string());
             result = false;
         }
         else
@@ -152,15 +141,15 @@ namespace Koala
 
     bool Config::Save()
     {
-        auto path_engine_configfile = Path::GetConfigPath() / "EngineConfig.ini";
-        auto path_game_configfile = Path::GetConfigPath() / "GameConfig.ini";
+        auto pathEngineConfigfile = Path::GetConfigPath() / "EngineConfig.ini";
+        auto pathGameConfigfile = Path::GetConfigPath() / "GameConfig.ini";
 
-        std::ofstream file_engine_config(path_engine_configfile, std::ios::trunc);
-        std::ofstream file_game_config(path_game_configfile, std::ios::trunc);
+        std::ofstream file_engine_config(pathEngineConfigfile, std::ios::trunc);
+        std::ofstream file_game_config(pathGameConfigfile, std::ios::trunc);
 
         if (!file_engine_config.is_open() || !file_game_config.is_open())
         {
-            spdlog::error("Failed to save configurations");
+            loggerConfig.error("Failed to save configurations");
             return false;
         }
 
@@ -172,33 +161,33 @@ namespace Koala
 
     void Config::LoadINI(std::ifstream& file, std::unordered_map<std::string, std::string>& out)
     {
-        std::lock_guard<std::mutex> lock_guard(global_config_lock);
+        std::unique_lock lock_guard(globalConfigLock);
         assert(file.is_open());
         std::string line;
 
-        const static auto remove_blank_lines = [](std::string &str)
+        const static auto RemoveBlankLines = [](std::string &str)
         {
             while (
                 !str.empty() && (
-                StringTool::startswith(str, "\n") ||
-                StringTool::startswith(str, "\r")
+                str.starts_with("\n") ||
+                str.starts_with("\r")
                 ))
                 str = str.substr(1);
 
             while (
                 !str.empty() && (
-                StringTool::endswith(str, "\n") ||
-                StringTool::endswith(str, "\r")
+                str.starts_with("\n") ||
+                str.starts_with("\r")
                 ))
                 str = str.substr(0, str.length() - 2);
         };
 
         while (std::getline(file, line))
         {
-            remove_blank_lines(line);
+            RemoveBlankLines(line);
             if (
-                StringTool::startswith(line, "#") ||
-                StringTool::startswith(line, "[")
+                line.starts_with("#") ||
+                line.starts_with("[")
                 )
             continue;
 
@@ -214,15 +203,15 @@ namespace Koala
             {
                 while (
                     !str.empty() && (
-                    StringTool::startswith(str, " ") ||
-                    StringTool::startswith(str, "\t")
+                    str.starts_with(" ") ||
+                    str.starts_with("\t")
                     ))
                     str = str.substr(1);
 
                 while (
                     !str.empty() && (
-                    StringTool::endswith(str, " ") ||
-                    StringTool::endswith(str, "\t")
+                    str.starts_with(" ") ||
+                    str.starts_with("\t")
                     ))
                     str = str.substr(0, str.length() - 1);
             };
@@ -242,7 +231,7 @@ namespace Koala
 
             if (out.count(key) != 0)
             {
-                spdlog::warn("Configuration Reload: Key already exists: {}={}, now overriding with new value {}", key, out[key], value);
+                loggerConfig.warning("Configuration Reload: Key already exists: {}={}, now overriding with new value {}", key, out[key], value);
             }
 
             out[key] = value;
@@ -251,7 +240,7 @@ namespace Koala
 
     void Config::SaveINI(std::ofstream& file, const std::unordered_map<std::string, std::string>& config) const
     {
-        std::lock_guard<std::mutex> lock_guard(global_config_lock);
+        std::shared_lock lock_guard(globalConfigLock);
         for (auto pair: config)
         {
             std::string line = pair.first + " = " + pair.second;
@@ -261,28 +250,17 @@ namespace Koala
 
     void Config::PrintAllConfigurations() const
     {
-        std::lock_guard<std::mutex> lock_guard(global_config_lock);
-        spdlog::warn("Printing all configurations!");
+        std::shared_lock lock_guard(globalConfigLock);
+        Logger logger("PrintAllConfiguration");
+        logger.warning("Engine Configuration");
         for (auto const &config: engineConfigs)
         {
-            spdlog::warn("[ENG] {}={}", config.first, config.second);
+            logger.warning("{}\t=\t{}", config.first, config.second);
         }
-
+        logger.warning("Game Configuration");
         for (auto const &config: gameConfigs)
         {
-            spdlog::warn("[GAME] {}={}", config.first, config.second);
+            logger.warning("{}\t=\t{}", config.first, config.second);
         }
-
-        spdlog::warn("Print all configurations END!");
-
     }
-
-    // void Config::OverrideSettingWithCommandLine()
-    // {
-    //     if (CmdParser::Get().HasArg("cfg"))
-    //     {
-    //         auto cfg_override = CmdParser::Get().GetArgStr("cfg");
-    //         const static std::regex regex("");
-    //     }
-    // }
 }

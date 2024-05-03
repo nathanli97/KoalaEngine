@@ -19,8 +19,8 @@
 
 
 #pragma once
-#include <mutex>
 #include <optional>
+#include <shared_mutex>
 
 #include "Core/ModuleInterface.h"
 #include <unordered_map>
@@ -37,42 +37,19 @@ namespace Koala
         void Tick(float delta_time) override;
         bool Reload();
         bool Save();
-
-        bool HasAutoSaving() const
-        {
-            return bAutoSaving;
-        }
-
-        void SetAutoSaving(bool enabled)
-        {
-            bAutoSaving = enabled;
-        }
-
-        bool HasAutoSavingWhenEngineExiting() const
-        {
-            return bAutoSaveWhenEngineExiting;
-        }
-
-        void SetAutoSavingWhenEngineExiting(bool enabled)
-        {
-            bAutoSaveWhenEngineExiting = enabled;
-        }
-
         void PrintAllConfigurations() const;
 
-        std::optional<std::string> GetSettingStr(std::string key, std::string defaultValue = "") const;
-        std::string GetSettingStrWithAutoSaving(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig = false);
-        void SetSettingStr(std::string key, std::string value, bool bWriteIntoEngineConfig = false);
+        std::optional<std::string> GetSetting(std::string key, std::string defaultValue = "") const;
+        // TODO: This should be replaced by CVar. Removed it after console variable is working.
+        std::string GetSettingAndWriteDefault(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig = false);
+        void SetSetting(std::string key, std::string value, bool bWriteIntoEngineConfig = false);
     private:
-        mutable std::mutex global_config_lock;
+        mutable std::shared_mutex globalConfigLock;
         bool bReadonlyMode = false;
 
         void LoadINI(std::ifstream& file, std::unordered_map<std::string, std::string> &out);
         void SaveINI(std::ofstream& file, const std::unordered_map<std::string, std::string> &config) const;
 
         std::unordered_map<std::string, std::string> engineConfigs, gameConfigs;
-        bool bAutoSaving = false;
-        bool bAutoSaveWhenEngineExiting = false;
-
     };
 }

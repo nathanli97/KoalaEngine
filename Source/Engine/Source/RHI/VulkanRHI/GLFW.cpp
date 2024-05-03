@@ -37,10 +37,10 @@ namespace Koala::RHI
     {
         auto &config = Config::Get();
 
-        int windowWidth = std::stoi(config.GetSettingStrWithAutoSaving("render.window.width", "1280", true));
-        int windowHeight = std::stoi(config.GetSettingStrWithAutoSaving("render.window.height", "960", true));
+        int windowWidth = std::stoi(config.GetSettingAndWriteDefault("render.window.width", "1280", true));
+        int windowHeight = std::stoi(config.GetSettingAndWriteDefault("render.window.height", "960", true));
 
-        std::string windowTitle = config.GetSettingStrWithAutoSaving("render.window.title", "Koala");
+        std::string windowTitle = config.GetSettingAndWriteDefault("render.window.title", "Koala");
 
         int ret = glfwInit();
         if (ret != GLFW_TRUE)

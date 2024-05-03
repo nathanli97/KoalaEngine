@@ -89,7 +89,7 @@ namespace Koala::RHI
         VkApplicationInfo vkApplicationInfo{};
 
         auto &config = Config::Get();
-        auto app_name = config.GetSettingStrWithAutoSaving("app.name", "Koala Engine", true);
+        auto app_name = config.GetSettingAndWriteDefault("app.name", "Koala Engine", true);
         vkApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
         vkApplicationInfo.pApplicationName = app_name.c_str();
         vkApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
@@ -165,7 +165,7 @@ namespace Koala::RHI
 
         logger.info("We found {} devices which can render Vulkan.", countDevices);
 
-        auto preferedDeviceName = Config::Get().GetSettingStr("render.device");
+        auto preferedDeviceName = Config::Get().GetSetting("render.device");
 
         for (const auto device : physicalDevices)
         {
@@ -388,7 +388,7 @@ namespace Koala::RHI
             }
         }
 
-        auto enable_vsync = Config::Get().GetSettingStr("render.vsync", "True").value() == "True";
+        auto enable_vsync = Config::Get().GetSetting("render.vsync", "True").value() == "True";
         VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
         if (!enable_vsync)

@@ -26,6 +26,5 @@
 #include "EngineVersion.h"
 #include "Core/KoalaLogger.h"
 #include "Core/Check.h"
-#include "Core/StringTools.h"
 #include "PyScripting/PyIntegrate.h"
 #include "PyScripting/PyExecute.h"
