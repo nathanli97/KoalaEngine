@@ -1,0 +1,25 @@
+<code_scheme name="Project" version="173">
+  <Objective-C-extensions>
+    <rules>
+      <rule entity="NAMESPACE,CLASS,STRUCT,UNION,TYPEDEF,ENUMERATOR" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+      <rule entity="GLOBAL_FUNCTION,CLASS_MEMBER_FUNCTION,STRUCT_MEMBER_FUNCTION" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+      <rule entity="CLASS_MEMBER_FIELD,STRUCT_MEMBER_FIELD,PARAMETER,LOCAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+      <rule entity="ENUM" visibility="ANY" specifier="ANY" prefix="E" style="PASCAL_CASE" suffix="" />
+      <rule entity="MACRO" visibility="ANY" specifier="ANY" prefix="" style="SCREAMING_SNAKE_CASE" suffix="" />
+      <rule entity="GLOBAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="G" style="PASCAL_CASE" suffix="" />
+    </rules>
+  </Objective-C-extensions>
+  <Objective-C-extensions>
+    <rules>
+      <rule entity="NAMESPACE,CLASS,STRUCT,UNION,TYPEDEF,ENUMERATOR" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+      <rule entity="GLOBAL_FUNCTION,CLASS_MEMBER_FUNCTION,STRUCT_MEMBER_FUNCTION" visibility="ANY" specifier="ANY" prefix="" style="PASCAL_CASE" suffix="" />
+      <rule entity="CLASS_MEMBER_FIELD,STRUCT_MEMBER_FIELD,PARAMETER,LOCAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="" style="CAMEL_CASE" suffix="" />
+      <rule entity="ENUM" visibility="ANY" specifier="ANY" prefix="E" style="PASCAL_CASE" suffix="" />
+      <rule entity="MACRO" visibility="ANY" specifier="ANY" prefix="" style="SCREAMING_SNAKE_CASE" suffix="" />
+      <rule entity="GLOBAL_VARIABLE" visibility="ANY" specifier="ANY" prefix="G" style="PASCAL_CASE" suffix="" />
+    </rules>
+  </Objective-C-extensions>
+  <clangFormatSettings>
+    <option name="ENABLED" value="true" />
+  </clangFormatSettings>
+</code_scheme>

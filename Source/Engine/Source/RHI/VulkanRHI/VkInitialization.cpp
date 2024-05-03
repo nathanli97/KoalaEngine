@@ -44,21 +44,21 @@ static VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDebugCallBack(
 {
     if (messageSeverity < VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
         return VK_FALSE;
-    std::string message_type;
+    std::string messageTypeMessage;
     switch (messageType)
     {
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:message_type = "GENERAL";break;
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:message_type = "VIOLATES_SPECIFICATION";break;
-    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:message_type = "PERFORMANCE";break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:       messageTypeMessage = "GENERAL";break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:    messageTypeMessage = "VIOLATES_SPECIFICATION";break;
+    case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT:   messageTypeMessage = "PERFORMANCE";break;
     default:break;
     }
 
     switch (messageSeverity)
     {
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: logger.debug("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:logger.info("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:logger.warning("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
-    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:logger.error("Validation: {}: {}", message_type, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: logger.debug("Validation: {}: {}", messageTypeMessage, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:logger.info("Validation: {}: {}", messageTypeMessage, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:logger.warning("Validation: {}: {}", messageTypeMessage, pCallbackData->pMessage);break;
+    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:logger.error("Validation: {}: {}", messageTypeMessage, pCallbackData->pMessage);break;
     default:break;
     }
 
@@ -75,7 +75,7 @@ VkResult VulkanCreateDebugUtilsMessengerEXT(VkInstance instance,
         return VK_ERROR_EXTENSION_NOT_PRESENT;
     }
 }
-static VkDebugUtilsMessengerEXT vk_debug_messenger{};
+static VkDebugUtilsMessengerEXT GVkDebugMessenger{};
 #endif
 
 namespace Koala::RHI
@@ -86,323 +86,288 @@ namespace Koala::RHI
     bool VulkanRHI::InitVulkanInstance()
     {
         logger.info("Initializating Vulkan(using VK API v{}.{}.{})... ", VK_VERSION_MAJOR(VK_APIVERSION), VK_VERSION_MINOR(VK_APIVERSION), VK_VERSION_PATCH(VK_APIVERSION));
-        VkApplicationInfo app_info{};
+        VkApplicationInfo vkApplicationInfo{};
 
         auto &config = Config::Get();
         auto app_name = config.GetSettingStrWithAutoSaving("app.name", "Koala Engine", true);
-        app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = app_name.c_str();
-        app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        app_info.pEngineName = "Koala Engine";
-        app_info.engineVersion = VK_MAKE_VERSION(KOALA_ENGINE_VER_MAJOR, KOALA_ENGINE_VER_MINOR, KOALA_ENGINE_VER_PATCH);
-        app_info.apiVersion = VK_APIVERSION;
+        vkApplicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        vkApplicationInfo.pApplicationName = app_name.c_str();
+        vkApplicationInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+        vkApplicationInfo.pEngineName = "Koala Engine";
+        vkApplicationInfo.engineVersion = VK_MAKE_VERSION(KOALA_ENGINE_VER_MAJOR, KOALA_ENGINE_VER_MINOR, KOALA_ENGINE_VER_PATCH);
+        vkApplicationInfo.apiVersion = VK_APIVERSION;
 
-        VkInstanceCreateInfo vk_create_info{};
-        vk_create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        vk_create_info.pApplicationInfo = &app_info;
+        VkInstanceCreateInfo vkInstanceCreateInfo{};
+        vkInstanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        vkInstanceCreateInfo.pApplicationInfo = &vkApplicationInfo;
 
-        uint32_t glfw_extension_count = 0;
-        const char **glfw_extensions;
+        uint32_t glfwExtensionCount = 0;
+        const char **glfwExtensions;
 
-        glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-        std::vector<const char *> required_extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+        glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+        std::vector<const char *> requiredExtensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
 
-        uint32_t extension_count = 0;
-        vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+        uint32_t extensionCount = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extensionCount, nullptr);
 
-        vk_create_info.enabledLayerCount = 0;
+        vkInstanceCreateInfo.enabledLayerCount = 0;
 
 #if RHI_ENABLE_GPU_DEBUG
-        const std::vector<const char *> validation_layers = {
+        const std::vector<const char *> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
-        vk_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-        vk_create_info.ppEnabledLayerNames = validation_layers.data();
-        required_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        vkInstanceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        vkInstanceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+        requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 #endif
 
 #ifdef __APPLE__
-        required_extensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+        requiredExtensions.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
-        vk_create_info.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+        vkInstanceCreateInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 #endif
 
-        vk_create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
-        vk_create_info.ppEnabledExtensionNames = required_extensions.data();
-        VkResult result = vkCreateInstance(&vk_create_info, nullptr, &vk.instance);
-
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to create VK Instance: {}", string_VkResult(result));
-            return false;
-        }
+        vkInstanceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
+        vkInstanceCreateInfo.ppEnabledExtensionNames = requiredExtensions.data();
+        VK_CHECK_RESULT_SUCCESS(vkCreateInstance(&vkInstanceCreateInfo, nullptr, &vk.instance));
 #if RHI_ENABLE_VALIDATION
-        VkDebugUtilsMessengerCreateInfoEXT vk_debug_utils_messenger_create_info_ext{};
-        vk_debug_utils_messenger_create_info_ext.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        vk_debug_utils_messenger_create_info_ext.messageSeverity =
+        VkDebugUtilsMessengerCreateInfoEXT vkDebugUtilsMessengerCreateInfoExt{};
+        vkDebugUtilsMessengerCreateInfoExt.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        vkDebugUtilsMessengerCreateInfoExt.messageSeverity =
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
                 | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
-        vk_debug_utils_messenger_create_info_ext.messageType =
+        vkDebugUtilsMessengerCreateInfoExt.messageType =
             VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT
                 | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        vk_debug_utils_messenger_create_info_ext.pfnUserCallback = VulkanDebugCallBack;
-        vk_debug_utils_messenger_create_info_ext.pUserData = nullptr;
-        if (VulkanCreateDebugUtilsMessengerEXT(vk.instance,
-                                               &vk_debug_utils_messenger_create_info_ext,
+        vkDebugUtilsMessengerCreateInfoExt.pfnUserCallback = VulkanDebugCallBack;
+        vkDebugUtilsMessengerCreateInfoExt.pUserData = nullptr;
+        VK_CHECK_RESULT_SUCCESS(VulkanCreateDebugUtilsMessengerEXT(vk.instance,
+                                               &vkDebugUtilsMessengerCreateInfoExt,
                                                nullptr,
-                                               &vk_debug_messenger) != VK_SUCCESS) {
-            logger.error("Failed to create vulkan validation messenger");
-        }
-        else
-        {
-            logger.info("Vulkan validation layer is enabled and initialized successfully");
-        }
+                                               &GVkDebugMessenger));
 #endif
 
         // Create a window surface for VK WSI
 
-        result = glfwCreateWindowSurface(vk.instance, glfw.window, nullptr, &vk.surface_khr);
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to create window surface for vulkan: {}", string_VkResult(result));
-            return false;
-        }
+        VK_CHECK_RESULT_SUCCESS(glfwCreateWindowSurface(vk.instance, glfw.window, nullptr, &vk.surfaceKhr))
         return true;
     }
     bool VulkanRHI::ChooseRenderDevice()
     {
-        uint32_t count_devices = 0;
-        auto result = vkEnumeratePhysicalDevices(vk.instance, &count_devices, nullptr);
-        std::vector<VkPhysicalDevice> physical_devices(count_devices);
-        result = vkEnumeratePhysicalDevices(vk.instance, &count_devices, physical_devices.data());
+        uint32_t countDevices = 0;
+        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, nullptr));
+        std::vector<VkPhysicalDevice> physicalDevices(countDevices);
+        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, physicalDevices.data()));
 
-        std::unordered_map<std::string, VkPhysicalDevice> suitable_devices;
-        std::unordered_map<std::string, VkPhysicalDeviceProperties> suitable_device_props;
-        std::unordered_map<std::string, VkPhysicalDeviceFeatures> suitable_devices_features;
+        std::unordered_map<std::string, VkPhysicalDevice> suitableDevices;
+        std::unordered_map<std::string, VkPhysicalDeviceProperties> suitableDeviceProps;
+        std::unordered_map<std::string, VkPhysicalDeviceFeatures> suitableDevicesFeatures;
 
+        logger.info("We found {} devices which can render Vulkan.", countDevices);
 
-        if (result != VK_SUCCESS) {
-            logger.error("Failed to enumerate VK physical devices: {}", string_VkResult(result));
-            return false;
-        }
+        auto preferedDeviceName = Config::Get().GetSettingStr("render.device");
 
-        logger.info("We found {} devices which can render Vulkan.", count_devices);
-
-        auto prefered_device_name = Config::Get().GetSettingStr("render.device");
-
-        for (const auto device : physical_devices)
+        for (const auto device : physicalDevices)
         {
-            VkPhysicalDeviceProperties device_properties;
-            VkPhysicalDeviceFeatures device_features;
-            vkGetPhysicalDeviceProperties(device, &device_properties);
-            vkGetPhysicalDeviceFeatures(device, &device_features);
+            VkPhysicalDeviceProperties deviceProperties;
+            VkPhysicalDeviceFeatures deviceFeatures;
+            vkGetPhysicalDeviceProperties(device, &deviceProperties);
+            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
 
-            bool is_this_device_suitable = true;
+            bool bIsDeviceSuitable = true;
 
-            uint32_t device_extension_count = 0;
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, nullptr);
-            std::vector<VkExtensionProperties> available_extensions(device_extension_count);
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &device_extension_count, available_extensions.data());
-            for (const std::string &required_extension_name : VK_DeviceRequiredExtensions) {
+            uint32_t deviceExtensionCount = 0;
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, nullptr);
+            std::vector<VkExtensionProperties> available_extensions(deviceExtensionCount);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, available_extensions.data());
+            for (const std::string &requiredExtensionName : VK_DeviceRequiredExtensions) {
                 if (std::find_if(available_extensions.cbegin(),
                                  available_extensions.cend(),
-                                 [&](const VkExtensionProperties &extension_properties) -> bool {
-                                   return required_extension_name == extension_properties.extensionName;
+                                 [&](const VkExtensionProperties &extensionProperties) -> bool {
+                                   return requiredExtensionName == extensionProperties.extensionName;
                                  }) == available_extensions.cend()) {
-                    is_this_device_suitable = false;
+                    bIsDeviceSuitable = false;
                     break;
                 }
             }
 
-            if (!is_this_device_suitable)
+            if (!bIsDeviceSuitable)
                 continue;
 
-            SwapChainSupportDetails chain_support_details;
+            SwapChainSupportDetails chainSupportDetails;
 
-            if (!QuerySwapChainSupport(device, chain_support_details)) {
-                is_this_device_suitable = false;
+            if (!QuerySwapChainSupport(device, chainSupportDetails)) {
+                bIsDeviceSuitable = false;
             }
-            if (chain_support_details.formats.empty() || chain_support_details.present_modes.empty()) {
-                is_this_device_suitable = false;
+            if (chainSupportDetails.formats.empty() || chainSupportDetails.presentModes.empty()) {
+                bIsDeviceSuitable = false;
             }
 
-            if (!is_this_device_suitable)
+            if (!bIsDeviceSuitable)
                 continue;
 
-            suitable_devices.emplace(device_properties.deviceName, device);
-            suitable_device_props.emplace(device_properties.deviceName, device_properties);
-            suitable_devices_features.emplace(device_properties.deviceName, device_features);
+            suitableDevices.emplace(deviceProperties.deviceName, device);
+            suitableDeviceProps.emplace(deviceProperties.deviceName, deviceProperties);
+            suitableDevicesFeatures.emplace(deviceProperties.deviceName, deviceFeatures);
         }
 
-        if (prefered_device_name.has_value())
+        if (preferedDeviceName.has_value())
         {
-            if (suitable_devices.count(prefered_device_name.value()) != 0)
+            if (suitableDevices.count(preferedDeviceName.value()) != 0)
             {
-                vk.physical_device = suitable_devices.at(prefered_device_name.value());
-                logger.info("Choosed prefered GPU: {}", prefered_device_name.value());
+                vk.physicalDevice = suitableDevices.at(preferedDeviceName.value());
+                logger.info("Choosed prefered GPU: {}", preferedDeviceName.value());
                 return true;
             }
             else
             {
-                logger.warning("Prefered GPU {} is not avaliable or not suitable", prefered_device_name.value());
+                logger.warning("Prefered GPU {} is not avaliable or not suitable", preferedDeviceName.value());
             }
         }
 
 
-        const bool print_gpu_info = CmdParser::Get().HasArg("printgpus");
+        const bool bNeedPrintGpuInfo = CmdParser::Get().HasArg("printgpus");
 
-        VkPhysicalDevice choose_device{nullptr};
+        VkPhysicalDevice chooseDevice{nullptr};
 
-        bool using_discrete_gpu = false;
-        for (auto const & gpu: suitable_devices)
+        bool bUsingDiscreteGpu = false;
+        for (auto const & gpu: suitableDevices)
         {
-            auto const &prop = suitable_device_props[gpu.first];
-            if (print_gpu_info)
+            auto const &prop = suitableDeviceProps[gpu.first];
+            if (bNeedPrintGpuInfo)
                 logger.info("GPU '{}' Type={}", gpu.first, string_VkPhysicalDeviceType(prop.deviceType));
 
-            if (!choose_device && prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            if (!chooseDevice && prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
             {
                 gpu_name = prop.deviceName;
                 logger.debug("We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
-                choose_device = gpu.second;
-                using_discrete_gpu = true;
+                chooseDevice = gpu.second;
+                bUsingDiscreteGpu = true;
             }
         }
 
-        if (!choose_device)
+        if (!chooseDevice)
         {
-            choose_device = suitable_devices.begin()->second;
-            gpu_name = suitable_devices.begin()->first;
+            chooseDevice = suitableDevices.begin()->second;
+            gpu_name = suitableDevices.begin()->first;
         }
 
-        if (!choose_device || suitable_devices.empty())
+        if (!chooseDevice || suitableDevices.empty())
         {
             logger.error("No suitable GPUs found! Try use --printgpus to check all the suitable GPUs.");
             return false;
         }
 
-        if (!using_discrete_gpu)
+        if (!bUsingDiscreteGpu)
         {
             logger.warning("No discrete GPU(s) is found!");
         }
 
         logger.info("Using GPU: {}", gpu_name);
-        vk.physical_device = choose_device;
+        vk.physicalDevice = chooseDevice;
         return true;
     }
     bool VulkanRHI::InitVulkanDeviceAndQueue()
     {
-        uint32_t queue_family_count = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, nullptr);
-        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-        vkGetPhysicalDeviceQueueFamilyProperties(vk.physical_device, &queue_family_count, queue_families.data());
+        uint32_t queueFamilyCount = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
+        vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, queueFamilies.data());
 
         uint32_t index = 0;
-        for (auto const &queue_family: queue_families)
+        for (auto const &queueFamily: queueFamilies)
         {
-            if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT &&
-                queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT &&
+                queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
             {
-                vk.queue_info.graphics_queue_index = vk.queue_info.compute_queue_index = index;
-            } else if (!vk.queue_info.graphics_queue_index.has_value() && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                vk.queueInfo.graphicsQueueIndex = vk.queueInfo.computeQueueIndex = index;
+            } else if (!vk.queueInfo.graphicsQueueIndex.has_value() && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
             {
-                vk.queue_info.graphics_queue_index = index;
-            } else if (!vk.queue_info.compute_queue_index.has_value() && queue_family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+                vk.queueInfo.graphicsQueueIndex = index;
+            } else if (!vk.queueInfo.computeQueueIndex.has_value() && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
             {
-                vk.queue_info.compute_queue_index = index;
+                vk.queueInfo.computeQueueIndex = index;
             }
 
-            if (!vk.queue_info.present_queue_index.has_value())
+            if (!vk.queueInfo.presentQueueIndex.has_value())
             {
-                VkBool32 is_present_supported = VK_FALSE;
-                vkGetPhysicalDeviceSurfaceSupportKHR(vk.physical_device, index, vk.surface_khr, &is_present_supported);
-                if (is_present_supported)
+                VkBool32 isPresentSupported = VK_FALSE;
+                vkGetPhysicalDeviceSurfaceSupportKHR(vk.physicalDevice, index, vk.surfaceKhr, &isPresentSupported);
+                if (isPresentSupported)
                 {
-                    vk.queue_info.present_queue_index = index;
+                    vk.queueInfo.presentQueueIndex = index;
                 }
             }
             index++;
 
             // All the queue families we need is found, no further check is needed.
-            if (vk.queue_info.IsComplete())
+            if (vk.queueInfo.IsComplete())
                 break;
         }
 
-        if (!vk.queue_info.IsComplete())
+        if (!vk.queueInfo.IsComplete())
         {
             logger.error("Your device didn't meet the minimum requirements.");
             return false;
         }
 
 
-        float queue_priority = 1;
+        float queuePriority = 1;
 
-        const std::set<uint32_t> unique_queue_families = {
-            vk.queue_info.graphics_queue_index.value(),
-            vk.queue_info.present_queue_index.value(),
-            vk.queue_info.compute_queue_index.value()
+        const std::set<uint32_t> uniqueQueueFamilies = {
+            vk.queueInfo.graphicsQueueIndex.value(),
+            vk.queueInfo.presentQueueIndex.value(),
+            vk.queueInfo.computeQueueIndex.value()
         };
 
-        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 
-        for (const uint32_t queue_family : unique_queue_families) {
-            VkDeviceQueueCreateInfo queue_create_info{};
-            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queue_create_info.queueFamilyIndex = queue_family;
-            queue_create_info.queueCount = 1;
-            queue_create_info.pQueuePriorities = &queue_priority;
-            queue_create_infos.push_back(queue_create_info);
+        for (const uint32_t queue_family : uniqueQueueFamilies) {
+            VkDeviceQueueCreateInfo queueCreateInfo{};
+            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex = queue_family;
+            queueCreateInfo.queueCount = 1;
+            queueCreateInfo.pQueuePriorities = &queuePriority;
+            queueCreateInfos.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures device_features{};
-        VkDeviceCreateInfo device_create_info{};
-        device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        device_create_info.pQueueCreateInfos = queue_create_infos.data();
-        device_create_info.queueCreateInfoCount = static_cast<uint32_t>(unique_queue_families.size());
-        device_create_info.pEnabledFeatures = &device_features;
-        device_create_info.enabledLayerCount = 0;
-        device_create_info.enabledExtensionCount = static_cast<uint32_t>(VK_DeviceRequiredExtensions.size());
-        device_create_info.ppEnabledExtensionNames = VK_DeviceRequiredExtensions.data();
+        VkPhysicalDeviceFeatures deviceFeatures{};
+        VkDeviceCreateInfo deviceCreateInfo{};
+        deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
+        deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueFamilies.size());
+        deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+        deviceCreateInfo.enabledLayerCount = 0;
+        deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(VK_DeviceRequiredExtensions.size());
+        deviceCreateInfo.ppEnabledExtensionNames = VK_DeviceRequiredExtensions.data();
 
 #if RHI_ENABLE_VALIDATION
-        const std::vector<const char *> validation_layers = {
+        const std::vector<const char *> validationLayers = {
             "VK_LAYER_KHRONOS_validation"
         };
-        device_create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-        device_create_info.ppEnabledLayerNames = validation_layers.data();
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
 #endif
 
-        VkResult result = vkCreateDevice(vk.physical_device, &device_create_info, nullptr, &vk.device);
-
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to create VK device: {}", string_VkResult(result));
-            return false;
-        }
+        VK_CHECK_RESULT_SUCCESS(vkCreateDevice(vk.physicalDevice, &deviceCreateInfo, nullptr, &vk.device));
 
 
-        vkGetDeviceQueue(vk.device, vk.queue_info.present_queue_index.value(), 0, &vk.present_queue);
-        vkGetDeviceQueue(vk.device, vk.queue_info.compute_queue_index.value(), 0, &vk.compute_queue);
-        vkGetDeviceQueue(vk.device, vk.queue_info.graphics_queue_index.value(), 0, &vk.graphics_queue);
+        vkGetDeviceQueue(vk.device, vk.queueInfo.presentQueueIndex.value(), 0, &vk.presentQueue);
+        vkGetDeviceQueue(vk.device, vk.queueInfo.computeQueueIndex.value(), 0, &vk.computeQueue);
+        vkGetDeviceQueue(vk.device, vk.queueInfo.graphicsQueueIndex.value(), 0, &vk.graphicsQueue);
 
         return true;
     }
 
     bool VulkanRHI::InitMemoryAlloctor()
     {
-        VmaAllocatorCreateInfo allocator_create_info = {};
-        allocator_create_info.vulkanApiVersion = VK_APIVERSION;
-        allocator_create_info.physicalDevice = vk.physical_device;
-        allocator_create_info.device = vk.device;
-        allocator_create_info.instance = vk.instance;
+        VmaAllocatorCreateInfo allocatorCreateInfo = {};
+        allocatorCreateInfo.vulkanApiVersion = VK_APIVERSION;
+        allocatorCreateInfo.physicalDevice = vk.physicalDevice;
+        allocatorCreateInfo.device = vk.device;
+        allocatorCreateInfo.instance = vk.instance;
 
-        VkResult result = vmaCreateAllocator(&allocator_create_info, &vk.vma_allocator);
-
-        if (result != VK_SUCCESS)
-        {
-            logger.error("Failed to initialize VMA! {}", string_VkResult(result));
-            return false;
-        }
+        VK_CHECK_RESULT_SUCCESS(vmaCreateAllocator(&allocatorCreateInfo, &vk.vmaAllocator));
 
         return true;
     }
@@ -411,11 +376,11 @@ namespace Koala::RHI
     {
         VkExtent2D extent;
 
-        SwapChainSupportDetails chain_support_details;
-        QuerySwapChainSupport(vk.physical_device, chain_support_details);
+        SwapChainSupportDetails chainSupportDetails;
+        QuerySwapChainSupport(vk.physicalDevice, chainSupportDetails);
 
-        VkSurfaceFormatKHR surface_format = chain_support_details.formats[0];
-        for (const auto &format: chain_support_details.formats)
+        VkSurfaceFormatKHR surface_format = chainSupportDetails.formats[0];
+        for (const auto &format: chainSupportDetails.formats)
         {
             if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
             {
@@ -424,54 +389,54 @@ namespace Koala::RHI
         }
 
         auto enable_vsync = Config::Get().GetSettingStr("render.vsync", "True").value() == "True";
-        VkPresentModeKHR present_mode = VK_PRESENT_MODE_FIFO_KHR;
+        VkPresentModeKHR presentMode = VK_PRESENT_MODE_FIFO_KHR;
 
         if (!enable_vsync)
         {
-            bool mailbox_supported = false;
-            bool fifo_relaxed_supported = false;
-            bool immediate_supported = false;
-            for (auto const mode: chain_support_details.present_modes)
+            bool bMailboxSupported = false;
+            bool bFifoRelaxedSupported = false;
+            bool bImmediateSupported = false;
+            for (auto const mode: chainSupportDetails.presentModes)
             {
-                if (!mailbox_supported && mode == VK_PRESENT_MODE_MAILBOX_KHR)
+                if (!bMailboxSupported && mode == VK_PRESENT_MODE_MAILBOX_KHR)
                 {
-                    mailbox_supported = true;
+                    bMailboxSupported = true;
                     continue;
                 }
-                if (!fifo_relaxed_supported && mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
+                if (!bFifoRelaxedSupported && mode == VK_PRESENT_MODE_FIFO_RELAXED_KHR)
                 {
-                    fifo_relaxed_supported = true;
+                    bFifoRelaxedSupported = true;
                     continue;
                 }
-                if (!immediate_supported && mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
+                if (!bImmediateSupported && mode == VK_PRESENT_MODE_IMMEDIATE_KHR)
                 {
-                    immediate_supported = true;
+                    bImmediateSupported = true;
                     continue;
                 }
             }
 
-            if (mailbox_supported)
+            if (bMailboxSupported)
             {
-                present_mode = VK_PRESENT_MODE_MAILBOX_KHR;
-            } else if (fifo_relaxed_supported)
+                presentMode = VK_PRESENT_MODE_MAILBOX_KHR;
+            } else if (bFifoRelaxedSupported)
             {
-                present_mode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
-            } else if (immediate_supported)
+                presentMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+            } else if (bImmediateSupported)
             {
-                present_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+                presentMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
             }
         }
 
-        logger.debug("Present mode: {}", string_VkPresentModeKHR(present_mode));
+        logger.debug("Present mode: {}", string_VkPresentModeKHR(presentMode));
 
 
-        if (chain_support_details.capabilities.currentExtent.width != UINT32_MAX)
+        if (chainSupportDetails.capabilities.currentExtent.width != UINT32_MAX)
         {
-            extent = chain_support_details.capabilities.currentExtent;
+            extent = chainSupportDetails.capabilities.currentExtent;
         }
         else
         {
-            extent = GetFrameBufferSizeFromGLFW(chain_support_details.capabilities);
+            extent = GetFrameBufferSizeFromGLFW(chainSupportDetails.capabilities);
         }
 
         if (extent.width == 0 || extent.height == 0)
@@ -481,99 +446,87 @@ namespace Koala::RHI
             return false;
         }
 
-        uint32_t image_count = chain_support_details.capabilities.minImageCount + 1;
-        if(chain_support_details.capabilities.maxImageCount > 0 && image_count > chain_support_details.capabilities.maxImageCount)
+        uint32_t imageCount = chainSupportDetails.capabilities.minImageCount + 1;
+        if(chainSupportDetails.capabilities.maxImageCount > 0 && imageCount > chainSupportDetails.capabilities.maxImageCount)
         {
             logger.warning("SwapChain supported image count too small -- selecting minimal value of image count");
-            image_count = chain_support_details.capabilities.minImageCount;
+            imageCount = chainSupportDetails.capabilities.minImageCount;
         }
 
-        VkSwapchainCreateInfoKHR swapchain_create_info{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
-        swapchain_create_info.surface = vk.surface_khr;
-        swapchain_create_info.minImageCount = image_count;
-        swapchain_create_info.imageFormat = surface_format.format;
-        swapchain_create_info.imageColorSpace = surface_format.colorSpace;
-        swapchain_create_info.imageExtent = extent;
-        swapchain_create_info.imageArrayLayers = 1;
+        VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+        swapchainCreateInfo.surface = vk.surfaceKhr;
+        swapchainCreateInfo.minImageCount = imageCount;
+        swapchainCreateInfo.imageFormat = surface_format.format;
+        swapchainCreateInfo.imageColorSpace = surface_format.colorSpace;
+        swapchainCreateInfo.imageExtent = extent;
+        swapchainCreateInfo.imageArrayLayers = 1;
 
-        swapchain_create_info.imageUsage =
+        swapchainCreateInfo.imageUsage =
             VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
             VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
 
-        uint32_t swapchain_queue_families[] = {
-            vk.queue_info.graphics_queue_index.value(),
-            vk.queue_info.present_queue_index.value()
+        uint32_t swapchainQueueFamilies[] = {
+            vk.queueInfo.graphicsQueueIndex.value(),
+            vk.queueInfo.presentQueueIndex.value()
         };
 
-        if (vk.queue_info.graphics_queue_index.value() != vk.queue_info.present_queue_index.value())
+        if (vk.queueInfo.graphicsQueueIndex.value() != vk.queueInfo.presentQueueIndex.value())
         {
-            swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-            swapchain_create_info.queueFamilyIndexCount = 2;
-            swapchain_create_info.pQueueFamilyIndices = swapchain_queue_families;
+            swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+            swapchainCreateInfo.queueFamilyIndexCount = 2;
+            swapchainCreateInfo.pQueueFamilyIndices = swapchainQueueFamilies;
         }
         else
         {
             // If graphics and present queues are same queue, then we don't need concurrently use two queues.
             // Because we can use same queue for graphics and present.
-            swapchain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            swapchain_create_info.queueFamilyIndexCount = 0;
-            swapchain_create_info.pQueueFamilyIndices = nullptr;
+            swapchainCreateInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            swapchainCreateInfo.queueFamilyIndexCount = 0;
+            swapchainCreateInfo.pQueueFamilyIndices = nullptr;
         }
 
-        swapchain_create_info.preTransform = chain_support_details.capabilities.currentTransform;
-        swapchain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        swapchain_create_info.presentMode = present_mode;
-        swapchain_create_info.clipped = VK_TRUE;
-        swapchain_create_info.oldSwapchain = VK_NULL_HANDLE;
+        swapchainCreateInfo.preTransform = chainSupportDetails.capabilities.currentTransform;
+        swapchainCreateInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        swapchainCreateInfo.presentMode = presentMode;
+        swapchainCreateInfo.clipped = VK_TRUE;
+        swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VkResult result = vkCreateSwapchainKHR(vk.device, &swapchain_create_info, nullptr, &vk.swap_chain.swapchain_khr);
-
-        if (result == VK_SUCCESS)
-        {
-            vkGetSwapchainImagesKHR(vk.device, vk.swap_chain.swapchain_khr, &image_count, nullptr);
-            vk.swap_chain.images.resize(image_count);
-            vkGetSwapchainImagesKHR(vk.device, vk.swap_chain.swapchain_khr, &image_count, vk.swap_chain.images.data());
-            vk.swap_chain.image_format = surface_format.format;
-            vk.swap_chain.image_extent = extent;
-        }
-        else
-        {
-            logger.error("Failed to create swapchain: {}", string_VkResult(result));
-        }
+        VK_CHECK_RESULT_SUCCESS(vkCreateSwapchainKHR(vk.device, &swapchainCreateInfo, nullptr, &vk.swapChain.swapchainKhr));
+        
+        vkGetSwapchainImagesKHR(vk.device, vk.swapChain.swapchainKhr, &imageCount, nullptr);
+        vk.swapChain.images.resize(imageCount);
+        vkGetSwapchainImagesKHR(vk.device, vk.swapChain.swapchainKhr, &imageCount, vk.swapChain.images.data());
+        vk.swapChain.imageFormat = surface_format.format;
+        vk.swapChain.imageExtent = extent;
+        
         return true;
     }
 
     bool VulkanRHI::CreateSwapChainViews()
     {
-        vk.swap_chain.image_views.resize(vk.swap_chain.images.size());
+        vk.swapChain.imageViews.resize(vk.swapChain.images.size());
 
         uint32_t index = 0;
-        for (auto &image: vk.swap_chain.images)
+        for (auto &image: vk.swapChain.images)
         {
-            VkImageViewCreateInfo view_create_info{};
-            view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            view_create_info.image = image;
-            view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            view_create_info.format = vk.swap_chain.image_format;
+            VkImageViewCreateInfo vkImageViewCreateInfo{};
+            vkImageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            vkImageViewCreateInfo.image = image;
+            vkImageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            vkImageViewCreateInfo.format = vk.swapChain.imageFormat;
             // We don't need swizzle for now.
-            view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-            view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-            view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-            view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-            view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            view_create_info.subresourceRange.baseMipLevel = 0;
-            view_create_info.subresourceRange.levelCount = 1;
-            view_create_info.subresourceRange.baseArrayLayer = 0;
-            view_create_info.subresourceRange.layerCount = 1;
+            vkImageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+            vkImageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            vkImageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+            vkImageViewCreateInfo.subresourceRange.levelCount = 1;
+            vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+            vkImageViewCreateInfo.subresourceRange.layerCount = 1;
 
-            VkResult result = vkCreateImageView(vk.device, &view_create_info, nullptr, &vk.swap_chain.image_views[index++]);
-
-            if (result != VK_SUCCESS)
-            {
-                logger.error("VK ImageView #{} creation was failed: {}", index - 1, string_VkResult(result));
-                return false;
-            }
+            VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vk.device, &vkImageViewCreateInfo, nullptr, &vk.swapChain.imageViews[index++]))
         }
         return true;
     }
@@ -581,41 +534,27 @@ namespace Koala::RHI
 
 
 
-    bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chain_support_details)
+    bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chainSupportDetails)
     {
-        VkResult result = vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vk.surface_khr, &chain_support_details.capabilities);
-        if (result != VK_SUCCESS) {
-            return false;
-        }
-        uint32_t format_count{};
-        result = vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surface_khr, &format_count, nullptr);
+        VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vk.surfaceKhr, &chainSupportDetails.capabilities))
+        uint32_t formatCount{};
+        VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surfaceKhr, &formatCount, nullptr))
 
-        if (format_count != 0) {
-            chain_support_details.formats.resize(format_count);
-            result =
-                vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surface_khr, &format_count, chain_support_details.formats.data());
+        if (formatCount != 0) {
+            chainSupportDetails.formats.resize(formatCount);
+            VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfaceFormatsKHR(device, vk.surfaceKhr, &formatCount, chainSupportDetails.formats.data()));
         }
 
-        if (result != VK_SUCCESS) {
-            logger.error("Failed to query VK physical device surface format {}", string_VkResult(result));
-            return false;
+        uint32_t presentModeCount{};
+        VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfacePresentModesKHR(device, vk.surfaceKhr, &presentModeCount, nullptr))
+        if (presentModeCount != 0) {
+            chainSupportDetails.presentModes.resize(presentModeCount);
+            VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfacePresentModesKHR(device,
+                                                               vk.surfaceKhr,
+                                                               &presentModeCount,
+                                                               chainSupportDetails.presentModes.data()))
         }
-
-        uint32_t present_mode_count{};
-        result = vkGetPhysicalDeviceSurfacePresentModesKHR(device, vk.surface_khr, &present_mode_count, nullptr);
-        if (present_mode_count != 0) {
-            chain_support_details.present_modes.resize(present_mode_count);
-            result = vkGetPhysicalDeviceSurfacePresentModesKHR(device,
-                                                               vk.surface_khr,
-                                                               &present_mode_count,
-                                                               chain_support_details.present_modes.data());
-        }
-
-        if (result != VK_SUCCESS) {
-            logger.warning("Failed to query VK physical device surface present modes: {}", string_VkResult(result));
-            return false;
-        }
-
+        
         return true;
     }
 
@@ -634,15 +573,15 @@ namespace Koala::RHI
         }
 
 #if RHI_ENABLE_VALIDATION
-        if (vk_debug_messenger)
+        if (GVkDebugMessenger)
         {
-            VulkanDestroyDebugUtilsMessengerEXT(vk.instance, vk_debug_messenger, nullptr);
+            VulkanDestroyDebugUtilsMessengerEXT(vk.instance, GVkDebugMessenger, nullptr);
         }
 #endif
 
-        if (vk.surface_khr)
+        if (vk.surfaceKhr)
         {
-            vkDestroySurfaceKHR(vk.instance, vk.surface_khr, nullptr);
+            vkDestroySurfaceKHR(vk.instance, vk.surfaceKhr, nullptr);
         }
         vkDestroyInstance(vk.instance, nullptr);
     }

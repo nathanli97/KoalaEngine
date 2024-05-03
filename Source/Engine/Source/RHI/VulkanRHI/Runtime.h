@@ -37,39 +37,39 @@ namespace Koala::RHI
 {
     struct VulkanRuntime {
         VkInstance instance{};
-        VkSurfaceKHR surface_khr{};
-        VkPhysicalDevice physical_device{};
+        VkSurfaceKHR surfaceKhr{};
+        VkPhysicalDevice physicalDevice{};
 
-        VmaAllocator vma_allocator{};
+        VmaAllocator vmaAllocator{};
 
         struct
         {
-            std::optional<uint32_t> graphics_queue_index;
-            std::optional<uint32_t> compute_queue_index;
-            std::optional<uint32_t> present_queue_index;
+            std::optional<uint32_t> graphicsQueueIndex;
+            std::optional<uint32_t> computeQueueIndex;
+            std::optional<uint32_t> presentQueueIndex;
 
             [[nodiscard]] bool IsComplete() const
             {
-                return graphics_queue_index.has_value() &&
-                    compute_queue_index.has_value() &&
-                    present_queue_index.has_value();
+                return graphicsQueueIndex.has_value() &&
+                    computeQueueIndex.has_value() &&
+                    presentQueueIndex.has_value();
             }
-        } queue_info;
+        } queueInfo;
 
-        VkQueue present_queue{};
-        VkQueue compute_queue{};
-        VkQueue graphics_queue{};
+        VkQueue presentQueue{};
+        VkQueue computeQueue{};
+        VkQueue graphicsQueue{};
 
         VkDevice device{};
 
         struct
         {
             std::vector<VkImage> images;
-            std::vector<VkImageView> image_views;
-            VkFormat image_format{};
-            VkExtent2D image_extent{};
-            VkSwapchainKHR swapchain_khr{};
-        } swap_chain;
+            std::vector<VkImageView> imageViews;
+            VkFormat imageFormat{};
+            VkExtent2D imageExtent{};
+            VkSwapchainKHR swapchainKhr{};
+        } swapChain;
     };
     struct GLFWRuntime {
         GLFWwindow *window{};
@@ -77,7 +77,7 @@ namespace Koala::RHI
     struct SwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
-        std::vector<VkPresentModeKHR> present_modes;
+        std::vector<VkPresentModeKHR> presentModes;
     };
 }
 #endif

@@ -196,7 +196,7 @@ namespace Koala::RHI
         textureRHI->cachedTextureInfo.usage = createInfo.usage;
         textureRHI->cachedTextureInfo.imageType = createInfo.imageType;
         
-        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime.vma_allocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
+        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime.vmaAllocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
 
         return textureRHI;
     }

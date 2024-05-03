@@ -70,7 +70,7 @@ namespace Koala::RHI {
 
     void VulkanRHI::CleanSwapChain()
     {
-        for (auto &view: vk.swap_chain.image_views)
+        for (auto &view: vk.swapChain.imageViews)
         {
             if (view)
             {
@@ -78,11 +78,11 @@ namespace Koala::RHI {
             }
         }
 
-        if (vk.swap_chain.swapchain_khr)
+        if (vk.swapChain.swapchainKhr)
         {
-            vkDestroySwapchainKHR(vk.device, vk.swap_chain.swapchain_khr, nullptr);
+            vkDestroySwapchainKHR(vk.device, vk.swapChain.swapchainKhr, nullptr);
         }
-        vk.swap_chain.images.clear();
+        vk.swapChain.images.clear();
     }
 
     ITextureInterface* VulkanRHI::GetTextureInterface()

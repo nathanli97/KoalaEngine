@@ -79,7 +79,7 @@ namespace Koala::RHI
         auto bufferRHI = std::make_shared<VulkanBufferRHI>();
         bufferRHI->cachedBufferCreateInfo = info;
 
-        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime.vma_allocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
+        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime.vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
         return nullptr;
     }
 }

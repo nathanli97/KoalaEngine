@@ -40,7 +40,7 @@ public:
 
     [[nodiscard]] inline VmaAllocator GetMemoryAllocator() const
     {
-        return vk.vma_allocator;
+        return vk.vmaAllocator;
     }
 
     static void HandleVulkanFuncFailed(VkResult result, const char * func, const char * file, size_t line);
@@ -70,7 +70,7 @@ private:
     bool CreateSwapChain();
     bool CreateSwapChainViews();
 
-    bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chain_support_details);
+    bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chainSupportDetails);
 
     VkExtent2D GetFrameBufferSizeFromGLFW(const VkSurfaceCapabilitiesKHR &capabilities);
 
