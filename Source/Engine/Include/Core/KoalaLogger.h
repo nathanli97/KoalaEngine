@@ -23,7 +23,7 @@
 #include <memory>
 
 #include <spdlog/spdlog.h>
-#include <spdlog/sinks/stdout_sinks.h>
+#include "spdlog/sinks/stdout_color_sinks.h"
 
 namespace Koala
 {
@@ -32,7 +32,7 @@ namespace Koala
     public:
         inline explicit Logger (const std::string &log_cat)
         {
-            auto static sink = std::make_shared<spdlog::sinks::stdout_sink_mt>();
+            auto static sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
             logger = new spdlog::logger(log_cat, sink);
         }
         ~Logger()
