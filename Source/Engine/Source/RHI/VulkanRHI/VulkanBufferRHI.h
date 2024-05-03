@@ -22,6 +22,11 @@
 #include "RHI/Interfaces/BufferRHI.h"
 #include "Runtime.h"
 
+namespace Koala
+{
+    struct RGBAColor;
+}
+
 namespace Koala::RHI
 {
     class VulkanBufferInterface;
@@ -39,7 +44,13 @@ namespace Koala::RHI
     public:
         VulkanBufferInterface(VulkanRuntime& inRuntime): vkRuntime(inRuntime) {}
         BufferRHIRef CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info) override;
+        void CopyBuffer(CommandBufferRef inCommandBuffer, const char *inDebugName, BufferRHIRef inSrcBuffer,
+            BufferRHIRef inDstBuffer, const BufferCopyInfo &info) override {}
+
     private:
+#if RHI_ENABLE_GPU_MARKER
+        void SetBufferDebugName(const VulkanBufferRHI& inVkBufferRHI, const char *inLabel);
+#endif
         VulkanRuntime &vkRuntime;
     };
 }

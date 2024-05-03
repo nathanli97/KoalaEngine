@@ -42,6 +42,16 @@ namespace Koala::RHI
         NonExclusiveAccessBuffer = 1 << 10, // This buffer can access from multiple device queues. Slower than exclusive mode.
     };
     typedef uint32_t EBufferUsages;
+
+    struct BufferCopyInfo
+    {
+        size_t srcOffset;
+        size_t dstOffset;
+        // If size == 0, will copy whole srcBuffer to dstBuffer, the copySize will take min(srcBufferSize, dstBufferSize)
+        size_t size;
+
+        BufferCopyInfo() = default;
+    };
     
     struct RHIBufferCreateInfo
     {

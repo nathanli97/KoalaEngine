@@ -35,29 +35,52 @@ namespace Koala::RHI
         TextureChannelMax
     };
 
+    /**
+     * @brief The usage flag for texture.
+     * @details This flag descriptures how the program use this texture, the underlying RHI code \
+     *          can take this flag to optimize how the texture is created and used, to maximum runtime performance.
+     */
     enum ETextureUsage
     {
+        // Invalid texture. Do not use this flag to create texture.
         UnknownTexture = 0,
+        // This texture can be used to present to surface (framebuffer).
         PresentTexture = 1 << 0,
+        // This texture can be used as source in transfer command (COPY SRC).
         CopySrcTexture = 1 << 1,
+        // This texture can be used as destination in transfer command (COPY DST).
         CopyDstTexture = 1 << 2,
 
-        // Can be used as RenderTarget
+        // Can be used as RenderTarget.
         RenderTarget = 1 << 3,
-        // Can be sampled on GPU shaders
+        // Can be used as ShaderResource.
         ShaderResource = 1 << 4,
 
+        // This texture can have RGB(A) values.
         ColorTexture = 1 << 5,
+        // This texture should treat as depth-only texture. NOTE `DepthTexture` and `StencilTexture` can be used together, In such case texture format maybe like D24S8.
         DepthTexture = 1 << 6,
+        // This texture should treat as stencil-only texture. NOTE `DepthTexture` and `StencilTexture` can be used together, In such case texture format maybe like D24S8.
         StencilTexture = 1 << 7,
-        
+
+        // AVOID: This texture can be written by CPU. For performance consideration, this flag should avoid.
         CPUWriteTexture = 1 << 8,
+        // AVOID: This texture can be written by CPU. For performance consideration, this flag should avoid.
         CPUReadTexture = 1 << 9,
+        // This texture can be written by GPU.
         GPUWriteTexture = 1 << 10,
+        // RECOMMENDED: This texture can be written by GPU.
         GPUOnlyTexture = 1 << 11,
         
+        /**
+         * By the default, all textures use optimal layout and use staging buffer for loading.
+         * If you don't want use staging buffer for texture loading, then use 'LinearLayout'.
+         * This will cause created texture is in linear layout, i.e. can load texture data directly.
+         */
+        LinearLayout = 1 << 12,
+        
 
-        NonExclusiveAccessTexture = 1 << 12, // This image can access from multiple device queues. Slower than exclusive mode.
+        NonExclusiveAccessTexture = 1 << 31, // This image can access from multiple device queues. Slower than exclusive mode.
     };
 
     typedef uint32_t ETextureUsages;

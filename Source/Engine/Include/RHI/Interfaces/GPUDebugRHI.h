@@ -17,17 +17,21 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/BufferResources.h"
 #include "RHI/CommandBufferResource.h"
+
+namespace Koala
+{
+    struct RGBAColor;
+}
 
 namespace Koala::RHI
 {
-    
-    class IBufferInterface
+    class IGPUDebugInterface
     {
-    public:
-        virtual ~IBufferInterface() = default;
-        virtual BufferRHIRef CreateBuffer(const char* inDebugName, const RHIBufferCreateInfo& info) = 0;
-        virtual void CopyBuffer(CommandBufferRef inCommandBuffer, const char* inDebugName, BufferRHIRef inSrcBuffer, BufferRHIRef inDstBuffer, const BufferCopyInfo& info = BufferCopyInfo()) = 0;
+        ~IGPUDebugInterface() = default;
+        virtual void BeginArea(CommandBufferRef inCmdBuffer, const char * inAreaDesc, const RGBAColor &inColor) = 0;
+        virtual void EndArea(CommandBufferRef inCmdBuffer) = 0;
+        virtual void BeginArea(CommandQueueRef inCmdBuffer, const char * inAreaDesc, const RGBAColor &inColor) = 0;
+        virtual void EndArea(CommandQueueRef inCmdBuffer) = 0;
     };
 }

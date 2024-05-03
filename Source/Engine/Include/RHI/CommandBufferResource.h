@@ -17,17 +17,26 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/BufferResources.h"
-#include "RHI/CommandBufferResource.h"
+#include <memory>
 
 namespace Koala::RHI
 {
-    
-    class IBufferInterface
+    struct RHICommandPool
     {
-    public:
-        virtual ~IBufferInterface() = default;
-        virtual BufferRHIRef CreateBuffer(const char* inDebugName, const RHIBufferCreateInfo& info) = 0;
-        virtual void CopyBuffer(CommandBufferRef inCommandBuffer, const char* inDebugName, BufferRHIRef inSrcBuffer, BufferRHIRef inDstBuffer, const BufferCopyInfo& info = BufferCopyInfo()) = 0;
+        
     };
+
+    struct RHICommandBuffer
+    {
+        
+    };
+
+    struct RHICommandQueue
+    {
+        
+    };
+    
+    typedef std::shared_ptr<RHICommandPool>   CommandPoolRef;
+    typedef std::shared_ptr<RHICommandBuffer> CommandBufferRef;
+    typedef std::shared_ptr<RHICommandQueue>  CommandQueueRef;
 }

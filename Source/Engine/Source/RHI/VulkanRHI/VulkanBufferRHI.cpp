@@ -18,6 +18,7 @@
 #include "VulkanBufferRHI.h"
 
 #include <Core.h>
+#include <RGBAColor.h>
 #include "VulkanRHI.h"
 #include "RHI/TextureResources.h"
 
@@ -82,5 +83,15 @@ namespace Koala::RHI
         VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime.vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
         return nullptr;
     }
+
+#if RHI_ENABLE_GPU_MARKER
+    void VulkanBufferInterface::SetBufferDebugName(const VulkanBufferRHI& inVkBufferRHI, const char *inLabel)
+    {
+        VkDebugUtilsObjectNameInfoEXT vkDebugUtilsObjectNameInfoExt{.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT};
+        vkDebugUtilsObjectNameInfoExt.objectType = VK_OBJECT_TYPE_BUFFER;
+        vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVkBufferRHI.buffer);
+        vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
+    }
+#endif
 }
 #endif

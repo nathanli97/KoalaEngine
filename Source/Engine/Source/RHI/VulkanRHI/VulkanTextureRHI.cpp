@@ -28,7 +28,7 @@
 namespace Koala::RHI
 {
     static Koala::Logger logger("VulkanRHITexture");
-    static FORCEINLINE VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
+    static FORCEINLINE_DEBUGABLE VkImageUsageFlags TextureUsageToVkImageUsageFlags(ETextureUsages usage)
     {
         VkImageUsageFlags flags{0};
         ASSERT(usage != ETextureUsage::UnknownTexture);
@@ -70,6 +70,13 @@ namespace Koala::RHI
             flags |= VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT;
         }
         return flags;
+    }
+    static FORCEINLINE VkImageLayout TextureUsageToVkImageLayout(ETextureUsages usage)
+    {
+        if (usage & ETextureUsage::LinearLayout)
+            return VK_IMAGE_LAYOUT_PREINITIALIZED;
+        else
+            return VK_IMAGE_LAYOUT_UNDEFINED;
     }
     static FORCEINLINE VkSampleCountFlagBits NumSamplesToVkSampleCount(int numSamples)
     {
@@ -129,7 +136,7 @@ namespace Koala::RHI
         }
 
     }
-    static FORCEINLINE VmaMemoryUsage TextureUsageToVmaMemoryUsage(ETextureUsages inUsage)
+    static FORCEINLINE_DEBUGABLE VmaMemoryUsage TextureUsageToVmaMemoryUsage(ETextureUsages inUsage)
     {
         if (inUsage & ETextureUsage::GPUOnlyTexture || inUsage & ETextureUsage::PresentTexture)
             return VMA_MEMORY_USAGE_GPU_ONLY;
@@ -154,7 +161,7 @@ namespace Koala::RHI
 
         return VMA_MEMORY_USAGE_AUTO;
     }
-    static FORCEINLINE VkImageAspectFlagBits TextureUsagesToVkImageAspectFlagBits(ETextureUsages usage)
+    static FORCEINLINE_DEBUGABLE VkImageAspectFlagBits TextureUsagesToVkImageAspectFlagBits(ETextureUsages usage)
     {
         if (usage & ETextureUsage::ColorTexture)
             return VK_IMAGE_ASPECT_COLOR_BIT;
@@ -177,15 +184,15 @@ namespace Koala::RHI
         createInfo.extent.depth = info.depth;
         createInfo.mipLevels = info.numMips;
         createInfo.samples = NumSamplesToVkSampleCount(info.numSamples);
-        createInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        createInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        createInfo.sharingMode = info.usage & (uint32_t)NonExclusiveAccessTexture ? VK_SHARING_MODE_CONCURRENT : VK_SHARING_MODE_EXCLUSIVE;
+        createInfo.initialLayout = TextureUsageToVkImageLayout(info.usage);
         createInfo.usage = TextureUsageToVkImageUsageFlags(info.usage);
         createInfo.arrayLayers = info.numTextureArray;
-        createInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        createInfo.tiling = (info.usage & ETextureUsage::LinearLayout) ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
         
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
         vmaAllocationCreateInfo.usage = TextureUsageToVmaMemoryUsage(info.usage);
-
+        // We only interested in GPU Memory.
         vmaAllocationCreateInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
         auto textureRHI = std::make_shared<VulkanTextureRHI>();
@@ -195,7 +202,8 @@ namespace Koala::RHI
         textureRHI->cachedTextureInfo.samples = createInfo.samples;
         textureRHI->cachedTextureInfo.usage = createInfo.usage;
         textureRHI->cachedTextureInfo.imageType = createInfo.imageType;
-        
+        textureRHI->cachedTextureInfo.initialLayout = createInfo.initialLayout;
+
         VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime.vmaAllocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
 
         return textureRHI;

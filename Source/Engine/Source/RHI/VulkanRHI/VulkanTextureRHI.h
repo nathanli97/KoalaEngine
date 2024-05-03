@@ -41,8 +41,10 @@ namespace Koala::RHI
             VkImageType imageType;
             VkSampleCountFlagBits samples;
             VkImageUsageFlags usage;
+            VkImageLayout initialLayout;
         } cachedTextureInfo{};
 
+        // VmaAllocationInfo cachedAllocationInfo{};
         size_t GetPlatformSize() override {return 0;}
     };
 
