@@ -206,6 +206,10 @@ namespace Koala::RHI
 
         VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime.vmaAllocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
 
+#if RHI_ENABLE_GPU_MARKER
+        SetTextureDebugName(*textureRHI, debugName);
+        textureRHI->cachedTextureInfo.debugName = debugName;
+#endif
         return textureRHI;
     }
     
@@ -215,6 +219,9 @@ namespace Koala::RHI
         auto vulkanTextureRHI = static_cast<VulkanTextureRHI*>(inTexture->GetPlatformNativePointer());
 
         CreateImageView(view->imageView, *vulkanTextureRHI, bUseSwizzle, TextureUsagesToVkImageAspectFlagBits(vulkanTextureRHI->GetTextureUsage()));
+#if RHI_ENABLE_GPU_MARKER
+        SetTextureViewDebugName(*view, vulkanTextureRHI->cachedTextureInfo.debugName.c_str());
+#endif
         return view;
     }
 
@@ -258,6 +265,25 @@ namespace Koala::RHI
 
         VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vkRuntime.device, &vkImageViewCreateInfo, nullptr, &outImageView))
     }
-    
+#if RHI_ENABLE_GPU_MARKER
+    void VulkanTextureInterface::SetTextureDebugName(const VulkanTextureRHI &inVulkanTextureRHI, const char *inLabel)
+    {
+        VkDebugUtilsObjectNameInfoEXT vkDebugUtilsObjectNameInfoExt{.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT};
+        vkDebugUtilsObjectNameInfoExt.objectType = VK_OBJECT_TYPE_IMAGE;
+        vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureRHI.image);
+        vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
+
+        vkSetDebugUtilsObjectNameEXT(vkRuntime.device, &vkDebugUtilsObjectNameInfoExt);
+    }
+    void VulkanTextureInterface::SetTextureViewDebugName(const VulkanTextureView& inVulkanTextureViewRHI, const char *inLabel)
+    {
+        VkDebugUtilsObjectNameInfoEXT vkDebugUtilsObjectNameInfoExt{.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT};
+        vkDebugUtilsObjectNameInfoExt.objectType = VK_OBJECT_TYPE_IMAGE_VIEW;
+        vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureViewRHI.imageView);
+        vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
+
+        vkSetDebugUtilsObjectNameEXT(vkRuntime.device, &vkDebugUtilsObjectNameInfoExt);
+    }
+#endif
 }
 #endif

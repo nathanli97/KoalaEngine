@@ -81,6 +81,10 @@ namespace Koala::RHI
         bufferRHI->cachedBufferCreateInfo = info;
 
         VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime.vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
+
+#if RHI_ENABLE_GPU_MARKER
+        SetBufferDebugName(*bufferRHI, debugName);
+#endif
         return nullptr;
     }
 
@@ -91,6 +95,8 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectType = VK_OBJECT_TYPE_BUFFER;
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVkBufferRHI.buffer);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
+
+        vkSetDebugUtilsObjectNameEXT(vkRuntime.device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

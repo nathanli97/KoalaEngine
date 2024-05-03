@@ -42,6 +42,9 @@ namespace Koala::RHI
             VkSampleCountFlagBits samples;
             VkImageUsageFlags usage;
             VkImageLayout initialLayout;
+#if RHI_ENABLE_GPU_MARKER
+            std::string debugName;
+#endif
         } cachedTextureInfo{};
 
         // VmaAllocationInfo cachedAllocationInfo{};
@@ -65,6 +68,11 @@ namespace Koala::RHI
         void CopyTexture() override {}
 
     private:
+#if RHI_ENABLE_GPU_MARKER
+        void SetTextureDebugName(const VulkanTextureRHI& inVulkanTextureRHI, const char *inLabel);
+        void SetTextureViewDebugName(const VulkanTextureView& inVulkanTextureViewRHI, const char *inLabel);
+
+#endif
         void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
         VulkanRuntime &vkRuntime;
     };
