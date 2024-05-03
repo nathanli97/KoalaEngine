@@ -18,8 +18,8 @@
 
 
 #pragma once
-#include "Module.h"
-#include "Thread.h"
+#include "ModuleInterface.h"
+#include "ThreadInterface.h"
 
 namespace Koala {
     struct IThreadedModule: public IModule, IThread
@@ -28,6 +28,6 @@ namespace Koala {
 
         void CreateThread();
     private:
-        bool thread_created = false;
+        bool bThreadCreated = false;
     };
 }

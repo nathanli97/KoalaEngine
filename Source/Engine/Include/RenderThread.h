@@ -49,32 +49,32 @@ namespace Koala {
         // Return FALSE if RenderThread is exited too early (Has ERROR).
         bool WaitForRenderReady()
         {
-            std::unique_lock lock(mutex_render_ready_or_initerr);
-            cv_render_ready_or_initerr.wait(lock);
+            std::unique_lock lock(mutexRenderReadyOrInitErr);
+            cvRenderReadyOrInitErr.wait(lock);
 
-            return !thread_has_initerr;
+            return !bRenderInitFailed;
         }
 
         void WaitForRTStop()
         {
-            if (thread_has_initerr)
+            if (bRenderInitFailed)
                 return;
 
-            std::unique_lock lock(mutex_renderthread_stop);
-            cv_renderthread_stop.wait(lock);
+            std::unique_lock lock(mutexRenderThreadStop);
+            cvRenderThreadStop.wait(lock);
         }
 
         RenderThread(): IThreadedModule() {}
     private:
         RHI::IRenderHardware *render = nullptr;
 
-        std::mutex mutex_render_ready_or_initerr;
-        std::condition_variable cv_render_ready_or_initerr;
+        std::mutex mutexRenderReadyOrInitErr;
+        std::condition_variable cvRenderReadyOrInitErr;
 
-        std::mutex mutex_renderthread_stop;
-        std::condition_variable cv_renderthread_stop;
+        std::mutex mutexRenderThreadStop;
+        std::condition_variable cvRenderThreadStop;
 
-        bool thread_has_initerr = false;
+        bool bRenderInitFailed = false;
     };
 }
 

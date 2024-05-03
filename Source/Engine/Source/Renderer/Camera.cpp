@@ -23,20 +23,20 @@ namespace Koala::Renderer
     {
         if (IsProjectionDirty())
         {
-            projector->comm_param.far_plane = far_plane;
-            projector->comm_param.near_plane = near_plane;
+            projector->commParam.farPlane = farPlane;
+            projector->commParam.nearPlane = nearPlane;
 
-            if (camera_mode == ECameraMode::OrthographicCamera)
+            if (cameraMode == ECameraMode::OrthographicCamera)
             {
-                projector->proj_param.ortho.bottom = bottom;
-                projector->proj_param.ortho.top = top;
-                projector->proj_param.ortho.left = left;
-                projector->proj_param.ortho.right = right;
+                projector->projParam.ortho.bottom = bottom;
+                projector->projParam.ortho.top = top;
+                projector->projParam.ortho.left = left;
+                projector->projParam.ortho.right = right;
             }
             else
             {
-                projector->proj_param.persp.fov = fov;
-                projector->proj_param.persp.aspect = aspect;
+                projector->projParam.persp.fov = fov;
+                projector->projParam.persp.aspect = aspect;
             }
 
             projector->MarkDirty();

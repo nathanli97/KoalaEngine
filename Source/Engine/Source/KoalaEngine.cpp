@@ -37,6 +37,7 @@ namespace Koala
     bool KoalaEngine::EarlyInitializeStage(int argc, char** argv)
     {
         using namespace Koala;
+        engineStage = EEngineStage::EarlyInitStage;
         Logger loggerEngineEarlyInit("EngineEarlyInitialize");
 
         CmdParser::Initialize(argc, argv);
@@ -69,6 +70,7 @@ namespace Koala
 
     bool KoalaEngine::InitializeStage()
     {
+        engineStage = EEngineStage::InitStage;
         Logger loggerEngineInit("EngineInitialize");
 
         Scripting::Initialize();
@@ -101,6 +103,7 @@ namespace Koala
             KOALA_ENGINE_VER_PATCH,
             KOALA_ENGINE_VER_CODENAME);
 
+        engineStage = EEngineStage::Running;
         return true;
     }
 

@@ -22,7 +22,7 @@
 #include <mutex>
 #include <optional>
 
-#include "Core/Module.h"
+#include "Core/ModuleInterface.h"
 #include <unordered_map>
 #include <string>
 
@@ -40,40 +40,39 @@ namespace Koala
 
         bool HasAutoSaving() const
         {
-            return auto_saving;
+            return bAutoSaving;
         }
 
         void SetAutoSaving(bool enabled)
         {
-            auto_saving = enabled;
+            bAutoSaving = enabled;
         }
 
         bool HasAutoSavingWhenEngineExiting() const
         {
-            return saving_when_engine_exiting;
+            return bAutoSaveWhenEngineExiting;
         }
 
         void SetAutoSavingWhenEngineExiting(bool enabled)
         {
-            saving_when_engine_exiting = enabled;
+            bAutoSaveWhenEngineExiting = enabled;
         }
 
         void PrintAllConfigurations() const;
 
-        std::optional<std::string> GetSettingStr(std::string key, std::string default_value = "") const;
-        std::string GetSettingStrWithAutoSaving(std::string key, std::string default_value, bool write_into_engine_config = false);
-        void SetSettingStr(std::string key, std::string value, bool write_into_engine_config = false);
+        std::optional<std::string> GetSettingStr(std::string key, std::string defaultValue = "") const;
+        std::string GetSettingStrWithAutoSaving(std::string key, std::string defaultValue, bool bWriteIntoEngineConfig = false);
+        void SetSettingStr(std::string key, std::string value, bool bWriteIntoEngineConfig = false);
     private:
         mutable std::mutex global_config_lock;
-        bool readonly_mode = false;
+        bool bReadonlyMode = false;
 
         void LoadINI(std::ifstream& file, std::unordered_map<std::string, std::string> &out);
         void SaveINI(std::ofstream& file, const std::unordered_map<std::string, std::string> &config) const;
 
-        std::unordered_map<std::string, std::string> engine_configs, game_configs;
-        bool auto_saving = false;
-        bool saving_when_engine_exiting = false;
+        std::unordered_map<std::string, std::string> engineConfigs, gameConfigs;
+        bool bAutoSaving = false;
+        bool bAutoSaveWhenEngineExiting = false;
 
-        // void OverrideSettingWithCommandLine();
     };
 }

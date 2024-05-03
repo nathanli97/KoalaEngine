@@ -19,15 +19,15 @@
 #include <cassert>
 #include <thread>
 
-#include "Core/Thread.h"
+#include "Core/ThreadInterface.h"
 #include "Core/ThreadedModule.h"
 #include "ThreadManager.h"
 
 
 namespace Koala {
 void IThreadedModule::CreateThread() {
-    assert(!thread_created);
+    assert(!bThreadCreated);
     ThreadManager::Get().CreateThread(this);
-    thread_created = true;
+    bThreadCreated = true;
 }
 }

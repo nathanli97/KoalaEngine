@@ -27,28 +27,28 @@ namespace Koala
     CmdParser *CmdParser::cmd_parser{nullptr};
     CmdParser::CmdParser(int argc, char** argv)
     {
-        std::string curr_arg;
+        std::string currArg;
         std::string cmdline;
         for (int i = 1; i < argc; i++)
         {
             std::string arg = argv[i];
             cmdline += argv[i];
             cmdline += " ";
-            const bool arg_with_short = StringTool::startswith(arg, "-");
-            const bool arg_with_long = StringTool::startswith(arg, "--");
+            const bool argWithShort = StringTool::startswith(arg, "-");
+            const bool argWithLong = StringTool::startswith(arg, "--");
             if (
-                arg_with_short ||
-                arg_with_long
+                argWithShort ||
+                argWithLong
                 )
             {
-                const int substr_start = arg_with_long ? 2 : 1;
-                arg = arg.substr(substr_start);
+                const int substrStart = argWithLong ? 2 : 1;
+                arg = arg.substr(substrStart);
 
-                auto position_of_equal = arg.find('=');
-                if (position_of_equal != std::string::npos)
+                auto positionOfEqual = arg.find('=');
+                if (positionOfEqual != std::string::npos)
                 {
-                    auto param = arg.substr(position_of_equal);
-                    auto key = arg.substr(0, position_of_equal);
+                    auto param = arg.substr(positionOfEqual);
+                    auto key = arg.substr(0, positionOfEqual);
 
                     if (args.count(key) != 0)
                     {
@@ -65,14 +65,14 @@ namespace Koala
                         spdlog::warn("Found redundent arg {}, ignored", arg);
                     } else
                     {
-                        curr_arg = arg;
+                        currArg = arg;
                         args.emplace(arg, "");
                     }
                 }
-            } else if (!curr_arg.empty())
+            } else if (!currArg.empty())
             {
-                args[curr_arg] = arg;
-                curr_arg.clear();
+                args[currArg] = arg;
+                currArg.clear();
             } else
             {
                 spdlog::warn("Unexpected arg {}, ignored", arg);
