@@ -37,9 +37,11 @@ namespace Koala::RHI
         GPUOnlyBuffer = 1 << 7,
 
         DynamicOffsetBuffer = 1 << 8, // Can provide offset dynamically.
-        TexelBuffer = 1 << 9, // Treat buffer data as image. i.e. we can perfrom sample operations on this buffer.
+        TexelBuffer = 1 << 9, // Treat buffer data as image. i.e. we can perform sample operations on this buffer.
 
-        NonExclusiveAccessBuffer = 1 << 10, // This buffer can access from multiple device queues. Slower than exclusive mode.
+        BufferMemoryMapSequentialWrite, // You need map the buffer (On GPU Memory) to HOST (CPU) Memory, and want to write them sequentially.  (WARNING: sequential write only! DO NOT READ OR WRITE RANDOMLY!)
+        BufferMemoryMapRandomAccess,    // You need map the buffer (On GPU Memory) to HOST (CPU) Memory, and want to read&write them randomly. (Random access)
+        NonExclusiveAccessBuffer = 1 << 31, // This buffer can access from multiple device queues. Slower than exclusive mode.
     };
     typedef uint32_t EBufferUsages;
 

@@ -81,6 +81,11 @@ namespace Koala::RHI
         VmaAllocationCreateInfo vmaAllocationCreateInfo{};
         vmaAllocationCreateInfo.usage = BufferUsageToVmaMemoryUsage(info.usage);
         
+        if (info.usage & BufferMemoryMapRandomAccess)
+            vmaAllocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT;
+        else if (info.usage & BufferMemoryMapSequentialWrite)
+            vmaAllocationCreateInfo.flags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        
         auto bufferRHI = std::make_shared<VulkanBufferRHI>();
         bufferRHI->cachedBufferCreateInfo = info;
 
