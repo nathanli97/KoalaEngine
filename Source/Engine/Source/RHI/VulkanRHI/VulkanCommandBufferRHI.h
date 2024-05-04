@@ -17,45 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <unordered_map>
-
-#include "Definations.h"
+#include "RHI/Interfaces/CommandBufferRHI.h"
 #include "RHI/CommandBufferResources.h"
-#include "Core/Check.h"
-#include "Core/SingletonInterface.h"
-#ifdef INCLUDE_RHI_VULKAN
+#if 1 || INCLUDE_RHI_VULKAN
 #include "Runtime.h"
-namespace Koala::RHI
-{
-    struct VulkanCommandQueue final: public RHICommandQueue
-    {
-        uint32_t queueFamilyIndex;
-        VkQueue vkQueue;
-    };
-
-    class VulkanCommandQueueRegister final: public ISingleton
+namespace Koala::RHI {
+    class VulkanCommandBufferInterface: public ICommandBufferInterface
     {
     public:
-        KOALA_IMPLEMENT_SINGLETON(VulkanCommandQueueRegister)
-        VulkanCommandQueue* GetQueue(ECommandQueueType inType)
-        {
-            check(vkQueueMap.contains(inType));
-            return &vkQueueMap.at(inType);
-        }
-        void AddUninitializedCommandQueue() {}
-        template<typename... Type>
-        void AddUninitializedCommandQueue(ECommandQueueType inType, Type... inTypes)    
-        {
-            check(!vkQueueMap.contains(inType));
-            vkQueueMap.emplace(inType, VulkanCommandQueue{});
-            AddUninitializedCommandQueue(inTypes...);
-        }
-        bool HasQueue(ECommandQueueType inQueueType) const
-        {
-            return vkQueueMap.contains(inQueueType);
-        }
-    private:
-        std::unordered_map<ECommandQueueType, VulkanCommandQueue> vkQueueMap; 
+        CommandQueueRef GetCommandQueue(ECommandQueueType inQueueType) override;
     };
 }
 #endif

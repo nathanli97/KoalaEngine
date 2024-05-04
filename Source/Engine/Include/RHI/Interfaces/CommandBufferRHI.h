@@ -26,5 +26,6 @@ namespace Koala::RHI
     {
     public:
         virtual ~ICommandBufferInterface() = default;
+        virtual CommandQueueRef GetCommandQueue(ECommandQueueType inQueueType) = 0;
     };
 }

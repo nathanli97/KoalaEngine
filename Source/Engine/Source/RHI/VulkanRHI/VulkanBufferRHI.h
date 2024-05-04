@@ -18,7 +18,7 @@
 
 #pragma once
 
-#ifdef INCLUDE_RHI_VULKAN
+#if INCLUDE_RHI_VULKAN
 #include "RHI/Interfaces/BufferRHI.h"
 #include "Runtime.h"
 

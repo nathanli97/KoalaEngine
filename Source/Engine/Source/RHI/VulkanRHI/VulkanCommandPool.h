@@ -17,9 +17,9 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/CommandBufferResource.h"
-#include "Runtime.h"
+#include "RHI/CommandBufferResources.h"
 #ifdef INCLUDE_RHI_VULKAN
+#include "Runtime.h"
 namespace Koala::RHI
 {
     class VulkanCommandPool: public RHICommandPool
