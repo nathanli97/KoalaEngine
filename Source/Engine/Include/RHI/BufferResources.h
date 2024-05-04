@@ -67,6 +67,9 @@ namespace Koala::RHI
         virtual ~BufferRHI() = default;
         virtual size_t GetPlatformSize() = 0;
         FORCEINLINE_DEBUGABLE const RHIBufferCreateInfo& GetCachedCreateInfo() const {return cachedBufferCreateInfo;}
+
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
     protected:
         RHIBufferCreateInfo cachedBufferCreateInfo{};
     };

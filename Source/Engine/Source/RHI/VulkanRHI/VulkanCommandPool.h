@@ -26,6 +26,7 @@ namespace Koala::RHI
     {
     public:
         VkCommandPool vkCommandPool{};
+        ~VulkanCommandPool();
     };
 }
 #endif

@@ -543,7 +543,7 @@ namespace Koala::RHI
             imageCount = chainSupportDetails.capabilities.minImageCount;
         }
 
-        VkSwapchainCreateInfoKHR swapchainCreateInfo{ VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
+        VkSwapchainCreateInfoKHR swapchainCreateInfo{ .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR };
         swapchainCreateInfo.surface = vk.surfaceKhr;
         swapchainCreateInfo.minImageCount = imageCount;
         swapchainCreateInfo.imageFormat = surface_format.format;

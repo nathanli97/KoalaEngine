@@ -17,8 +17,10 @@
 
 #include "VulkanCommandBufferRHI.h"
 
+#include "VulkanCommandPool.h"
 #include "VulkanCommandQueue.h"
-
+#include "VulkanRHI.h"
+#ifdef INCLUDE_RHI_VULKAN
 namespace Koala::RHI
 {
     CommandQueueRef VulkanCommandBufferInterface::GetCommandQueue(ECommandQueueType inQueueType)
@@ -27,4 +29,29 @@ namespace Koala::RHI
             return nullptr;
         return VulkanCommandQueueRegister::Get().GetQueue(inQueueType);
     }
+    
+    CommandPoolRef VulkanCommandBufferInterface::CreateCommandPool(CommandQueueRef inCommandQueue)
+    {
+        std::shared_ptr<VulkanCommandPool> pool;
+
+        auto vkQueue = static_cast<VulkanCommandQueue*>(inCommandQueue->GetPlatformNativePointer());
+        VkCommandPoolCreateInfo vkCommandPoolCreateInfo{.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+        vkCommandPoolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+        // TODO: short-live support? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT 
+        vkCommandPoolCreateInfo.queueFamilyIndex = vkQueue->queueFamilyIndex;
+
+        VK_CHECK_RESULT_SUCCESS(vkCreateCommandPool(VulkanRHI::GetVkRuntime()->device, &vkCommandPoolCreateInfo, nullptr, &pool->vkCommandPool))
+        return pool;
+    }
+
+    void VulkanCommandBufferInterface::ReleaseCommandPool(const VulkanCommandPool& inCommandPool)
+    {
+        vkDestroyCommandPool(VulkanRHI::GetVkRuntime()->device, inCommandPool.vkCommandPool, nullptr);
+    }
+    
+    VulkanCommandPool::~VulkanCommandPool()
+    {
+        VulkanCommandBufferInterface::Get().ReleaseCommandPool(*this);
+    }
 }
+#endif

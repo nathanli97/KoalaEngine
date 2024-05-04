@@ -44,7 +44,6 @@ namespace Koala::RHI
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(VulkanBufferInterface)
-        VulkanBufferInterface();
         BufferRHIRef CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info) override;
         void CopyBuffer(CommandBufferRef inCommandBuffer, const char *inDebugName, BufferRHIRef inSrcBuffer,
             BufferRHIRef inDstBuffer, const BufferCopyInfo &info) override {}
@@ -53,7 +52,6 @@ namespace Koala::RHI
 #if RHI_ENABLE_GPU_MARKER
         void SetBufferDebugName(const VulkanBufferRHI& inVkBufferRHI, const char *inLabel);
 #endif
-        VulkanRuntime *vkRuntime{nullptr};
     };
 }
 

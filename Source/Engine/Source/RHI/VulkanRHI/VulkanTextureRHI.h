@@ -66,7 +66,6 @@ namespace Koala::RHI
     public:
         KOALA_IMPLEMENT_SINGLETON(VulkanTextureInterface)
         
-        VulkanTextureInterface();
         TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
         TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle) override;
         void CopyTexture() override {}
@@ -80,7 +79,6 @@ namespace Koala::RHI
 
 #endif
         void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
-        VulkanRuntime *vkRuntime{nullptr};
     };
 }
 #endif

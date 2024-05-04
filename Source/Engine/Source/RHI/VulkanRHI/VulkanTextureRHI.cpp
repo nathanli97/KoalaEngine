@@ -172,10 +172,6 @@ namespace Koala::RHI
         ensure(false, "You must specify one of Color/Depth/Stencil in usages!");
         return VK_IMAGE_ASPECT_NONE;
     }
-    VulkanTextureInterface::VulkanTextureInterface()
-    {
-        vkRuntime = VulkanRHI::Get().GetVkRuntime();
-    }
 
     TextureRHIRef VulkanTextureInterface::CreateTexture(const char* debugName, const RHITextureCreateInfo& info)
     {
@@ -209,7 +205,7 @@ namespace Koala::RHI
         textureRHI->cachedTextureInfo.imageType = createInfo.imageType;
         textureRHI->cachedTextureInfo.initialLayout = createInfo.initialLayout;
 
-        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(vkRuntime->vmaAllocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
+        VK_CHECK_RESULT_SUCCESS(vmaCreateImage(VulkanRHI::GetVkRuntime()->vmaAllocator, &createInfo, &vmaAllocationCreateInfo, &textureRHI->image, &textureRHI->vmaAllocation, nullptr))
 
 #if RHI_ENABLE_GPU_MARKER
         SetTextureDebugName(*textureRHI, debugName);
@@ -268,15 +264,15 @@ namespace Koala::RHI
         vkImageViewCreateInfo.subresourceRange.layerCount = image.cachedTextureCreateInfo.numTextureArray;
 
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vkRuntime->device, &vkImageViewCreateInfo, nullptr, &outImageView))
+        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(VulkanRHI::GetVkRuntime()->device, &vkImageViewCreateInfo, nullptr, &outImageView))
     }
     void VulkanTextureInterface::ReleaseTexture(VulkanTextureRHI& inTexture)
     {
-        vmaDestroyImage(vkRuntime->vmaAllocator, inTexture.image, inTexture.vmaAllocation);
+        vmaDestroyImage(VulkanRHI::GetVkRuntime()->vmaAllocator, inTexture.image, inTexture.vmaAllocation);
     }
     void VulkanTextureInterface::ReleaseTextureView(VulkanTextureView& inTextureView)
     {
-        vkDestroyImageView(vkRuntime->device, inTextureView.imageView, nullptr);
+        vkDestroyImageView(VulkanRHI::GetVkRuntime()->device, inTextureView.imageView, nullptr);
     }
     VulkanTextureRHI::~VulkanTextureRHI()
     {
@@ -294,7 +290,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureRHI.image);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(vkRuntime->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
     }
     void VulkanTextureInterface::SetTextureViewDebugName(const VulkanTextureView& inVulkanTextureViewRHI, const char *inLabel)
     {
@@ -303,7 +299,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureViewRHI.imageView);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(vkRuntime->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

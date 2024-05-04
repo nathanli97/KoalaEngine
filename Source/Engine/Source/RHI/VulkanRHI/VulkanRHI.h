@@ -39,9 +39,9 @@ public:
     void PostShutdown_MainThread() override;
     bool Tick_MainThread() override;
 
-    NODISCARD FORCEINLINE VulkanRuntime* GetVkRuntime()
+    NODISCARD FORCEINLINE static VulkanRuntime* GetVkRuntime()
     {
-        return &vk;
+        return &Get().vk;
     }
     
     static void HandleVulkanFuncFailed(VkResult result, const char * func, const char * file, size_t line);

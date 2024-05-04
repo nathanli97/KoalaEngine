@@ -17,15 +17,17 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "Core/SingletonInterface.h"
 #include "RHI/CommandBufferResources.h"
 
 namespace Koala::RHI
 {
     
-    class ICommandBufferInterface
+    class ICommandBufferInterface: public ISingleton
     {
     public:
         virtual ~ICommandBufferInterface() = default;
         virtual CommandQueueRef GetCommandQueue(ECommandQueueType inQueueType) = 0;
+        virtual CommandPoolRef CreateCommandPool(CommandQueueRef inCommandQueue) = 0;
     };
 }

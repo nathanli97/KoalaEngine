@@ -30,17 +30,20 @@ namespace Koala::RHI
     };
     struct RHICommandPool
     {
-        
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
     };
 
     struct RHICommandBuffer
     {
-        
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
     };
 
     struct RHICommandQueue
     {
-        
+        const void* GetPlatformNativePointer() const {return this;}
+        void* GetPlatformNativePointer() {return this;}
     };
     
     typedef std::shared_ptr<RHICommandPool>   CommandPoolRef;

@@ -66,10 +66,6 @@ namespace Koala::RHI
 
         return VMA_MEMORY_USAGE_AUTO;
     }
-    VulkanBufferInterface::VulkanBufferInterface()
-    {
-        vkRuntime = VulkanRHI::Get().GetVkRuntime();
-    }
 
     BufferRHIRef VulkanBufferInterface::CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info)
     {
@@ -89,7 +85,7 @@ namespace Koala::RHI
         auto bufferRHI = std::make_shared<VulkanBufferRHI>();
         bufferRHI->cachedBufferCreateInfo = info;
 
-        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime->vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
+        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(VulkanRHI::GetVkRuntime()->vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
 
 #if RHI_ENABLE_GPU_MARKER
         SetBufferDebugName(*bufferRHI, debugName);
@@ -98,7 +94,7 @@ namespace Koala::RHI
     }
     void VulkanBufferInterface::ReleaseBuffer(VulkanBufferRHI &inBuffer)
     {
-        vmaDestroyBuffer(vkRuntime->vmaAllocator, inBuffer.buffer, inBuffer.vmaAllocation);
+        vmaDestroyBuffer(VulkanRHI::GetVkRuntime()->vmaAllocator, inBuffer.buffer, inBuffer.vmaAllocation);
     }
     VulkanBufferRHI::~VulkanBufferRHI()
     {
@@ -112,7 +108,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVkBufferRHI.buffer);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(vkRuntime->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

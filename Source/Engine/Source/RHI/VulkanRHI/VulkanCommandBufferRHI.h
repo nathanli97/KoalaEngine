@@ -19,13 +19,24 @@
 #pragma once
 #include "RHI/Interfaces/CommandBufferRHI.h"
 #include "RHI/CommandBufferResources.h"
-#if 1 || INCLUDE_RHI_VULKAN
+#ifdef INCLUDE_RHI_VULKAN
 #include "Runtime.h"
+
+namespace Koala::RHI
+{
+    class VulkanCommandPool;
+}
+
 namespace Koala::RHI {
     class VulkanCommandBufferInterface: public ICommandBufferInterface
     {
     public:
+        KOALA_IMPLEMENT_SINGLETON(VulkanCommandBufferInterface)
         CommandQueueRef GetCommandQueue(ECommandQueueType inQueueType) override;
+        CommandPoolRef CreateCommandPool(CommandQueueRef inCommandQueue) override;
+
+        void ReleaseCommandPool(const VulkanCommandPool& inCommandPool);
+    private:
     };
 }
 #endif
