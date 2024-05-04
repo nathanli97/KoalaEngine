@@ -27,7 +27,18 @@ namespace Koala::RHI
     {
     public:
         virtual ~ICommandBufferInterface() = default;
+        /**
+         * Get CommandQueue by given type.
+         * The CommandQueues is created automatically when RHI initializes.
+         * @param inQueueType The type of CommandQueue.
+         * @return Reference of CommandQueue.
+         */
         virtual CommandQueueRef GetCommandQueue(ECommandQueueType inQueueType) = 0;
+        /**
+         * Create CommandPool for given CommandQueue. The CommandBuffer allocated from this CommandPool **must** only be submitted to given CommandQueue. 
+         * @param inCommandQueue 
+         * @return Reference of Created CommandPool
+         */
         virtual CommandPoolRef CreateCommandPool(CommandQueueRef inCommandQueue) = 0;
     };
 }
