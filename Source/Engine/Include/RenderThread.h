@@ -66,7 +66,7 @@ namespace Koala {
 
         RenderThread(): IThreadedModule() {}
     private:
-        RHI::IRenderHardware *render = nullptr;
+        RHI::IRenderHardware *rhiRender = nullptr;
 
         std::mutex mutexRenderReadyOrInitErr;
         std::condition_variable cvRenderReadyOrInitErr;

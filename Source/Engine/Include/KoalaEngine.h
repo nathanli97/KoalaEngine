@@ -27,7 +27,9 @@ namespace Koala {
         UnInitialized,
         EarlyInitStage,
         InitStage,
-        Running
+        Running,
+        ExitRequested,
+        Exiting
     };
     class KoalaEngine
     {
@@ -55,14 +57,17 @@ namespace Koala {
             static KoalaEngine engine;
             return engine;
         }
-        [[nodiscard]] bool IsEngineExitRequested() const
+        NODISCARD bool IsEngineExitRequested() const
         {
-            return bIsRequestedEngineStop;
+            std::lock_guard lock(mutexEngineStage);
+            return engineStage >= EEngineStage::ExitRequested;
         }
 
         void RequestEngineStop()
         {
-            bIsRequestedEngineStop = true;
+            std::lock_guard lock(mutexEngineStage);
+            if (engineStage < EEngineStage::ExitRequested)
+                engineStage = EEngineStage::ExitRequested;
         }
     private:
         bool Initialize(int argc, char** argv);
@@ -73,8 +78,8 @@ namespace Koala {
         void Tick();
         void Shutdown();
 
+        mutable std::mutex mutexEngineStage;
         EEngineStage engineStage {EEngineStage::UnInitialized};
-        // TODO: This flag variable may be need to protect by LOCK
-        bool bIsRequestedEngineStop = false;
+
     };
 }

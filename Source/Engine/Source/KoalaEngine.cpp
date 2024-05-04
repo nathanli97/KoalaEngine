@@ -116,12 +116,12 @@ namespace Koala
 
     void KoalaEngine::Shutdown()
     {
+        loggerEngine.info("KoalaEngine is exiting");
         RenderThread::Get().WaitForRTStop();
         RenderThread::Get().Shutdown_MainThread();
         ModuleManager::Get().ShutdownModules();
         Config::Get().Shutdown_MainThread();
         Scripting::Shutdown();
-        loggerEngine.info("KoalaEngine is exiting");
     }
 
 }

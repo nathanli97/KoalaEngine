@@ -40,20 +40,20 @@ namespace Koala
             return false;
         }
 
-        render = RHI::GetRHI(renderer);
-        render->PreInit_MainThread();
+        rhiRender = RHI::GetRHI(renderer);
+        rhiRender->PreInit_MainThread();
         return true;
     }
 
     bool RenderThread::Shutdown_MainThread()
     {
-        render->PostShutdown_MainThread();
+        rhiRender->PostShutdown_MainThread();
         return true;
     }
 
     void RenderThread::Tick(float delta_time)
     {
-        if (!render->Tick_MainThread())
+        if (!rhiRender->Tick_MainThread())
             KoalaEngine::Get().RequestEngineStop();
     }
 
@@ -63,12 +63,12 @@ namespace Koala
 
         logger.info("RenderThread: Initializing RHI");
 
-        if (!render->Initialize_RenderThread())
+        if (!rhiRender->Initialize_RenderThread())
         {
             logger.error("RHI: Failed to initialize!");
 
             logger.info("RenderThread: Shutdowning RHI");
-            render->Shutdown_RenderThread();
+            rhiRender->Shutdown_RenderThread();
             logger.info("RenderThread is stopping.");
 
             KoalaEngine::Get().RequestEngineStop();
@@ -94,13 +94,18 @@ namespace Koala
             cvRenderReadyOrInitErr.notify_all();
         }
 
-        while (!KoalaEngine::Get().IsEngineExitRequested())
+        while (true)
         {
+            if (KoalaEngine::Get().IsEngineExitRequested())
+            {
+                logger.info("Engine exit was requested. Trying to shutdown RenderThread...");
+                break;
+            }
             // TODO: Render!!!!!!!!!!!!!
         }
 
         logger.info("RenderThread: Shutdowning RHI");
-        render->Shutdown_RenderThread();
+        rhiRender->Shutdown_RenderThread();
         logger.info("RenderThread is stopping.");
 
         {

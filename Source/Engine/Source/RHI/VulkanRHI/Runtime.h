@@ -55,7 +55,7 @@ namespace Koala::RHI
             std::optional<uint32_t> presentQueueIndex;
             std::optional<uint32_t> transferQueueIndex;
             
-            FORCEINLINE NODISCARD bool IsComplete() const
+            NODISCARD FORCEINLINE bool IsComplete() const
             {
                 return graphicsQueueIndex.has_value() &&
                     computeQueueIndex.has_value() &&
