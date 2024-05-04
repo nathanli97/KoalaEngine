@@ -17,14 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/CommandBufferResources.h"
-
+#include "RHI/CommandBufferResource.h"
+#include "Runtime.h"
+#ifdef INCLUDE_RHI_VULKAN
 namespace Koala::RHI
 {
-    
-    class ICommandBufferInterface
+    class VulkanCommandPool: public RHICommandPool
     {
     public:
-        virtual ~ICommandBufferInterface() = default;
+        VkCommandPool vkCommandPool{};
     };
 }
+#endif

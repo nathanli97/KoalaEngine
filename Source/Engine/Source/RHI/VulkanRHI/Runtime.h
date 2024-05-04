@@ -22,8 +22,11 @@
 #define VMA_VULKAN_VERSION 1003000
 #define VMA_STATIC_VULKAN_FUNCTIONS 0
 #define VMA_DYNAMIC_VULKAN_FUNCTIONS 1
+#include <set>
 #include <volk.h>
 #include <vk_mem_alloc.h>
+
+#include "Memory/Allocator.h"
 
 #ifdef INCLUDE_RHI_VULKAN
 #define GLFW_INCLUDE_VULKAN
@@ -50,19 +53,17 @@ namespace Koala::RHI
             std::optional<uint32_t> graphicsQueueIndex;
             std::optional<uint32_t> computeQueueIndex;
             std::optional<uint32_t> presentQueueIndex;
-
-            [[nodiscard]] bool IsComplete() const
+            std::optional<uint32_t> transferQueueIndex;
+            
+            FORCEINLINE NODISCARD bool IsComplete() const
             {
                 return graphicsQueueIndex.has_value() &&
                     computeQueueIndex.has_value() &&
-                    presentQueueIndex.has_value();
+                    presentQueueIndex.has_value() &&
+                    transferQueueIndex.has_value();
             }
         } queueInfo;
-
-        VkQueue presentQueue{};
-        VkQueue computeQueue{};
-        VkQueue graphicsQueue{};
-
+        
         VkDevice device{};
 
         struct

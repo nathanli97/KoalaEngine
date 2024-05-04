@@ -111,7 +111,7 @@ namespace Koala
         
         IConsoleVariable(EConsoleVariableFlags inFlags): flags(inFlags) {}
         template<typename T>
-        const T& As_Unsafe() {return *static_cast<const T*>(storage);}
+        const T& As_Unsafe() const {return *static_cast<const T*>(storage);}
         
         template<typename T>
         T& As_Unsafe() {return *static_cast<T*>(storage);}

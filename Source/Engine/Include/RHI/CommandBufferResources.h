@@ -17,14 +17,36 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "RHI/CommandBufferResources.h"
+#include <memory>
 
 namespace Koala::RHI
 {
-    
-    class ICommandBufferInterface
+    enum class ECommandQueueType
     {
-    public:
-        virtual ~ICommandBufferInterface() = default;
+        PresentQueue,
+        CommandQueue,
+        GraphicsQueue,
+        TransferQueue
     };
+    struct RHICommandPool
+    {
+        
+    };
+
+    struct RHICommandBuffer
+    {
+        
+    };
+
+    struct RHICommandQueue
+    {
+        
+    };
+    
+    typedef std::shared_ptr<RHICommandPool>   CommandPoolRef;
+    typedef std::shared_ptr<RHICommandBuffer> CommandBufferRef;
+
+    // The queue should be created when RHI initializes, and destroy when RHI shutdown.
+    // No need to use shared_ptr.
+    typedef RHICommandQueue*  CommandQueueRef;
 }

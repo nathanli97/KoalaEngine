@@ -71,14 +71,14 @@ namespace Koala {
         }
         template<typename Type, typename... Args> Type* New(Args... args)
         {
-            Type* memory = MemoryAllocator::Get().MallocPooledTyped<Type>();
+            Type* memory = static_cast<Type*>(Malloc(sizeof(Type)));
             ConstructElement(*memory, std::forward<Args&&>(args)...);
             return memory;
         }
         template<typename Type> void Delete(Type *ptr)
         {
             DestructElement(*ptr);
-            MemoryAllocator::Get().FreePooled(ptr);
+            Free(ptr);
         }
     }
 }

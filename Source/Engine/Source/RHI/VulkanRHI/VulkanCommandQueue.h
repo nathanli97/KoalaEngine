@@ -17,26 +17,41 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <memory>
+#include <unordered_map>
 
+#include "Definations.h"
+#include "RHI/CommandBufferResources.h"
+#include "Runtime.h"
+#include "Core/Check.h"
+#include "Core/SingletonInterface.h"
+#ifdef INCLUDE_RHI_VULKAN
 namespace Koala::RHI
 {
-    struct RHICommandPool
+    struct VulkanCommandQueue final: public RHICommandQueue
     {
-        
+        uint32_t queueFamilyIndex;
+        VkQueue vkQueue;
     };
 
-    struct RHICommandBuffer
+    class VulkanCommandQueueRegister final: public ISingleton
     {
-        
+    public:
+        KOALA_IMPLEMENT_SINGLETON(VulkanCommandQueueRegister)
+        VulkanCommandQueue* GetQueue(ECommandQueueType inType)
+        {
+            check(vkQueueMap.contains(inType));
+            return &vkQueueMap.at(inType);
+        }
+        void AddUninitializedCommandQueue() {}
+        template<typename... Type>
+        void AddUninitializedCommandQueue(ECommandQueueType inType, Type... inTypes)    
+        {
+            check(!vkQueueMap.contains(inType));
+            vkQueueMap.emplace(inType, VulkanCommandQueue{});
+            AddUninitializedCommandQueue(inTypes...);
+        }
+    private:
+        std::unordered_map<ECommandQueueType, VulkanCommandQueue> vkQueueMap; 
     };
-
-    struct RHICommandQueue
-    {
-        
-    };
-    
-    typedef std::shared_ptr<RHICommandPool>   CommandPoolRef;
-    typedef std::shared_ptr<RHICommandBuffer> CommandBufferRef;
-    typedef std::shared_ptr<RHICommandQueue>  CommandQueueRef;
 }
+#endif

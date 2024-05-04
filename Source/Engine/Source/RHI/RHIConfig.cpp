@@ -18,6 +18,7 @@
 
 #include <unordered_set>
 
+#include "ConsoleVariable.h"
 #include "RHI/RHI.h"
 
 #ifdef INCLUDE_RHI_VULKAN

@@ -19,7 +19,7 @@
 #pragma once
 #include "Core/SingletonInterface.h"
 #include "RHI/BufferResources.h"
-#include "RHI/CommandBufferResource.h"
+#include "RHI/CommandBufferResources.h"
 
 namespace Koala::RHI
 {

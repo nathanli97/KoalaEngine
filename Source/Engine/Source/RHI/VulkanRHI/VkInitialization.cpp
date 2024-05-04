@@ -17,6 +17,8 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #include "CmdParser.h"
+#include "ConsoleVariable.h"
+#include "VulkanCommandQueue.h"
 #ifdef INCLUDE_RHI_VULKAN
 #include "Core.h"
 #include "Config.h"
@@ -264,51 +266,126 @@ namespace Koala::RHI
         vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
         vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, queueFamilies.data());
-
-        uint32_t index = 0;
-        for (auto const &queueFamily: queueFamilies)
+        
+        auto IsCurrentQueueFamilySupportsPresent = [this](uint32_t index)->bool
         {
-            if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT &&
-                queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                vk.queueInfo.graphicsQueueIndex = vk.queueInfo.computeQueueIndex = index;
-            } else if (!vk.queueInfo.graphicsQueueIndex.has_value() && queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            {
-                vk.queueInfo.graphicsQueueIndex = index;
-            } else if (!vk.queueInfo.computeQueueIndex.has_value() && queueFamily.queueFlags & VK_QUEUE_COMPUTE_BIT)
-            {
-                vk.queueInfo.computeQueueIndex = index;
-            }
+            VkBool32 bPresentSupported = VK_FALSE;
+            vkGetPhysicalDeviceSurfaceSupportKHR(vk.physicalDevice, index, vk.surfaceKhr, &bPresentSupported);
+            return bPresentSupported == VK_TRUE;
+        };
 
-            if (!vk.queueInfo.presentQueueIndex.has_value())
+        std::set<uint32_t> knownQueueFamilies;
+        
+        auto FindSuitableQueueFamilyIndex = [&, this](bool bAllowQueueFamilyOverlap, VkQueueFlagBits requiredFlag, std::set<uint32_t> notIndexInSet = {}) -> std::optional<uint32_t>
+        {
+            for (uint32_t index = 0; index < queueFamilyCount; ++index)
             {
-                VkBool32 isPresentSupported = VK_FALSE;
-                vkGetPhysicalDeviceSurfaceSupportKHR(vk.physicalDevice, index, vk.surfaceKhr, &isPresentSupported);
-                if (isPresentSupported)
+                if (notIndexInSet.contains(index))
+                    continue;
+                auto &queueFamily = queueFamilies[index];
+                if (queueFamily.queueFlags & requiredFlag)
                 {
-                    vk.queueInfo.presentQueueIndex = index;
+                    if (bAllowQueueFamilyOverlap)
+                    {
+                        return index;
+                    }
+                    else
+                    {
+                        if (!knownQueueFamilies.contains(index))
+                        {
+                            knownQueueFamilies.emplace(index);
+                            return index;
+                        }
+                    }
                 }
             }
-            index++;
+            return std::optional<uint32_t>();
+        };
+        
 
-            // All the queue families we need is found, no further check is needed.
-            if (vk.queueInfo.IsComplete())
-                break;
+        // We are trying to find queues with different queue families.
+        {
+            vk.queueInfo.graphicsQueueIndex = FindSuitableQueueFamilyIndex(false, VK_QUEUE_GRAPHICS_BIT);
+            vk.queueInfo.transferQueueIndex = FindSuitableQueueFamilyIndex(false, VK_QUEUE_TRANSFER_BIT);
+            vk.queueInfo.computeQueueIndex = FindSuitableQueueFamilyIndex(false, VK_QUEUE_COMPUTE_BIT);
+            
+            if (!vk.queueInfo.graphicsQueueIndex.has_value())
+            {
+                logger.error("Can not find a queue family that supports Graphics Rendering in your GPU.");
+                return false;
+            }
+
+            if (!vk.queueInfo.transferQueueIndex.has_value())
+            {
+                // Fallback, Can we find a compute queue family that not shared with graphics?
+                vk.queueInfo.transferQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_TRANSFER_BIT, std::set<uint32_t>{vk.queueInfo.graphicsQueueIndex.value()});
+                // Fallback, allow overlap with anything queue families.
+                if (!vk.queueInfo.transferQueueIndex.has_value())
+                    vk.queueInfo.transferQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_TRANSFER_BIT);
+                
+                if (!vk.queueInfo.transferQueueIndex.has_value())
+                {
+                    logger.error("Can not find a queue family that supports Transfer (Memory Copy) in your GPU.");
+                    return false;
+                }
+            }
+
+            if (!vk.queueInfo.computeQueueIndex.has_value())
+            {
+                // Can we find a compute queue family that not shared with graphics and transfer?
+                vk.queueInfo.computeQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_COMPUTE_BIT, std::set<uint32_t>{
+                    vk.queueInfo.graphicsQueueIndex.value(),
+                    vk.queueInfo.transferQueueIndex.value()
+                });
+                // Fallback, Can we find a compute queue family that not shared with transfer?
+                if (!vk.queueInfo.computeQueueIndex.has_value())
+                    vk.queueInfo.computeQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_COMPUTE_BIT, std::set<uint32_t>{vk.queueInfo.transferQueueIndex.value()});
+                // Fallback, Can we find a compute queue family that not shared with graphics?
+                if (!vk.queueInfo.computeQueueIndex.has_value())
+                    vk.queueInfo.computeQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_COMPUTE_BIT, std::set<uint32_t>{vk.queueInfo.graphicsQueueIndex.value()});
+                // Fallback, allow overlap with anything queue families.
+                if (!vk.queueInfo.computeQueueIndex.has_value())
+                    vk.queueInfo.computeQueueIndex = FindSuitableQueueFamilyIndex(true, VK_QUEUE_COMPUTE_BIT);
+
+                if (!vk.queueInfo.computeQueueIndex.has_value())
+                {
+                    logger.error("Can not find a queue family that supports Compute in your GPU.");
+                    return false;
+                }
+            }
+
+            for (uint32_t index : knownQueueFamilies)
+            {
+                if (IsCurrentQueueFamilySupportsPresent(index))
+                {
+                    vk.queueInfo.presentQueueIndex = index;
+                    break;
+                }
+            }
         }
 
+        
+        
         if (!vk.queueInfo.IsComplete())
         {
-            logger.error("Your device didn't meet the minimum requirements.");
+            logger.error("Your device didn't meet the minimum requirements. One or more queues is missing in your GPU: present, graphics, compute, transfer");
             return false;
         }
 
-
+        logger.info("Queue details: GraphicsQueue={}, PresentQueue={}, ComputeQueue={}, TransferQueue={}",
+            vk.queueInfo.graphicsQueueIndex.value(),
+            vk.queueInfo.presentQueueIndex.value(),
+            vk.queueInfo.computeQueueIndex.value(),
+            vk.queueInfo.transferQueueIndex.value()
+        );
+        
         float queuePriority = 1;
 
         const std::set<uint32_t> uniqueQueueFamilies = {
             vk.queueInfo.graphicsQueueIndex.value(),
             vk.queueInfo.presentQueueIndex.value(),
-            vk.queueInfo.computeQueueIndex.value()
+            vk.queueInfo.computeQueueIndex.value(),
+            vk.queueInfo.transferQueueIndex.value()
         };
 
         std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -343,10 +420,27 @@ namespace Koala::RHI
         VK_CHECK_RESULT_SUCCESS(vkCreateDevice(vk.physicalDevice, &deviceCreateInfo, nullptr, &vk.device));
         volkLoadDevice(vk.device);
         
-        vkGetDeviceQueue(vk.device, vk.queueInfo.presentQueueIndex.value(), 0, &vk.presentQueue);
-        vkGetDeviceQueue(vk.device, vk.queueInfo.computeQueueIndex.value(), 0, &vk.computeQueue);
-        vkGetDeviceQueue(vk.device, vk.queueInfo.graphicsQueueIndex.value(), 0, &vk.graphicsQueue);
+        {
+            auto &queueRegister = VulkanCommandQueueRegister::Get();
+            queueRegister.AddUninitializedCommandQueue(ECommandQueueType::PresentQueue, ECommandQueueType::GraphicsQueue, ECommandQueueType::CommandQueue, ECommandQueueType::TransferQueue);
 
+
+            auto preset = queueRegister.GetQueue(ECommandQueueType::PresentQueue);
+            auto graphics = queueRegister.GetQueue(ECommandQueueType::GraphicsQueue);
+            auto compute = queueRegister.GetQueue(ECommandQueueType::CommandQueue);
+            auto transfer = queueRegister.GetQueue(ECommandQueueType::TransferQueue);
+
+            preset->queueFamilyIndex = vk.queueInfo.presentQueueIndex.value();
+            graphics->queueFamilyIndex = vk.queueInfo.graphicsQueueIndex.value();
+            compute->queueFamilyIndex = vk.queueInfo.computeQueueIndex.value();
+            transfer->queueFamilyIndex = vk.queueInfo.transferQueueIndex.value();
+            
+            vkGetDeviceQueue(vk.device, preset->queueFamilyIndex, 0, &preset->vkQueue);
+            vkGetDeviceQueue(vk.device, graphics->queueFamilyIndex, 0, &graphics->vkQueue);
+            vkGetDeviceQueue(vk.device, compute->queueFamilyIndex, 0, &compute->vkQueue);
+            vkGetDeviceQueue(vk.device, transfer->queueFamilyIndex, 0, &transfer->vkQueue);
+        }
+        
         return true;
     }
 
