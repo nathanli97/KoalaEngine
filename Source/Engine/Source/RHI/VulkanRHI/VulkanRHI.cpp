@@ -88,14 +88,12 @@ namespace Koala::RHI {
 
     ITextureInterface* VulkanRHI::GetTextureInterface()
     {
-        static VulkanTextureInterface vkTextureInterface(vk);
-        return &vkTextureInterface;
+        return &VulkanTextureInterface::Get();
     }
 
     IBufferInterface *VulkanRHI::GetBufferInterface()
     {
-        static VulkanBufferInterface vkBufferInterface(vk);
-        return &vkBufferInterface;
+        return &VulkanBufferInterface::Get();
     }
 
 

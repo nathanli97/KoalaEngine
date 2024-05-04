@@ -17,13 +17,14 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "Core/SingletonInterface.h"
 #include "RHI/BufferResources.h"
 #include "RHI/CommandBufferResource.h"
 
 namespace Koala::RHI
 {
     
-    class IBufferInterface
+    class IBufferInterface: public ISingleton
     {
     public:
         virtual ~IBufferInterface() = default;

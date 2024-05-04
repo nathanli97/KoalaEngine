@@ -17,12 +17,13 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "Core/SingletonInterface.h"
 #include "RHI/TextureResources.h"
 
 namespace Koala::RHI
 {
     
-    class ITextureInterface
+    class ITextureInterface: public ISingleton
     {
     public:
         virtual ~ITextureInterface() = default;

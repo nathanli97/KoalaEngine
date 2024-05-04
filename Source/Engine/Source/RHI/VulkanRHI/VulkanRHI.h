@@ -26,6 +26,7 @@ namespace Koala::RHI {
 
 class VulkanRHI: public IRenderHardware{
 public:
+    KOALA_IMPLEMENT_SINGLETON(VulkanRHI)
     // ===== Caller: RT =======
     bool Initialize_RenderThread() override;
     void Shutdown_RenderThread() override;
@@ -38,11 +39,11 @@ public:
     void PostShutdown_MainThread() override;
     bool Tick_MainThread() override;
 
-    [[nodiscard]] inline VmaAllocator GetMemoryAllocator() const
+    NODISCARD FORCEINLINE VulkanRuntime* GetVkRuntime()
     {
-        return vk.vmaAllocator;
+        return &vk;
     }
-
+    
     static void HandleVulkanFuncFailed(VkResult result, const char * func, const char * file, size_t line);
 private:
     VulkanRuntime vk{};

@@ -20,7 +20,6 @@
 #include <Core.h>
 #include <RGBAColor.h>
 #include "VulkanRHI.h"
-#include "RHI/TextureResources.h"
 
 #ifdef INCLUDE_RHI_VULKAN
 namespace Koala::RHI
@@ -67,6 +66,11 @@ namespace Koala::RHI
 
         return VMA_MEMORY_USAGE_AUTO;
     }
+    VulkanBufferInterface::VulkanBufferInterface()
+    {
+        vkRuntime = VulkanRHI::Get().GetVkRuntime();
+    }
+
     BufferRHIRef VulkanBufferInterface::CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info)
     {
         VkBufferCreateInfo vkBufferCreateInfo{.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
@@ -80,14 +84,21 @@ namespace Koala::RHI
         auto bufferRHI = std::make_shared<VulkanBufferRHI>();
         bufferRHI->cachedBufferCreateInfo = info;
 
-        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime.vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
+        VK_CHECK_RESULT_SUCCESS(vmaCreateBuffer(vkRuntime->vmaAllocator, &vkBufferCreateInfo, &vmaAllocationCreateInfo, &bufferRHI->buffer, &bufferRHI->vmaAllocation, nullptr));
 
 #if RHI_ENABLE_GPU_MARKER
         SetBufferDebugName(*bufferRHI, debugName);
 #endif
         return nullptr;
     }
-
+    void VulkanBufferInterface::ReleaseBuffer(VulkanBufferRHI &inBuffer)
+    {
+        vmaDestroyBuffer(vkRuntime->vmaAllocator, inBuffer.buffer, inBuffer.vmaAllocation);
+    }
+    VulkanBufferRHI::~VulkanBufferRHI()
+    {
+        VulkanBufferInterface::Get().ReleaseBuffer(*this);
+    }
 #if RHI_ENABLE_GPU_MARKER
     void VulkanBufferInterface::SetBufferDebugName(const VulkanBufferRHI& inVkBufferRHI, const char *inLabel)
     {
@@ -96,7 +107,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVkBufferRHI.buffer);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(vkRuntime.device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(vkRuntime->device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

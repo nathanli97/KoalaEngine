@@ -35,6 +35,7 @@ namespace Koala::RHI
     {
     public:
         friend class VulkanBufferInterface;
+        ~VulkanBufferRHI();
         size_t GetPlatformSize() override {return 0;}
         VmaAllocation vmaAllocation{};
         VkBuffer buffer{};
@@ -42,16 +43,17 @@ namespace Koala::RHI
     class VulkanBufferInterface: public IBufferInterface
     {
     public:
-        VulkanBufferInterface(VulkanRuntime& inRuntime): vkRuntime(inRuntime) {}
+        KOALA_IMPLEMENT_SINGLETON(VulkanBufferInterface)
+        VulkanBufferInterface();
         BufferRHIRef CreateBuffer(const char *debugName, const RHIBufferCreateInfo &info) override;
         void CopyBuffer(CommandBufferRef inCommandBuffer, const char *inDebugName, BufferRHIRef inSrcBuffer,
             BufferRHIRef inDstBuffer, const BufferCopyInfo &info) override {}
-
+        void ReleaseBuffer(VulkanBufferRHI &inBuffer);
     private:
 #if RHI_ENABLE_GPU_MARKER
         void SetBufferDebugName(const VulkanBufferRHI& inVkBufferRHI, const char *inLabel);
 #endif
-        VulkanRuntime &vkRuntime;
+        VulkanRuntime *vkRuntime{nullptr};
     };
 }
 

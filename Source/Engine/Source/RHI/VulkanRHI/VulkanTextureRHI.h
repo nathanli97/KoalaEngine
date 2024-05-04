@@ -34,6 +34,7 @@ namespace Koala::RHI
         friend class VulkanTextureInterface;
         VkImage image{};
         VmaAllocation vmaAllocation{};
+        virtual ~VulkanTextureRHI() override;
         
         struct
         {
@@ -54,6 +55,7 @@ namespace Koala::RHI
     class VulkanTextureView: public TextureView
     {
     public:
+        virtual ~VulkanTextureView() override;
         std::shared_ptr<VulkanTextureRHI> linkedTexture{};
         VkImageView imageView{};
         FORCEINLINE_DEBUGABLE TextureRHIRef GetTexture() override {return linkedTexture;}
@@ -62,11 +64,15 @@ namespace Koala::RHI
     class VulkanTextureInterface: public ITextureInterface
     {
     public:
-        VulkanTextureInterface(VulkanRuntime& inRuntime):vkRuntime(inRuntime) {}
+        KOALA_IMPLEMENT_SINGLETON(VulkanTextureInterface)
+        
+        VulkanTextureInterface();
         TextureRHIRef CreateTexture(const char* debugName, const RHITextureCreateInfo& info) override;
         TextureViewRef CreateTextureView(TextureRHIRef inTexture, bool bUseSwizzle) override;
         void CopyTexture() override {}
 
+        void ReleaseTexture(VulkanTextureRHI& inTexture);
+        void ReleaseTextureView(VulkanTextureView& inTextureView);
     private:
 #if RHI_ENABLE_GPU_MARKER
         void SetTextureDebugName(const VulkanTextureRHI& inVulkanTextureRHI, const char *inLabel);
@@ -74,7 +80,7 @@ namespace Koala::RHI
 
 #endif
         void CreateImageView(VkImageView &outImageView, const VulkanTextureRHI& image, bool bUseSwizzle, VkImageAspectFlags vkImageAspectFlags);
-        VulkanRuntime &vkRuntime;
+        VulkanRuntime *vkRuntime{nullptr};
     };
 }
 #endif
