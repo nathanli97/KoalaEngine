@@ -72,11 +72,11 @@ namespace Koala
         }
         FORCEINLINE bool IsFinished()
         {
-            return status.load(std::memory_order::memory_order_seq_cst) == EWorkerStatus::Finished;
+            return status.load(std::memory_order::seq_cst) == EWorkerStatus::Finished;
         }
         FORCEINLINE bool IsIdle()
         {
-            return status.load(std::memory_order::memory_order_seq_cst) == EWorkerStatus::Idle;
+            return status.load(std::memory_order::seq_cst) == EWorkerStatus::Idle;
         }
         // Wait current task in Worker to finish.
         FORCEINLINE void Wait()

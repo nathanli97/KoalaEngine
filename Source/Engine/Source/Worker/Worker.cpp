@@ -39,7 +39,7 @@ namespace Koala
             }
 
             // We are status == Ready now.
-            status.store(EWorkerStatus::Busy, std::memory_order::memory_order_seq_cst);
+            status.store(EWorkerStatus::Busy, std::memory_order::seq_cst);
 
             task(taskArg);
 
