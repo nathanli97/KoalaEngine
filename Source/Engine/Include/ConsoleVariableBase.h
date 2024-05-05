@@ -20,7 +20,7 @@
 #include <shared_mutex>
 #include <string>
 
-#include "ThreadNames.h"
+#include "Core/ThreadTypes.h"
 #include "Core/Check.h"
 
 namespace Koala

@@ -21,7 +21,7 @@
 
 #include "Core/ThreadInterface.h"
 #include "Core/ThreadedModule.h"
-#include "ThreadManager.h"
+#include "Core/ThreadManager.h"
 
 
 namespace Koala {

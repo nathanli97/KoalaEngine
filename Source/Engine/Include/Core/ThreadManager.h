@@ -22,10 +22,10 @@
 #include <thread>
 #include <unordered_map>
 
-#include "Core/Check.h"
-#include "Core/SingletonInterface.h"
-#include "Core/ThreadInterface.h"
-#include "ThreadNames.h"
+#include "Check.h"
+#include "SingletonInterface.h"
+#include "ThreadInterface.h"
+#include "ThreadTypes.h"
 
 namespace Koala
 {
