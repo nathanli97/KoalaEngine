@@ -20,7 +20,7 @@
 
 namespace Koala
 {
-    enum class EThreadName
+    enum class EThreadType
     {
         UnknownThread,
         MainThread,

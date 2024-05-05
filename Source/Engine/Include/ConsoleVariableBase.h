@@ -59,13 +59,13 @@ namespace Koala
             }
             
             {
-                EThreadName name = GetCurrentThreadId();
+                EThreadType name = GetCurrentThreadId();
 
                 //  If this CVar has been tagged as thread-safe in particular thread, and we are in that thread now
                 if (
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread && name == EThreadName::MainThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread && name == EThreadName::RenderThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread && name == EThreadName::RHIThread))
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread && name == EThreadType::MainThread) ||
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread && name == EThreadType::RenderThread) ||
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread && name == EThreadType::RHIThread))
                     return As_Unsafe<Type>();
             }
 
@@ -134,6 +134,6 @@ namespace Koala
         EConsoleVariableFlags flags;
     private:
         mutable std::shared_mutex mutex;
-        static EThreadName GetCurrentThreadId();
+        static EThreadType GetCurrentThreadId();
     };
 }

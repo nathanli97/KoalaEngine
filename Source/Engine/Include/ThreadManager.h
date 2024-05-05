@@ -33,7 +33,7 @@ namespace Koala
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(ThreadManager)
-        void CreateThread(IThread* inThread, EThreadName inThreadName = EThreadName::UnknownThread)
+        void CreateThread(IThread* inThread, EThreadType inThreadName = EThreadType::UnknownThread)
         {
             std::lock_guard lock(mutexForThreadList);
             threads.emplace_back(
@@ -55,7 +55,7 @@ namespace Koala
         }
         // Register current thread by given name.
         // WARNING: This logic should happen in early-engine init stage. All threads should be created in this stage.
-        void RegisterThreadWithName(EThreadName inThread)
+        void RegisterThreadWithName(EThreadType inThread)
         {
             std::unique_lock lock(mutexFormThreadIdNameMap);
             auto id = std::this_thread::get_id();
@@ -66,21 +66,21 @@ namespace Koala
         }
         // Get Current Thread Name.
         // WARNING: Only call after engine early-initialized.
-        EThreadName GetCurrentThread() const
+        EThreadType GetCurrentThread() const
         {
             auto id = std::this_thread::get_id();
             if (!mapThreadIdToName.contains(id))
-                return EThreadName::UnknownThread;
+                return EThreadType::UnknownThread;
             return mapThreadIdToName.at(id);
         }
         // Get Current Thread Name. This is thread-safe version of GetCurrentThread(), but slower.
         // Call this function only in early engine init stage.
-        EThreadName GetCurrentThreadInEarlyEngineInitStage() const
+        EThreadType GetCurrentThreadInEarlyEngineInitStage() const
         {
             std::shared_lock lock(mutexFormThreadIdNameMap);
             auto id = std::this_thread::get_id();
             if (!mapThreadIdToName.contains(id))
-                return EThreadName::UnknownThread;
+                return EThreadType::UnknownThread;
             return mapThreadIdToName.at(id);
         }
         ~ThreadManager()
@@ -95,7 +95,7 @@ namespace Koala
     private:
         std::list<std::thread> threads;
         mutable std::mutex mutexForThreadList;
-        std::unordered_map<std::thread::id, EThreadName> mapThreadIdToName;
+        std::unordered_map<std::thread::id, EThreadType> mapThreadIdToName;
         mutable std::shared_mutex mutexFormThreadIdNameMap;
 
     };
