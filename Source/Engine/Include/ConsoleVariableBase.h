@@ -59,13 +59,13 @@ namespace Koala
             }
             
             {
-                EThreadType name = GetCurrentThreadId();
+                EThreadType threadType = GetCurrentThreadId();
 
                 //  If this CVar has been tagged as thread-safe in particular thread, and we are in that thread now
                 if (
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread && name == EThreadType::MainThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread && name == EThreadType::RenderThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread && name == EThreadType::RHIThread))
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread && threadType == EThreadType::MainThread) ||
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread && threadType == EThreadType::RenderThread) ||
+                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread && threadType == EThreadType::RHIThread))
                     return As_Unsafe<Type>();
             }
 
