@@ -24,6 +24,7 @@
 #include "Config.h"
 #include <Core.h>
 #include "../RHI/VulkanRHI/VulkanRHI.h"
+#include "Renderer/Core/RenderCmdProcessor.h"
 
 namespace Koala
 {
@@ -59,6 +60,9 @@ namespace Koala
 
     void RenderThread::Run()
     {
+        Render::Core::RenderCmdProcessor processor;
+        processor.AddTaskLambda([](){});
+        
         logger.info("RenderThread is running.");
 
         logger.info("RenderThread: Initializing RHI");
