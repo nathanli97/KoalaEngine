@@ -57,17 +57,15 @@ namespace Koala {
             static KoalaEngine engine;
             return engine;
         }
-        NODISCARD bool IsEngineExitRequested() const
+        NODISCARD FORCEINLINE bool IsEngineExitRequested() const
         {
-            std::lock_guard lock(mutexEngineStage);
-            return engineStage >= EEngineStage::ExitRequested;
+            return engineStage.load(std::memory_order::acquire) >= EEngineStage::ExitRequested;
         }
 
         void RequestEngineStop()
         {
-            std::lock_guard lock(mutexEngineStage);
-            if (engineStage < EEngineStage::ExitRequested)
-                engineStage = EEngineStage::ExitRequested;
+            if (engineStage.load(std::memory_order::acquire) < EEngineStage::ExitRequested)
+                engineStage.store(EEngineStage::ExitRequested, std::memory_order::release);
         }
     private:
         bool Initialize(int argc, char** argv);
@@ -78,8 +76,6 @@ namespace Koala {
         void Tick();
         void Shutdown();
 
-        mutable std::mutex mutexEngineStage;
-        EEngineStage engineStage {EEngineStage::UnInitialized};
-
+        std::atomic<EEngineStage> engineStage {EEngineStage::UnInitialized};
     };
 }
