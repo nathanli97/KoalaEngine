@@ -1,10 +1,24 @@
 include(SourceFiles.gen.cmake)
 
 add_compile_definitions(INCLUDE_RHI_VULKAN=1)
-add_compile_definitions(RHI_ENABLE_GPU_DEBUG=1)
 # the following two definitions is work on if RHI_ENABLE_GPU_DEBUG is enabled
-add_compile_definitions(RHI_ENABLE_GPU_MARKER=1)
-add_compile_definitions(RHI_ENABLE_VALIDATION=1)
+
+option(RHI_GPU_DEBUG "Enable GPU Debug features" ON)
+cmake_dependent_option(RHI_GPU_MARKER "Enable GPU Markers (Symbols for GPU Debugging)" ON "RHI_GPU_DEBUG" OFF)
+cmake_dependent_option(RHI_GPU_VALIDATION "Enable GPU Validation" ON "RHI_GPU_DEBUG" OFF)
+
+if (${RHI_GPU_DEBUG})
+    message(STATUS "KoalaEngine: Enabling GPU Debug features")
+    add_compile_definitions(RHI_ENABLE_GPU_DEBUG=1)
+    if (${RHI_GPU_MARKER})
+        add_compile_definitions(RHI_ENABLE_GPU_MARKER=1)
+        message(STATUS "KoalaEngine: Enabled GPU DEBUG")
+    endif ()
+    if (${RHI_GPU_VALIDATION})
+        add_compile_definitions(RHI_ENABLE_VALIDATION=1)
+        message(STATUS "KoalaEngine: Enabled GPU VALIDATION")
+    endif ()
+endif ()
 
 set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator volk_headers)
 

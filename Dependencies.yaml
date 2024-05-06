@@ -1,0 +1,22 @@
+Dependencies:
+  eigen3:
+    git: 'https://gitlab.com/libeigen/eigen.git'
+    commit: '5635d37f46acc2985aa66d9385665a76c3b9d5c7'
+  fmt:
+    git: 'https://github.com/fmtlib/fmt.git'
+    commit: 'e69e5f977d458f2650bb346dadf2ad30c5320281'
+  spdlog:
+    git: 'https://github.com/gabime/spdlog.git'
+    commit: '7c02e204c92545f869e2f04edaab1f19fe8b19fd'
+  catch2:
+    git: 'https://github.com/catchorg/Catch2'
+    commit: 'b5373dadca40b7edc8570cf9470b9b1cb1934d40'
+  volk:
+    git: 'https://github.com/zeux/volk.git'
+    commit: '3a8068a57417940cf2bf9d837a7bb60d015ca2f1'
+  vma:
+    git: 'https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git'
+    commit: '5677097bafb8477097c6e3354ce68b7a44fd01a4'
+  glfw:
+    git: 'https://github.com/glfw/glfw.git'
+    commit: '7b6aead9fb88b3623e3b3725ebb42670cbe4c579'

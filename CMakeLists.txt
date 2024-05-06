@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.25)
 project(Koala)
 
+include(ThirdParty.cmake)
 option(BUILD_TESTS "Build Tests" OFF)
 
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)
@@ -9,27 +10,20 @@ if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)
     set_koala_build_env()
 endif ()
 
-find_package(Vulkan REQUIRED)
 find_package(Python REQUIRED Development)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 
+add_common_libs()
 
+option(VulkanRHI "Build VulkanRHI for rendering" ON)
+set(DefaultRHI "VulkanRHI" CACHE STRING "What RHI will be used to rendering by default")
 
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glfw)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/eigen3)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/fmt)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/spdlog)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/vma)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/volk)
-
-set_target_properties(glfw PROPERTIES FOLDER "ThirdParty")
-set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
-set_target_properties(fmt-header-only PROPERTIES FOLDER "ThirdParty")
-set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
-set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
-set_target_properties(volk PROPERTIES FOLDER "ThirdParty")
+if (${VulkanRHI})
+    find_package(Vulkan REQUIRED)
+    add_vulkan_libs()
+endif ()
 
 if (BUILD_TESTS)
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/catch2)

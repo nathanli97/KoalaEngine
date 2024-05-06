@@ -1,0 +1,18 @@
+macro(add_common_libs)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/eigen3)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/fmt)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/spdlog)
+
+    set_target_properties(fmt PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(fmt-header-only PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(spdlog PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(spdlog_header_only PROPERTIES FOLDER "ThirdParty")
+endmacro()
+
+macro(add_vulkan_libs)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/glfw)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/vma)
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/volk)
+    set_target_properties(glfw PROPERTIES FOLDER "ThirdParty")
+    set_target_properties(volk PROPERTIES FOLDER "ThirdParty")
+endmacro()
