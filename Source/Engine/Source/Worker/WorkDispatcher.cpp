@@ -16,17 +16,27 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#pragma once
+#include "Worker/WorkDispatcher.h"
+
+#include "KoalaEngine.h"
 
 namespace Koala
 {
-    enum class EThreadType
+    void WorkDispatcher::Run()
     {
-        UnknownThread,
-        MainThread,
-        GameThread = MainThread,
-        RenderThread,
-        RHIThread,
-        WorkerThread,
-    };
+        while (true)
+        {
+            if (KoalaEngine::Get().IsEngineExitRequested())
+            {
+                // Once Engine exit is requested, workers shutdown is already in progress now.
+                // We can not assign tasks to them, remapping tasks to MainThread.
+                TaskType task;
+                while (pendingAddTasks.TryPop(task))
+                {
+                    taskRemap[EThreadType::MainThread].Push(task);
+                }
+                
+            }
+        }
+    }
 }
