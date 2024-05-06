@@ -42,7 +42,7 @@ namespace Koala
 
         bool Initialize_MainThread() override { return true; }
         bool Shutdown_MainThread() override { return true; }
-        void Tick(float delta_time) override {}
+        void Tick_MainThread(float delta_time) override {}
     protected:
         void RegisterConsoleVariable(IConsoleVariable* inCVar)
         {

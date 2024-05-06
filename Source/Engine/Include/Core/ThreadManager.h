@@ -29,59 +29,47 @@
 
 namespace Koala
 {
+    struct ThreadTLS
+    {
+        static thread_local std::thread::id threadId;
+        static thread_local EThreadType threadType;
+        static thread_local uint32_t ThreadIndexOfType;
+        static void Initialize(EThreadType inThreadType, uint32_t inThreadIndexOfType = 0);
+    };
+    FORCEINLINE bool IsInMainThread()
+    {
+        return ThreadTLS::threadType == EThreadType::MainThread;
+    }
+    FORCEINLINE bool IsInRenderThread()
+    {
+        return ThreadTLS::threadType == EThreadType::RenderThread;
+    }
     class ThreadManager final: public ISingleton
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(ThreadManager)
-        void CreateThread(IThread* inThread, EThreadType inThreadName = EThreadType::UnknownThread)
+        void CreateThread(IThread* inThread, bool bShouldDeleteThreadObjectWhenShutdown = false)
         {
             std::lock_guard lock(mutexForThreadList);
             threads.emplace_back(
                 [=, this]
                 {
-                    RegisterThreadWithName(inThreadName);
                     inThread->Run();
                 });
+            if (bShouldDeleteThreadObjectWhenShutdown)
+            {
+                threadObjects.push_back(inThread);
+            }
         }
-        template <typename Callable, typename... Args>
-        void CreateThread(Callable inFunc, Args&&... args) requires std::invocable<Callable, Args...>
+        template <typename Callable>
+        void CreateThread(Callable inFunc) requires std::invocable<Callable>
         {
             std::lock_guard lock(mutexForThreadList);
             threads.emplace_back(
                 [=, this]
                 {
-                    inFunc(std::forward<Args>(args)...);
+                    inFunc();
                 });
-        }
-        // Register current thread by given name.
-        // WARNING: This logic should happen in early-engine init stage. All threads should be created in this stage.
-        void RegisterThreadWithName(EThreadType inThread)
-        {
-            std::unique_lock lock(mutexFormThreadIdNameMap);
-            auto id = std::this_thread::get_id();
-            if (mapThreadIdToName.contains(id))
-                mapThreadIdToName[id] = inThread;
-            else
-                mapThreadIdToName.emplace(id, inThread);
-        }
-        // Get Current Thread Name.
-        // WARNING: Only call after engine early-initialized.
-        EThreadType GetCurrentThread() const
-        {
-            auto id = std::this_thread::get_id();
-            if (!mapThreadIdToName.contains(id))
-                return EThreadType::UnknownThread;
-            return mapThreadIdToName.at(id);
-        }
-        // Get Current Thread Name. This is thread-safe version of GetCurrentThread(), but slower.
-        // Call this function only in early engine init stage.
-        EThreadType GetCurrentThreadInEarlyEngineInitStage() const
-        {
-            std::shared_lock lock(mutexFormThreadIdNameMap);
-            auto id = std::this_thread::get_id();
-            if (!mapThreadIdToName.contains(id))
-                return EThreadType::UnknownThread;
-            return mapThreadIdToName.at(id);
         }
         ~ThreadManager()
         {
@@ -91,11 +79,15 @@ namespace Koala
                     thread.join();
             }
             threads.clear();
+            for (auto object: threadObjects)
+            {
+                delete object;
+            }
         }
     private:
         std::list<std::thread> threads;
+        std::list<IThread*>    threadObjects;
         mutable std::mutex mutexForThreadList;
-        std::unordered_map<std::thread::id, EThreadType> mapThreadIdToName;
         mutable std::shared_mutex mutexFormThreadIdNameMap;
 
     };

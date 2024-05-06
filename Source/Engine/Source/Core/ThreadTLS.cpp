@@ -16,38 +16,18 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Core/ModuleInterface.h"
+#include "Core/ThreadManager.h"
+
 namespace Koala
 {
-    void ModuleManager::RegisterModule(IModule* module)
+    thread_local std::thread::id ThreadTLS::threadId;
+    thread_local EThreadType ThreadTLS::threadType = EThreadType::UnknownThread;
+    thread_local uint32_t ThreadTLS::ThreadIndexOfType = 0;
+    void ThreadTLS::Initialize(EThreadType inThreadType, uint32_t inThreadIndexOfType)
     {
-        modules.push_back(module);
+        threadId = std::this_thread::get_id();
+        threadType = inThreadType;
+        ThreadIndexOfType = inThreadIndexOfType;
     }
 
-    void ModuleManager::InitializeModules()
-    {
-        for (auto it = modules.begin(); it != modules.end(); ++it)
-        {
-            IModule * module = *it;
-            module->Initialize_MainThread();
-        }
-    }
-
-    void ModuleManager::TickModules(float delta)
-    {
-        for (auto it = modules.begin(); it != modules.end(); ++it)
-        {
-            IModule * module = *it;
-            module->Tick_MainThread(delta);
-        }
-    }
-
-    void ModuleManager::ShutdownModules()
-    {
-        for (auto it = modules.rbegin(); it != modules.rend(); ++it)
-        {
-            IModule * module = *it;
-            module->Shutdown_MainThread();
-        }
-    }
 }

@@ -23,7 +23,7 @@
 #include "Core.h"
 #include "EngineVersion.h"
 #include "RenderThread.h"
-
+#include "Core/ThreadManager.h"
 
 
 namespace Koala
@@ -31,6 +31,7 @@ namespace Koala
     Logger loggerEngine("KoalaEngine");
     bool KoalaEngine::Initialize(int argc, char** argv)
     {
+        ThreadTLS::Initialize(EThreadType::MainThread);
         return EarlyInitializeStage(argc, argv) &&
             InitializeStage();
     }
@@ -111,7 +112,7 @@ namespace Koala
     void KoalaEngine::Tick()
     {
         // TODO: Pass actual deltatime to the function.
-        RenderThread::Get().Tick(0);
+        RenderThread::Get().Tick_MainThread(0);
     }
 
     void KoalaEngine::Shutdown()

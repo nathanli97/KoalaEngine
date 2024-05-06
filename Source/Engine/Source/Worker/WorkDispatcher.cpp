@@ -18,25 +18,125 @@
 
 #include "Worker/WorkDispatcher.h"
 
-#include "KoalaEngine.h"
+#include <iostream>
 
+#include "KoalaEngine.h"
+#include "Core/ThreadManager.h"
+
+#define PROCESS_LOCAL_TASKS(LIST, MUTEX) { \
+    std::queue<TaskPairType> localQueue; \
+    { \
+        std::lock_guard lock(mutexTaskMainThread); localQueue.swap(taskListMainThread); \
+    } \
+    while (!localQueue.empty()) \
+    { \
+        auto &p = localQueue.front(); \
+        p.first(p.second); \
+    } \
+    }
 namespace Koala
 {
     void WorkDispatcher::Run()
     {
         while (true)
         {
-            if (KoalaEngine::Get().IsEngineExitRequested())
+            const bool bEngineIsShutdowning = KoalaEngine::Get().IsEngineExitRequested();
+            
+            Task localTask;
+            if (bEngineIsShutdowning)
             {
-                // Once Engine exit is requested, workers shutdown is already in progress now.
-                // We can not assign tasks to them, remapping tasks to MainThread.
-                TaskType task;
-                while (pendingAddTasks.TryPop(task))
+                if (!pendingAddTasks.TryPop(localTask))
+                    return;
+            }
+            else
+                pendingAddTasks.WaitAndPop(localTask);
+
+            // Are we have a valid task?
+            if (localTask.assignThread != EThreadType::UnknownThread)
+            {
+                switch (localTask.assignThread)
                 {
-                    taskRemap[EThreadType::MainThread].Push(task);
+                    case EThreadType::MainThread:
+                    {
+                        std::scoped_lock lock(mutexTaskMainThread);
+                        taskListMainThread.emplace(localTask.task);
+                        break;
+                    }
+                    case EThreadType::RenderThread:
+                    {
+                        std::scoped_lock lock(mutexTaskRenderThread);
+                        taskListRenderThread.emplace(localTask.task);
+                        break;
+                    }
+                    case EThreadType::RHIThread:
+                    {
+                        std::scoped_lock lock(mutexTaskRHIThread);
+                        taskListRHIThread.emplace(localTask.task);
+                        break;
+                    }
+                    case EThreadType::WorkerThread:
+                    {
+                        ProcessNewWorkerTask(localTask, bEngineIsShutdowning);
+                        break;
+                    }
+                    default: break;
                 }
-                
             }
         }
     }
+
+    void WorkDispatcher::ProcessNewWorkerTask(Task &task,bool bInEngineIsShutdowning)
+    {
+        if (bInEngineIsShutdowning)
+        {
+            std::scoped_lock lock(mutexTaskMainThread);
+            taskListMainThread.emplace(task.task);
+        } else
+        {
+            
+        }
+    }
+
+    
+    bool WorkDispatcher::Initialize_MainThread()
+    {
+        auto nCores = std::thread::hardware_concurrency();
+        workerThreads.resize(nCores);
+        
+        for (Worker* &worker: workerThreads)
+        {
+            worker = new Worker();
+            ThreadManager::Get().CreateThread(worker, true);
+        }
+        
+        return true;
+    }
+
+    void WorkDispatcher::Tick_MainThread(float)
+    {
+        PROCESS_LOCAL_TASKS(taskListMainThread, mutexTaskMainThread)
+    }
+
+    void WorkDispatcher::Tick_RenderThread()
+    {
+        PROCESS_LOCAL_TASKS(taskListRenderThread, mutexTaskRenderThread)
+    }
+
+    void WorkDispatcher::Tick_RHIThread()
+    {
+        PROCESS_LOCAL_TASKS(taskListRHIThread, mutexTaskRHIThread)
+    }
+    
+    bool WorkDispatcher::Shutdown_MainThread()
+    {
+        // Do not delete worker thread. ThreadManager will release all IThread* object when it is exited.
+        for (auto worker: workerThreads)
+        {
+            worker->Exit();
+        }
+        return true;
+    }
+
+
+
 }

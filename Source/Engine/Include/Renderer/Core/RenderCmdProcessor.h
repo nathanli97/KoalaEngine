@@ -18,12 +18,19 @@
 
 #pragma once
 
+#define RENDER_COMMAND_ENQUEUE(X) Koala::Render::Core::AddRenderCommand(X)
+#include "Core/ThreadManager.h"
+
 namespace Koala::Render::Core
 {
-    class RenderCmdProcessor
+    template<typename LAMBDA>
+    void AddRenderCommand(LAMBDA&& inTask)
     {
-    public:
-        template<typename LAMBDA>
-        void AddTaskLambda(LAMBDA&& inTask){}
-    };
+        if (IsInRenderThread())
+            inTask();
+        else
+        {
+                
+        }
+    }
 }

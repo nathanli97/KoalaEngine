@@ -34,7 +34,7 @@ namespace Koala
         KOALA_IMPLEMENT_SINGLETON(Config)
         bool Initialize_MainThread() override;
         bool Shutdown_MainThread() override;
-        void Tick(float delta_time) override;
+        void Tick_MainThread(float delta_time) override;
         bool Reload();
         bool Save();
         void PrintAllConfigurations() const;

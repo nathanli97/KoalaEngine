@@ -22,13 +22,16 @@ namespace Koala
     void Worker::Run()
     {
         status.store(EWorkerStatus::Idle, std::memory_order::release);
-        
+        {
+            std::scoped_lock lock(mutex);
+            cvWorkerThreadCreated.notify_all();
+        }
         while(true)
         {
             if (bShouldExit.load(std::memory_order::acquire))
             {
                 if (status.load(std::memory_order::acquire) != EWorkerStatus::Ready)
-                    return;
+                    break;
             }
             
             {
@@ -54,7 +57,7 @@ namespace Koala
 
             if (bShouldExit.load(std::memory_order::acquire))
             {
-                return;
+                break;
             }
         }
     }

@@ -22,19 +22,24 @@
 
 namespace Koala
 {
+    class WorkDispatcher;
     enum class EWorkerStatus: uint8_t
     {
         Uninitialized = 0,
         Idle,        // No task now. Can SetTask() and Execute(), etc.
         Ready,       // After Execute(). But this task is not executed yet.
         Busy,        // Task is running.
-        Finished     // Task is finished. Need call Reset() reset this worker to Idle status.
+        Finished,     // Task is finished. Need call Reset() reset this worker to Idle status.
+        Exited
     };
     
     // The workers can be only managed by one single dispatcher thread.
-    class Worker: IThread
+    class Worker: public IThread
     {
     public:
+        Worker() = default;
+        ~Worker() override {}
+        friend class WorkDispatcher;
         void Run() override;
     protected:
         // Reset from Finished to Idle
@@ -93,6 +98,18 @@ namespace Koala
         {
             bShouldExit.store(true, std::memory_order::relaxed);
         }
+
+        FORCEINLINE void WaitThreadCreated()
+        {
+            std::unique_lock lock(mutex);
+            
+            while (status.load() != EWorkerStatus::Uninitialized)
+            {
+                cvWorkerThreadCreated.wait(lock);
+            }
+        }
+    
+    
     private:
         // Task,TaskArg can only be updated when status==Idle!
         std::function<void(void*)> task;
@@ -100,9 +117,12 @@ namespace Koala
         
         std::condition_variable    cvWorkerTaskFinish;
         std::condition_variable    cvWorkerWaitTask;
+        std::condition_variable    cvWorkerThreadCreated;
+
         std::mutex                 mutex;
 
         std::atomic<EWorkerStatus> status;
         std::atomic<bool>          bShouldExit{false};
+
     };
 }

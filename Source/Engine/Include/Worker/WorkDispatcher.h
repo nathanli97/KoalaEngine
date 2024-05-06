@@ -17,6 +17,7 @@
 
 #pragma once
 #include <future>
+#include <unordered_set>
 
 #include "Worker.h"
 #include "Core/SingletonInterface.h"
@@ -28,35 +29,51 @@ namespace Koala
 {
     class WorkDispatcher: public IThreadedModule
     {
+    public:
+        typedef std::function<void(void*)> TaskFuncType;
+        typedef std::pair<TaskFuncType, void*> TaskPairType;
     private:
         struct Task
         {
-            std::function<void(void*)> func;
-            void* arg{nullptr};
+            TaskPairType task;
+            // std::promise<void> promise;
             EThreadType assignThread{EThreadType::UnknownThread};
 
             Task(std::function<void(void*)> inFunc, void* inArg, EThreadType inAssignThread):
-                func(inFunc), arg(inArg), assignThread(inAssignThread) {}
+                task(std::make_pair(inFunc, inArg)), assignThread(inAssignThread) {}
+            Task() = default;
+            // Task& GetFuture(std::future<void>& outFuture) { outFuture = promise.get_future(); return *this;}
         };
     public:
         KOALA_IMPLEMENT_SINGLETON(WorkDispatcher)
-
-        typedef std::function<void(void*)> TaskFuncType;
-        typedef std::pair<TaskFuncType, void*> TaskPairType;
         
         void Run() override;
         bool Initialize_MainThread() override;
         bool Shutdown_MainThread() override;
-        void Tick(float delta_time) override;
+        void Tick_MainThread(float delta_time) override;
+        void Tick_RenderThread();
+        void Tick_RHIThread();
 
         template <typename Lambda, typename Arg = void>
-        void AddTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread)
+        void AddTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
             pendingAddTasks.Push(Task(inTask, inArg, inAssignThread));
         }
     private:
         QueueTS<Task> pendingAddTasks;
-        // Map for storing tasks which will dispatched to MainThread/RenderThread/RHIThread
-        std::unordered_map<EThreadType, QueueTS<TaskPairType>> taskRemap;
+        
+        std::queue<TaskPairType> taskListMainThread;
+        std::mutex mutexTaskMainThread;
+        std::queue<TaskPairType> taskListRenderThread;
+        std::mutex mutexTaskRenderThread;
+        std::queue<TaskPairType> taskListRHIThread;
+        std::mutex mutexTaskRHIThread;
+        std::queue<TaskPairType> taskListWorkerThread;
+        std::mutex mutexTaskWorkerThread;
+
+        void ProcessNewWorkerTask(Task &task, bool bInEngineIsShutdowning);
+
+        std::vector<Worker*>       workerThreads;
+        std::mutex                mutexWorkerThreads;
     };
 }

@@ -100,7 +100,7 @@ namespace Koala
         }
     }
 
-    void Config::Tick(float delta_time) {}
+    void Config::Tick_MainThread(float delta_time) {}
 
     bool Config::Reload()
     {

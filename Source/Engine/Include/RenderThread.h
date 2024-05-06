@@ -37,7 +37,7 @@ namespace Koala {
         bool Shutdown_MainThread() override;
 
         // Caller: MT
-        void Tick(float delta_time) override;
+        void Tick_MainThread(float delta_time) override;
 
         // Caller: RT
         void Run() override;
@@ -66,7 +66,7 @@ namespace Koala {
 
         RenderThread(): IThreadedModule() {}
     private:
-        RHI::IRenderHardware *rhiRender = nullptr;
+        RHI::IRenderHardware *rhi = nullptr;
 
         std::mutex mutexRenderReadyOrInitErr;
         std::condition_variable cvRenderReadyOrInitErr;

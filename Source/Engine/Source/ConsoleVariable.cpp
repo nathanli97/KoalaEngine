@@ -21,9 +21,9 @@
 
 namespace Koala
 {
-    EThreadType IConsoleVariable::GetCurrentThreadId()
-    {
-        return ThreadManager::Get().GetCurrentThread();
-    }
+    // EThreadType IConsoleVariable::GetCurrentThreadId()
+    // {
+    //     return ThreadManager::Get().GetCurrentThread();
+    // }
 
 }

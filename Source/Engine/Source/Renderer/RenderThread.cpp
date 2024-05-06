@@ -24,6 +24,7 @@
 #include "Config.h"
 #include <Core.h>
 #include "../RHI/VulkanRHI/VulkanRHI.h"
+#include "Core/ThreadManager.h"
 #include "Renderer/Core/RenderCmdProcessor.h"
 
 namespace Koala
@@ -41,38 +42,37 @@ namespace Koala
             return false;
         }
 
-        rhiRender = RHI::GetRHI(renderer);
-        rhiRender->PreInit_MainThread();
+        rhi = RHI::GetRHI(renderer);
+        rhi->PreInit_MainThread();
         return true;
     }
 
     bool RenderThread::Shutdown_MainThread()
     {
-        rhiRender->PostShutdown_MainThread();
+        rhi->PostShutdown_MainThread();
         return true;
     }
 
-    void RenderThread::Tick(float delta_time)
+    void RenderThread::Tick_MainThread(float delta_time)
     {
-        if (!rhiRender->Tick_MainThread())
+        if (!rhi->Tick_MainThread())
             KoalaEngine::Get().RequestEngineStop();
     }
 
     void RenderThread::Run()
     {
-        Render::Core::RenderCmdProcessor processor;
-        processor.AddTaskLambda([](){});
+        // Render::Core::RenderCmdProcessor processor;
+        // processor.AddTaskLambda([](){});
+        ThreadTLS::Initialize(EThreadType::RenderThread);
         
-        logger.info("RenderThread is running.");
+        logger.info("Initializing RHI");
 
-        logger.info("RenderThread: Initializing RHI");
-
-        if (!rhiRender->Initialize_RenderThread())
+        if (!rhi->Initialize_RenderThread())
         {
             logger.error("RHI: Failed to initialize!");
 
             logger.info("RenderThread: Shutdowning RHI");
-            rhiRender->Shutdown_RenderThread();
+            rhi->Shutdown_RenderThread();
             logger.info("RenderThread is stopping.");
 
             KoalaEngine::Get().RequestEngineStop();
@@ -109,7 +109,7 @@ namespace Koala
         }
 
         logger.info("RenderThread: Shutdowning RHI");
-        rhiRender->Shutdown_RenderThread();
+        rhi->Shutdown_RenderThread();
         logger.info("RenderThread is stopping.");
 
         {
