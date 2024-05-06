@@ -99,11 +99,11 @@ namespace Koala
             bShouldExit.store(true, std::memory_order::relaxed);
         }
 
-        FORCEINLINE void WaitThreadCreated()
+        FORCEINLINE void WaitForThreadCreated()
         {
             std::unique_lock lock(mutex);
             
-            while (status.load() != EWorkerStatus::Uninitialized)
+            while (status.load() == EWorkerStatus::Uninitialized)
             {
                 cvWorkerThreadCreated.wait(lock);
             }

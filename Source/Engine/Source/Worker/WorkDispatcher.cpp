@@ -107,6 +107,7 @@ namespace Koala
         {
             worker = new Worker();
             ThreadManager::Get().CreateThread(worker, true);
+            worker->WaitForThreadCreated();
         }
         
         return true;
