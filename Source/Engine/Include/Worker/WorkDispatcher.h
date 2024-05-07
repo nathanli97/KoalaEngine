@@ -78,4 +78,16 @@ namespace Koala
     {
         return WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inAssignThread);
     }
+
+    template <typename Lambda>
+    void Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+    {
+        for (size_t index = 0; index < numOfTasks; index++)
+        {
+            WorkDispatcher::Get().AddTask([index, inTask](void* mem)
+            {
+                inTask(mem, index);
+            }, inMem, inAssignThread);
+        }
+    }
 }

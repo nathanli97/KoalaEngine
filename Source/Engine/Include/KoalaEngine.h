@@ -34,20 +34,20 @@ namespace Koala {
     class KoalaEngine
     {
     public:
-        static bool Launch(int argc, char** argv)
+        static void Launch(int argc, char** argv)
         {
-            if (!KoalaEngine::Get().Initialize(argc, argv))
+            auto &engine = KoalaEngine::Get();
+            if (!engine.Initialize(argc, argv))
             {
-                KoalaEngine::Get().Shutdown();
-                return false;
+                engine.Shutdown();
             }
 
-            while(!KoalaEngine::Get().IsEngineExitRequested())
-                KoalaEngine::Get().Tick();
+            while(!engine.IsEngineExitRequested())
+                engine.Tick();
 
-            KoalaEngine::Get().Shutdown();
-            return true;
+            engine.Shutdown();
         }
+        
         NODISCARD EEngineStage GetEngineRunningStage() const
         {
             return engineStage;
@@ -78,4 +78,9 @@ namespace Koala {
 
         std::atomic<EEngineStage> engineStage {EEngineStage::UnInitialized};
     };
+
+    FORCEINLINE void LaunchKoala(int argc, char **argv)
+    {
+        KoalaEngine::Launch(argc, argv);
+    }
 }

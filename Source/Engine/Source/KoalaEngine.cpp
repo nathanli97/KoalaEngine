@@ -109,6 +109,20 @@ namespace Koala
             KOALA_ENGINE_VER_CODENAME);
 
         engineStage = EEngineStage::Running;
+
+        if (CmdParser::Get().HasArg("--benchmark:workdispatcher"))
+        {
+            Logger loggerBM("BENCHMARK");
+            loggerBM.info("Benchmarking engine: WorkDispatcher performance");
+            loggerBM.info("BENCHMARK 1: 10000 tasks with maximum 50ms task length");
+            int testmem[10000];
+            for (int i = 0; i < 10000; i++)
+            {
+                testmem[i] = std::rand();
+            }
+
+            Async([](void* mem, size_t index){}, 10000, testmem);
+        }
         return true;
     }
 

@@ -5,6 +5,6 @@
 
 int main(int argc, char** argv)
 {
-    Koala::KoalaEngine::Launch(argc, argv);
+    Koala::LaunchKoala(argc, argv);
     return 0;
 }
