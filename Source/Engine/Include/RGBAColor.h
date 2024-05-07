@@ -37,20 +37,24 @@ namespace Koala
         {
             if constexpr (bHexHasAlpha)
             {
-                r = (float) ((inHex >> 24) & 0xFF);
-                g = (float) ((inHex >> 16) & 0xFF);
-                b = (float) ((inHex >> 8) & 0xFF);
-                a = (float) (inHex & 0xFF);
+                r = (float) ((inHex >> 24) & 0xFF) / 255.f;
+                g = (float) ((inHex >> 16) & 0xFF) / 255.f;
+                b = (float) ((inHex >> 8) & 0xFF) / 255.f;
+                a = (float) (inHex & 0xFF) / 255.f;
             }
             else
             {
-                r = (float) ((inHex >> 16) & 0xFF);
-                g = (float) ((inHex >> 8) & 0xFF);
-                b = (float) (inHex & 0xFF);
+                r = (float) ((inHex >> 16) & 0xFF) / 255.f;
+                g = (float) ((inHex >> 8) & 0xFF) / 255.f;
+                b = (float) (inHex & 0xFF) / 255.f;
                 a = 1;
             }
         }
         float r, g, b, a;
+        uint8_t ri() const { return static_cast<uint8_t>(r * 255); }
+        uint8_t gi() const { return static_cast<uint8_t>(g * 255); }
+        uint8_t bi() const { return static_cast<uint8_t>(b * 255); }
+        uint8_t ai() const { return static_cast<uint8_t>(a * 255); }
         explicit operator Vec4f() const {
             return Vec4f{r, g, b, a};
         }

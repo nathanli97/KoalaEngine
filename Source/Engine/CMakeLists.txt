@@ -4,6 +4,7 @@ add_compile_definitions(INCLUDE_RHI_VULKAN=1)
 # the following two definitions is work on if RHI_ENABLE_GPU_DEBUG is enabled
 
 option(RHI_GPU_DEBUG "Enable GPU Debug features" ON)
+option(ENABLE_CPU_PROFILE "Enable CPU Markers for profiling (PIX for Windows)" OFF)
 cmake_dependent_option(RHI_GPU_MARKER "Enable GPU Markers (Symbols for GPU Debugging)" ON "RHI_GPU_DEBUG" OFF)
 cmake_dependent_option(RHI_GPU_VALIDATION "Enable GPU Validation" ON "RHI_GPU_DEBUG" OFF)
 
@@ -20,6 +21,11 @@ if (${RHI_GPU_DEBUG})
     endif ()
 endif ()
 
+if (${ENABLE_CPU_PROFILE})
+    message(STATUS "KoalaEngine: Enabling CPU Profiling Markers")
+    add_compile_definitions(ENABLE_CPU_PROFILE=1)
+endif ()
+
 set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator volk_headers)
 
 add_library(KoalaEngine STATIC ${MODULE_SOURCE_FILES} ${MODULE_INCLUDE_FILES})
@@ -30,6 +36,13 @@ target_include_directories(KoalaEngine
         PUBLIC "${MODULE_INCLUDE_PATH}"
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
+
+if (${ENABLE_CPU_PROFILE})
+    target_include_directories(KoalaEngine
+            PUBLIC ${CMAKE_SOURCE_DIR}/ThirdParty/pix_for_windows/include
+    )
+    target_link_libraries(KoalaEngine PUBLIC ${CMAKE_SOURCE_DIR}/ThirdParty/pix_for_windows/lib/WinPixEventRuntime.lib)
+endif ()
 
 target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES})
 

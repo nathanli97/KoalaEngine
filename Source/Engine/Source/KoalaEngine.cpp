@@ -110,18 +110,21 @@ namespace Koala
 
         engineStage = EEngineStage::Running;
 
-        if (CmdParser::Get().HasArg("--benchmark:workdispatcher"))
+        if (CmdParser::Get().HasArg("benchmark:workdispatcher"))
         {
             Logger loggerBM("BENCHMARK");
             loggerBM.info("Benchmarking engine: WorkDispatcher performance");
-            loggerBM.info("BENCHMARK 1: 10000 tasks with maximum 50ms task length");
+            loggerBM.info("BENCHMARK : 1000 tasks with maximum 500ms task length");
             int testmem[10000];
             for (int i = 0; i < 10000; i++)
             {
                 testmem[i] = std::rand();
             }
 
-            Async([](void* mem, size_t index){}, 10000, testmem);
+            Async([](void* mem, size_t index)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            }, 1000, testmem);
         }
         return true;
     }

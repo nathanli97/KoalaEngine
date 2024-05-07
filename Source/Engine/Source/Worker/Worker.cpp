@@ -17,6 +17,8 @@
 
 #include "Worker/Worker.h"
 
+#include "CPUProfiler.h"
+
 namespace Koala::Worker
 {
     void Worker::Run()
@@ -49,7 +51,10 @@ namespace Koala::Worker
             // We are status == Ready now.
             status.store(EWorkerStatus::Busy, std::memory_order::seq_cst);
 
-            task.func(task.arg);
+            {
+                SCOPED_CPU_MARKER(Colors::Green, "Work")
+                task.func(task.arg);
+            }
 
             // Task Finished!
 
