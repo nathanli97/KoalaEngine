@@ -42,7 +42,7 @@ namespace Koala::Worker
 
         Task(std::function<void(void*)> inFunc, void* inArg, EThreadType inAssignThread):
             func(inFunc), arg(inArg), assignThread(inAssignThread) {}
-        // Task& GetFuture(std::future<void>& outFuture) { outFuture = promise.get_future(); return *this;}
+        Task& GetFuture(std::future<void>& outFuture) { outFuture = std::move(promise.get_future()); return *this;}
     };
     
 }

@@ -101,6 +101,9 @@ namespace Koala::Worker
     
     
     private:
+        std::atomic<EWorkerStatus> status{EWorkerStatus::Uninitialized};
+        std::atomic<bool>          bShouldExit{false};
+        
         // Task can only be updated when status==Idle!
         Task task;
         
@@ -108,9 +111,5 @@ namespace Koala::Worker
         std::condition_variable    cvWorkerThreadCreated;
 
         std::mutex                 mutex;
-
-        std::atomic<EWorkerStatus> status{EWorkerStatus::Uninitialized};
-        std::atomic<bool>          bShouldExit{false};
-
     };
 }

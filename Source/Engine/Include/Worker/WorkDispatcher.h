@@ -31,6 +31,7 @@ namespace Koala
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(WorkDispatcher)
+        WorkDispatcher();
         void Run() override;
         bool Initialize_MainThread() override;
         bool Shutdown_MainThread() override;
@@ -39,10 +40,14 @@ namespace Koala
         void Tick_RHIThread();
 
         template <typename Lambda, typename Arg = void>
-        void AddTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+        std::future<void> AddTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            pendingAddTasks.Push(Task(inTask, inArg, inAssignThread));
+            std::future<void> outFuture;
+            pendingAddTasks.Push(std::move(Worker::Task(inTask, inArg, inAssignThread).GetFuture(outFuture)));
+            return outFuture;
         }
+
+        FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
     private:
         QueueTS<Worker::Task> pendingAddTasks;
         
@@ -64,5 +69,13 @@ namespace Koala
 
         QueueTS<Worker::Task> undispatchedWorkerTasks;
         QueueTS<Worker::Task> finishedNonWorkerTasks;
+
+        size_t numWorkerThreads{0};
     };
+
+    template <typename Lambda, typename Arg=void>
+    std::future<void> AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+    {
+        return WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inAssignThread);
+    }
 }

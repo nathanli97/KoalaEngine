@@ -57,8 +57,8 @@ namespace Koala
         {
             std::unique_lock lock(mutex);
 
-            
-            cv.wait_for(lock, std::chrono::milliseconds(maxWaitMilliseconds));
+            if (Super::empty())
+                cv.wait_for(lock, std::chrono::milliseconds(maxWaitMilliseconds));
             if (Super::empty())
                 return false;
 

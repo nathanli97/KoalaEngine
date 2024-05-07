@@ -55,7 +55,7 @@ namespace Koala
             }
             else
             {
-                if (!pendingAddTasks.WaitAndPop(localTask))
+                if (!pendingAddTasks.TryPop(localTask))
                     continue;
             }
 
@@ -159,16 +159,16 @@ namespace Koala
         }
     }
 
+    WorkDispatcher::WorkDispatcher()
+        :numWorkerThreads(std::thread::hardware_concurrency())
+    {
+        if (numWorkerThreads > 6)
+            numWorkerThreads -= 4;
+    }
 
-
-    
     bool WorkDispatcher::Initialize_MainThread()
     {
-        auto nCores = std::thread::hardware_concurrency();
-
-        // MT, RT, AsyncLoading, etc
-        if (nCores > 6)
-            nCores -= 4;
+        auto nCores = numWorkerThreads;
         
         workerThreads.resize(nCores);
         
