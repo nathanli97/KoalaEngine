@@ -37,7 +37,7 @@ namespace Koala {
         bool Shutdown_MainThread() override;
 
         // Caller: MT
-        void Tick_MainThread(float delta_time) override;
+        void Tick_MainThread(float deltaTime) override;
 
         // Caller: RT
         void Run() override;

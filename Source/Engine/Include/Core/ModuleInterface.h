@@ -37,7 +37,7 @@ namespace Koala {
         // Module Tick function.
         // Tick function will be called once every frame.
         // Tick function will be called from MainThread.
-        virtual void Tick_MainThread(float delta_time) = 0;
+        virtual void Tick_MainThread(float deltaTime) = 0;
     };
     class ModuleManager: public ISingleton
     {

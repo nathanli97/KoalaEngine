@@ -17,7 +17,7 @@
 
 #include "Worker/Worker.h"
 
-namespace Koala
+namespace Koala::Worker
 {
     void Worker::Run()
     {
@@ -38,26 +38,25 @@ namespace Koala
                 std::unique_lock lock(mutex);
 
                 while (status != EWorkerStatus::Ready)
-                    cvWorkerWaitTask.wait(lock);
+                {
+                    cvWorkerWaitNewTask.wait_for(lock, std::chrono::seconds(1));
+
+                    if (bShouldExit.load())
+                        return;
+                }
             }
 
             // We are status == Ready now.
             status.store(EWorkerStatus::Busy, std::memory_order::seq_cst);
 
-            task(taskArg);
+            task.func(task.arg);
 
             // Task Finished!
 
             status.store(EWorkerStatus::Finished, std::memory_order::release);
-
-            {
-                std::scoped_lock lock(mutex);
-                cvWorkerTaskFinish.notify_all();
-            }
-
             if (bShouldExit.load(std::memory_order::acquire))
             {
-                break;
+                return;
             }
         }
     }

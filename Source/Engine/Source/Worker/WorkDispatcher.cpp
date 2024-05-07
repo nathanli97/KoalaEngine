@@ -24,32 +24,40 @@
 #include "Core/ThreadManager.h"
 
 #define PROCESS_LOCAL_TASKS(LIST, MUTEX) { \
-    std::queue<TaskPairType> localQueue; \
+    std::queue<Worker::Task> localQueue; \
     { \
-        std::lock_guard lock(mutexTaskMainThread); localQueue.swap(taskListMainThread); \
+        std::lock_guard lock(MUTEX); localQueue.swap(LIST); \
     } \
     while (!localQueue.empty()) \
     { \
-        auto &p = localQueue.front(); \
-        p.first(p.second); \
+        Worker::Task t = std::move(localQueue.front()); \
+        t.func(t.arg); \
+        finishedNonWorkerTasks.Push(std::move(t)); \
     } \
     }
 namespace Koala
 {
+    static Logger logger("WorkDispatcher");
     void WorkDispatcher::Run()
     {
         while (true)
         {
             const bool bEngineIsShutdowning = KoalaEngine::Get().IsEngineExitRequested();
             
-            Task localTask;
+            ProcessFinishedTasks();
+            DispatchWorkerTasks();
+            
+            Worker::Task localTask;
             if (bEngineIsShutdowning)
             {
                 if (!pendingAddTasks.TryPop(localTask))
                     return;
             }
             else
-                pendingAddTasks.WaitAndPop(localTask);
+            {
+                if (!pendingAddTasks.WaitAndPop(localTask))
+                    continue;
+            }
 
             // Are we have a valid task?
             if (localTask.assignThread != EThreadType::UnknownThread)
@@ -59,57 +67,119 @@ namespace Koala
                     case EThreadType::MainThread:
                     {
                         std::scoped_lock lock(mutexTaskMainThread);
-                        taskListMainThread.emplace(localTask.task);
+                        taskListMainThread.emplace(std::move(localTask));
                         break;
                     }
                     case EThreadType::RenderThread:
                     {
                         std::scoped_lock lock(mutexTaskRenderThread);
-                        taskListRenderThread.emplace(localTask.task);
+                        taskListRenderThread.emplace(std::move(localTask));
                         break;
                     }
                     case EThreadType::RHIThread:
                     {
                         std::scoped_lock lock(mutexTaskRHIThread);
-                        taskListRHIThread.emplace(localTask.task);
+                        taskListRHIThread.emplace(std::move(localTask));
                         break;
                     }
                     case EThreadType::WorkerThread:
                     {
-                        ProcessNewWorkerTask(localTask, bEngineIsShutdowning);
+                        ProcessNewWorkerTask(std::move(localTask), bEngineIsShutdowning);
                         break;
                     }
                     default: break;
                 }
             }
+
+            
         }
     }
 
-    void WorkDispatcher::ProcessNewWorkerTask(Task &task,bool bInEngineIsShutdowning)
+    void WorkDispatcher::ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning)
     {
         if (bInEngineIsShutdowning)
         {
             std::scoped_lock lock(mutexTaskMainThread);
-            taskListMainThread.emplace(task.task);
+            taskListMainThread.emplace(std::move(task));
         } else
         {
-            
+            undispatchedWorkerTasks.Push(std::move(task));
         }
     }
+
+    void WorkDispatcher::DispatchWorkerTasks()
+    {
+        std::forward_list<Worker::Worker*> idleWorkers;
+        for (auto worker: workerThreads)
+        {
+            if (worker->IsIdle())
+            {
+                idleWorkers.push_front(worker);
+            }
+        }
+
+        for (auto idleWorker: idleWorkers)
+        {
+            Worker::Task task;
+            if (!undispatchedWorkerTasks.TryPop(task))
+                break;
+
+            idleWorker->AssignTask(std::move(task));
+            idleWorker->Execute();
+        }
+    }
+
+    void WorkDispatcher::ProcessFinishedTasks()
+    {
+        std::forward_list<Worker::Worker*> finishedWorkers;
+        for (auto worker: workerThreads)
+        {
+            if (worker->IsFinished())
+            {
+                finishedWorkers.push_front(worker);
+            }
+        }
+
+        std::forward_list<Worker::Task> finishedTasks;
+        for (auto worker: finishedWorkers)
+        {
+            finishedTasks.push_front(worker->FinishTask());
+        }
+
+        Worker::Task t;
+        while (finishedNonWorkerTasks.TryPop(t))
+        {
+            finishedTasks.push_front(std::move(t));
+        }
+
+        for (Worker::Task &task: finishedTasks)
+        {
+            // Notify task waiters this task has finished (if any)
+            task.promise.set_value();
+        }
+    }
+
+
 
     
     bool WorkDispatcher::Initialize_MainThread()
     {
         auto nCores = std::thread::hardware_concurrency();
+
+        // MT, RT, AsyncLoading, etc
+        if (nCores > 6)
+            nCores -= 4;
+        
         workerThreads.resize(nCores);
         
-        for (Worker* &worker: workerThreads)
+        for (Worker::Worker* &worker: workerThreads)
         {
-            worker = new Worker();
-            ThreadManager::Get().CreateThread(worker, true);
+            worker = new Worker::Worker();
+            ThreadManager::Get().CreateThreadManaged(worker);
             worker->WaitForThreadCreated();
         }
-        
+
+        logger.info("Created {} worker thread(s)", nCores);
         return true;
     }
 

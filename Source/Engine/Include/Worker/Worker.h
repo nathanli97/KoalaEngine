@@ -19,10 +19,14 @@
 #include "Core/ThreadInterface.h"
 #include "Definations.h"
 #include "Core/Check.h"
+#include "Task.h"
 
 namespace Koala
 {
     class WorkDispatcher;
+}
+namespace Koala::Worker
+{
     enum class EWorkerStatus: uint8_t
     {
         Uninitialized = 0,
@@ -39,40 +43,37 @@ namespace Koala
     public:
         Worker() = default;
         ~Worker() override {}
-        friend class WorkDispatcher;
+        friend class Koala::WorkDispatcher;
         void Run() override;
     protected:
         // Reset from Finished to Idle
-        FORCEINLINE void Reset()
+        FORCEINLINE Task&& FinishTask()
         {
             std::unique_lock lock(mutex);
             ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Finished, "Only Finished worker can be reset to Idle");
             status.store(EWorkerStatus::Idle, std::memory_order::release);
-            task = nullptr;
-            taskArg = nullptr;
+            return std::move(task);
         }
         // Set new task. Worker status must be Idle. Can only be called when status==Idle.
-        template<typename TaskFunc>
-        FORCEINLINE void SetTask(TaskFunc&& inTask)
+        FORCEINLINE void AssignTask(Task&& inTask)
         {
-            ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Idle, "Only Idle worker can be SetTask. Do you forgot to call Reset?");
-            task = std::forward<TaskFunc>(inTask);
+            ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Idle, "Only Idle worker can AssignTask. Do you forgot to call Reset?");
+            task = std::move(inTask);
         }
+        
         // Execute the task. This will turn status into Ready
-        FORCEINLINE void Execute(void* arg = nullptr)
+        FORCEINLINE void Execute()
         {
             ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Idle, "Only Idle worker can be Execute. Do you forgot to call Reset?");
-            check(task.operator bool(), "Task is empty??");
-
-            taskArg = arg;
+            check(task.func.operator bool(), "Task is empty??");
             
-            if (task)
+            if (task.func)
             {
                 std::unique_lock lock(mutex);
                 // We need to ensure 'cvWorkerWaitTask.notify_one()' is happened-after 'status.store'!
                 status.store(EWorkerStatus::Ready, std::memory_order::release);
                 lock.unlock();
-                cvWorkerWaitTask.notify_one();
+                cvWorkerWaitNewTask.notify_one();
             }
         }
         FORCEINLINE bool IsFinished()
@@ -82,17 +83,6 @@ namespace Koala
         FORCEINLINE bool IsIdle()
         {
             return status.load(std::memory_order::seq_cst) == EWorkerStatus::Idle;
-        }
-        // Wait current task in Worker to finish.
-        FORCEINLINE void Wait()
-        {
-            std::unique_lock lock(mutex);
-            ensure(status.load(std::memory_order::acquire) != EWorkerStatus::Idle, "Worker is idle now! No Task at all!");
-            
-            while (status.load() != EWorkerStatus::Finished)
-            {
-                cvWorkerTaskFinish.wait(lock);
-            }
         }
         FORCEINLINE void Exit()
         {
@@ -111,17 +101,15 @@ namespace Koala
     
     
     private:
-        // Task,TaskArg can only be updated when status==Idle!
-        std::function<void(void*)> task;
-        void*                      taskArg{nullptr};
+        // Task can only be updated when status==Idle!
+        Task task;
         
-        std::condition_variable    cvWorkerTaskFinish;
-        std::condition_variable    cvWorkerWaitTask;
+        std::condition_variable    cvWorkerWaitNewTask;
         std::condition_variable    cvWorkerThreadCreated;
 
         std::mutex                 mutex;
 
-        std::atomic<EWorkerStatus> status;
+        std::atomic<EWorkerStatus> status{EWorkerStatus::Uninitialized};
         std::atomic<bool>          bShouldExit{false};
 
     };

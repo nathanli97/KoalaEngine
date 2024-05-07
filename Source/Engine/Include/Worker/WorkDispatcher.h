@@ -24,29 +24,13 @@
 #include "Core/ThreadTypes.h"
 #include "Core/ThreadedModule.h"
 #include "TSContainer/QueueTS.h"
-
+#include "Task.h"
 namespace Koala
 {
     class WorkDispatcher: public IThreadedModule
     {
     public:
-        typedef std::function<void(void*)> TaskFuncType;
-        typedef std::pair<TaskFuncType, void*> TaskPairType;
-    private:
-        struct Task
-        {
-            TaskPairType task;
-            // std::promise<void> promise;
-            EThreadType assignThread{EThreadType::UnknownThread};
-
-            Task(std::function<void(void*)> inFunc, void* inArg, EThreadType inAssignThread):
-                task(std::make_pair(inFunc, inArg)), assignThread(inAssignThread) {}
-            Task() = default;
-            // Task& GetFuture(std::future<void>& outFuture) { outFuture = promise.get_future(); return *this;}
-        };
-    public:
         KOALA_IMPLEMENT_SINGLETON(WorkDispatcher)
-        
         void Run() override;
         bool Initialize_MainThread() override;
         bool Shutdown_MainThread() override;
@@ -60,20 +44,25 @@ namespace Koala
             pendingAddTasks.Push(Task(inTask, inArg, inAssignThread));
         }
     private:
-        QueueTS<Task> pendingAddTasks;
+        QueueTS<Worker::Task> pendingAddTasks;
         
-        std::queue<TaskPairType> taskListMainThread;
+        std::queue<Worker::Task> taskListMainThread;
         std::mutex mutexTaskMainThread;
-        std::queue<TaskPairType> taskListRenderThread;
+        std::queue<Worker::Task> taskListRenderThread;
         std::mutex mutexTaskRenderThread;
-        std::queue<TaskPairType> taskListRHIThread;
+        std::queue<Worker::Task> taskListRHIThread;
         std::mutex mutexTaskRHIThread;
-        std::queue<TaskPairType> taskListWorkerThread;
+        std::queue<Worker::Task> taskListWorkerThread;
         std::mutex mutexTaskWorkerThread;
 
-        void ProcessNewWorkerTask(Task &task, bool bInEngineIsShutdowning);
+        void ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning);
+        void DispatchWorkerTasks();
+        void ProcessFinishedTasks();
 
-        std::vector<Worker*>       workerThreads;
+        std::vector<Worker::Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
+
+        QueueTS<Worker::Task> undispatchedWorkerTasks;
+        QueueTS<Worker::Task> finishedNonWorkerTasks;
     };
 }

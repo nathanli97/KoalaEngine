@@ -24,6 +24,7 @@
 #include "EngineVersion.h"
 #include "RenderThread.h"
 #include "Core/ThreadManager.h"
+#include "Worker/WorkDispatcher.h"
 
 
 namespace Koala
@@ -58,6 +59,8 @@ namespace Koala
 
         RenderThread::Get().Initialize_MainThread();
         ModuleManager::Get().InitializeModules();
+        WorkDispatcher::Get().Initialize_MainThread();
+
         
         // Sub-threads should be created in end of engine early init stage.
         CreateSubThreads();
@@ -67,6 +70,7 @@ namespace Koala
     void KoalaEngine::CreateSubThreads()
     {
         RenderThread::Get().CreateThread();
+        WorkDispatcher::Get().CreateThread();
     }
 
     bool KoalaEngine::InitializeStage()
@@ -112,7 +116,9 @@ namespace Koala
     void KoalaEngine::Tick()
     {
         // TODO: Pass actual deltatime to the function.
-        RenderThread::Get().Tick_MainThread(0);
+        float deltaTime = 0;
+        RenderThread::Get().Tick_MainThread(deltaTime);
+        WorkDispatcher::Get().Tick_MainThread(deltaTime);
     }
 
     void KoalaEngine::Shutdown()
@@ -121,6 +127,7 @@ namespace Koala
         RenderThread::Get().WaitForRTStop();
         RenderThread::Get().Shutdown_MainThread();
         ModuleManager::Get().ShutdownModules();
+        WorkDispatcher::Get().Shutdown_MainThread();
         Config::Get().Shutdown_MainThread();
         Scripting::Shutdown();
     }

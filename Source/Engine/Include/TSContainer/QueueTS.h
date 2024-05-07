@@ -29,12 +29,23 @@ namespace Koala
     public:
         typedef std::queue<Type> Super;
 
-        template <typename T>
-        void Push(T&& inValue)
+        void Push(const Type& inValue)
         {
             std::unique_lock lock(mutex);
             const bool bIsEmpty = Super::empty();
-            Super::push(std::forward<T>(inValue));
+            Super::push(inValue);
+
+            lock.unlock();
+
+            if (bIsEmpty)
+                cv.notify_one();
+        }
+
+        void Push(Type&& inValue)
+        {
+            std::unique_lock lock(mutex);
+            const bool bIsEmpty = Super::empty();
+            Super::push(std::move(inValue));
             
             lock.unlock();
             
@@ -42,15 +53,19 @@ namespace Koala
                 cv.notify_one();
         }
 
-        void WaitAndPop(Type& outPop)
+        bool WaitAndPop(Type& outPop, int maxWaitMilliseconds = 1000)
         {
             std::unique_lock lock(mutex);
 
-            while (Super::empty())
-                cv.wait(lock);
+            
+            cv.wait_for(lock, std::chrono::milliseconds(maxWaitMilliseconds));
+            if (Super::empty())
+                return false;
 
-            outPop = Super::front();
+            outPop = std::move(Super::front());
             Super::pop();
+
+            return true;
         }
 
         bool TryPop(Type& outPop)
@@ -60,7 +75,7 @@ namespace Koala
             if (Super::empty())
                 return false;
 
-            outPop = Super::front();
+            outPop = std::move(Super::front());
             Super::pop();
 
             return true;

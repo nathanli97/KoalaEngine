@@ -48,7 +48,13 @@ namespace Koala
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(ThreadManager)
-        void CreateThread(IThread* inThread, bool bShouldDeleteThreadObjectWhenShutdown = false)
+        void CreateThreadManaged(IThread* inThread)
+        {
+            IThread * thread = inThread;
+            threadObjects.push_back(thread);
+            CreateThread(thread);
+        }
+        void CreateThread(IThread* inThread)
         {
             std::lock_guard lock(mutexForThreadList);
             threads.emplace_back(
@@ -56,10 +62,6 @@ namespace Koala
                 {
                     inThread->Run();
                 });
-            if (bShouldDeleteThreadObjectWhenShutdown)
-            {
-                threadObjects.push_back(inThread);
-            }
         }
         template <typename Callable>
         void CreateThread(Callable inFunc) requires std::invocable<Callable>

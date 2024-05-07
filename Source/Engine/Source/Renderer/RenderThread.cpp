@@ -26,6 +26,7 @@
 #include "../RHI/VulkanRHI/VulkanRHI.h"
 #include "Core/ThreadManager.h"
 #include "Renderer/Core/RenderCmdProcessor.h"
+#include "Worker/WorkDispatcher.h"
 
 namespace Koala
 {
@@ -53,7 +54,7 @@ namespace Koala
         return true;
     }
 
-    void RenderThread::Tick_MainThread(float delta_time)
+    void RenderThread::Tick_MainThread(float deltaTime)
     {
         if (!rhi->Tick_MainThread())
             KoalaEngine::Get().RequestEngineStop();
@@ -105,6 +106,8 @@ namespace Koala
                 logger.info("Engine exit was requested. Trying to shutdown RenderThread...");
                 break;
             }
+            
+            WorkDispatcher::Get().Tick_RenderThread();
             // TODO: Render!!!!!!!!!!!!!
         }
 
