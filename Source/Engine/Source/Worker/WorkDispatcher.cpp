@@ -146,12 +146,10 @@ namespace Koala
         {
             finishedTasks.push_front(std::move(t));
         }
-
-        for (Worker::Task &task: finishedTasks)
-        {
-            // Notify task waiters this task has finished (if any)
-            task.promise.set_value();
-        }
+        // TODO :Notify task waiters this task has finished (if any)
+        // for (Worker::Task &task: finishedTasks)
+        // {
+        // }
     }
 
     WorkDispatcher::WorkDispatcher()

@@ -40,11 +40,9 @@ namespace Koala
         void Tick_RHIThread();
 
         template <typename Lambda, typename Arg = void>
-        std::future<void> AddTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+        void AddTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            std::future<void> outFuture;
-            pendingAddTasks.Push(std::move(Worker::Task(inTask, inArg, inAssignThread).GetFuture(outFuture)));
-            return outFuture;
+            pendingAddTasks.Push(std::move(Worker::Task(inTask, inArg, inAssignThread, inTaskPriority)));
         }
 
         FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
@@ -74,20 +72,20 @@ namespace Koala
     };
 
     template <typename Lambda, typename Arg=void>
-    std::future<void> AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+    std::future<void> AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
     {
-        return WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inAssignThread);
+        return WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inTaskPriority, inAssignThread);
     }
 
     template <typename Lambda>
-    void Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, EThreadType inAssignThread = EThreadType::WorkerThread)
+    void Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
     {
         for (size_t index = 0; index < numOfTasks; index++)
         {
             WorkDispatcher::Get().AddTask([index, inTask](void* mem)
             {
                 inTask(mem, index);
-            }, inMem, inAssignThread);
+            }, inMem, inTaskPriority, inAssignThread);
         }
     }
 }
