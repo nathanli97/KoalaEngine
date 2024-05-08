@@ -23,45 +23,40 @@ namespace Koala::Worker
     typedef std::function<void(void*)> TaskFuncType;
     typedef void* TaskArgType;
     
+    struct TaskMetaData
+    {
+        TaskMetaData() = default;
+        TaskFuncType func;
+        TaskArgType  arg;
+        EThreadType assignThread{EThreadType::UnknownThread};
+        std::atomic<uint8_t> taskPriority{(uint8_t)ETaskPriority::Normal};
+    };
+    
     struct Task
     {
         Task() = default;
         Task(const Task&) = delete;
         Task& operator=(const Task&) = delete;
         Task(Task&& inTask) noexcept
-            : func(std::move(inTask.func)), arg(inTask.arg), assignThread(std::move(inTask.assignThread)), taskPriority(std::move(inTask.taskPriority)) {}
+            : data(inTask.data) {}
         Task& operator=(Task&& inTask)
         {
             if (&inTask == this)
                 return *this;
-            func = std::move(inTask.func);
-            arg = inTask.arg;
-            assignThread = std::move(inTask.assignThread);
-            taskPriority = std::move(inTask.taskPriority);
+            data = inTask.data;
             inTask.Reset();
             return *this;
         }
 
         FORCEINLINE void Reset()
         {
-            func = nullptr;
-            arg = nullptr;
-            assignThread = EThreadType::UnknownThread;
-            taskPriority = (uint8_t)ETaskPriority::Normal;
+            data = nullptr;
         }
         
-        TaskFuncType func;
-        TaskArgType  arg;
+        TaskMetaData *data{nullptr};
 
-        // Metadata -- Only used in Dispatcher thread: Will be strikeout from Worker
-        // TODO: Strikeout metadata when metadata takes too much memory
-        // For now, the following metadata only used 2 Bytes of storage
-        // TODO: taskPriority is unused for now
-        EThreadType assignThread{EThreadType::UnknownThread};
-        uint8_t taskPriority{(uint8_t)ETaskPriority::Normal};
-
-        Task(std::function<void(void*)> inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inTaskPriority):
-            func(inFunc), arg(inArg), assignThread(inAssignThread), taskPriority((uint8_t)inTaskPriority) {}
+        Task(TaskMetaData* inData):
+            data(inData) {}
     };
     
 }

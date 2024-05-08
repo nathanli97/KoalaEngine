@@ -25,6 +25,10 @@
 #include "Core/ThreadedModule.h"
 #include "TSContainer/QueueTS.h"
 #include "Task.h"
+
+// How many tasks should dispatcher consider, default to 1024 (tasks)
+#define KOALA_WORK_DISPATCHER_CONSIDERING_TASK_POOL_SIZE 1024
+
 namespace Koala
 {
     class WorkDispatcher: public IThreadedModule
@@ -48,6 +52,7 @@ namespace Koala
         FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
     private:
         QueueTS<Worker::Task> pendingAddTasks;
+        std::array<Worker::TaskMetaData, KOALA_WORK_DISPATCHER_CONSIDERING_TASK_POOL_SIZE> consideringPendingTasks;
         
         std::queue<Worker::Task> taskListMainThread;
         std::mutex mutexTaskMainThread;
@@ -72,9 +77,9 @@ namespace Koala
     };
 
     template <typename Lambda, typename Arg=void>
-    std::future<void> AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+    void AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
     {
-        return WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inTaskPriority, inAssignThread);
+        WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inTaskPriority, inAssignThread);
     }
 
     template <typename Lambda>

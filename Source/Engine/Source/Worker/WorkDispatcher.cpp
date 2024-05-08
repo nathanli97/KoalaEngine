@@ -31,7 +31,7 @@
     while (!localQueue.empty()) \
     { \
         Worker::Task t = std::move(localQueue.front()); \
-        t.func(t.arg); \
+        t.data->func(t.data->arg); \
         finishedNonWorkerTasks.Push(std::move(t)); \
     } \
     }
@@ -60,9 +60,10 @@ namespace Koala
             }
 
             // Are we have a valid task?
-            if (localTask.assignThread != EThreadType::UnknownThread)
+            auto assignThread = localTask.data->assignThread;
+            if (assignThread != EThreadType::UnknownThread)
             {
-                switch (localTask.assignThread)
+                switch (assignThread)
                 {
                     case EThreadType::MainThread:
                     {
@@ -162,7 +163,11 @@ namespace Koala
     bool WorkDispatcher::Initialize_MainThread()
     {
         auto nCores = numWorkerThreads;
-        
+        for (auto &meta: consideringPendingTasks)
+        {
+            new (&meta) Worker::TaskMetaData;
+        }
+
         workerThreads.resize(nCores);
         
         for (Worker::Worker* &worker: workerThreads)
