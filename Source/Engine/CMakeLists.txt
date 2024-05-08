@@ -4,7 +4,7 @@ add_compile_definitions(INCLUDE_RHI_VULKAN=1)
 # the following two definitions is work on if RHI_ENABLE_GPU_DEBUG is enabled
 
 option(RHI_GPU_DEBUG "Enable GPU Debug features" ON)
-option(ENABLE_CPU_PROFILE "Enable CPU Markers for profiling (PIX for Windows)" OFF)
+option(ENABLE_CPU_PROFILE "Enable CPU Markers for profiling (PIX for Windows)" ON)
 cmake_dependent_option(RHI_GPU_MARKER "Enable GPU Markers (Symbols for GPU Debugging)" ON "RHI_GPU_DEBUG" OFF)
 cmake_dependent_option(RHI_GPU_VALIDATION "Enable GPU Validation" ON "RHI_GPU_DEBUG" OFF)
 

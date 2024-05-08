@@ -31,7 +31,7 @@
     while (!localQueue.empty()) \
     { \
         Worker::Task t = std::move(localQueue.front()); \
-        t.data->func(t.data->arg); \
+        t.func(t.arg); \
         finishedNonWorkerTasks.Push(std::move(t)); \
     } \
     }
@@ -60,7 +60,7 @@ namespace Koala
             }
 
             // Are we have a valid task?
-            auto assignThread = localTask.data->assignThread;
+            auto assignThread = localTask.assignThread;
             if (assignThread != EThreadType::UnknownThread)
             {
                 switch (assignThread)
@@ -104,25 +104,33 @@ namespace Koala
             taskListMainThread.emplace(std::move(task));
         } else
         {
-            undispatchedWorkerTasks.push(std::move(task));
+            int p = (uint8_t)task.taskPriority;
+            workerTaskBuckets[p].push(std::move(task));
         }
     }
 
     void WorkDispatcher::DispatchWorkerTasks()
     {
-        if (undispatchedWorkerTasks.empty())
-            return;
-        for (auto worker: workerThreads)
+        // Always check bucket #5: the highest priority
+        for (uint8_t i = Random() % 4; i < 5; i++)
         {
-            if (undispatchedWorkerTasks.empty())
-                break;
-            if (worker->IsIdle())
+            if (workerTaskBuckets[i].empty())
+                continue;
+            for (auto worker: workerThreads)
             {
-                worker->AssignTask(std::move(undispatchedWorkerTasks.front()));
-                worker->Execute();
-                undispatchedWorkerTasks.pop();
+                if (workerTaskBuckets[i].empty())
+                    break;
+                if (worker->IsIdle())
+                {
+                    worker->AssignTask(std::move(workerTaskBuckets[i].front()));
+                    worker->Execute();
+                    workerTaskBuckets[i].pop();
+                }
             }
         }
+
+        
+        
     }
 
     void WorkDispatcher::ProcessFinishedTasks()
@@ -163,10 +171,6 @@ namespace Koala
     bool WorkDispatcher::Initialize_MainThread()
     {
         auto nCores = numWorkerThreads;
-        for (auto &meta: consideringPendingTasks)
-        {
-            new (&meta) Worker::TaskMetaData;
-        }
 
         workerThreads.resize(nCores);
         

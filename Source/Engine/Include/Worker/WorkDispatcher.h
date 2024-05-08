@@ -26,9 +26,6 @@
 #include "TSContainer/QueueTS.h"
 #include "Task.h"
 
-// How many tasks should dispatcher consider, default to 1024 (tasks)
-#define KOALA_WORK_DISPATCHER_CONSIDERING_TASK_POOL_SIZE 1024
-
 namespace Koala
 {
     class WorkDispatcher: public IThreadedModule
@@ -43,16 +40,15 @@ namespace Koala
         void Tick_RenderThread();
         void Tick_RHIThread();
 
-        template <typename Lambda, typename Arg = void>
-        void AddTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+        template <typename Lambda, typename Arg = nullptr_t>
+        void AddTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            pendingAddTasks.Push(std::move(Worker::Task(inTask, inArg, inAssignThread, inTaskPriority)));
+            pendingAddTasks.Push(Worker::Task(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority));
         }
 
         FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
     private:
         QueueTS<Worker::Task> pendingAddTasks;
-        std::array<Worker::TaskMetaData, KOALA_WORK_DISPATCHER_CONSIDERING_TASK_POOL_SIZE> consideringPendingTasks;
         
         std::queue<Worker::Task> taskListMainThread;
         std::mutex mutexTaskMainThread;
@@ -60,8 +56,6 @@ namespace Koala
         std::mutex mutexTaskRenderThread;
         std::queue<Worker::Task> taskListRHIThread;
         std::mutex mutexTaskRHIThread;
-        std::queue<Worker::Task> taskListWorkerThread;
-        std::mutex mutexTaskWorkerThread;
 
         void ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning);
         void DispatchWorkerTasks();
@@ -70,14 +64,14 @@ namespace Koala
         std::vector<Worker::Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
 
-        std::queue<Worker::Task> undispatchedWorkerTasks;
+        std::array<std::queue<Worker::Task>, 5> workerTaskBuckets;
         QueueTS<Worker::Task> finishedNonWorkerTasks;
 
         size_t numWorkerThreads{0};
     };
 
-    template <typename Lambda, typename Arg=void>
-    void AsyncTask(Lambda&& inTask, Arg* inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+    template <typename Lambda, typename Arg = nullptr_t>
+    void AsyncTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
     {
         WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inTaskPriority, inAssignThread);
     }

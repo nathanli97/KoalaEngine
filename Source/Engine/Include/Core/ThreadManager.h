@@ -34,8 +34,20 @@ namespace Koala
         static thread_local std::thread::id threadId;
         static thread_local EThreadType threadType;
         static thread_local uint32_t ThreadIndexOfType;
+        static thread_local uint32_t randomNextSeed;
         static void Initialize(EThreadType inThreadType, uint32_t inThreadIndexOfType = 0);
     };
+    FORCEINLINE uint32_t Random()
+    {
+        uint32_t a = ThreadTLS::randomNextSeed;
+        a = (a ^ 61) ^ (a >> 16);
+        a = a + (a << 3);
+        a = a ^ (a >> 4);
+        a = a * 0x27d4eb2d;
+        a = a ^ (a >> 15);
+        ThreadTLS::randomNextSeed = a;
+        return a;
+    }
     FORCEINLINE bool IsInMainThread()
     {
         return ThreadTLS::threadType == EThreadType::MainThread;

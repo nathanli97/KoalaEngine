@@ -23,6 +23,7 @@ namespace Koala
     thread_local std::thread::id ThreadTLS::threadId;
     thread_local EThreadType ThreadTLS::threadType = EThreadType::UnknownThread;
     thread_local uint32_t ThreadTLS::ThreadIndexOfType = 0;
+    thread_local uint32_t ThreadTLS::randomNextSeed = std::time(NULL);
     void ThreadTLS::Initialize(EThreadType inThreadType, uint32_t inThreadIndexOfType)
     {
         threadId = std::this_thread::get_id();
