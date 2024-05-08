@@ -24,48 +24,70 @@
 #include "Memory/Allocator.h"
 
 namespace Koala {
-    
     template <typename InType>
-    class TConsoleVariable final: public IConsoleVariable
+    class TConsoleVariable final: public IConsoleVariableArithmetic
     {
     public:
+        static_assert(std::is_arithmetic_v<InType>, "This type of TConsoleVariable can only accept arithmetic types.");
         typedef InType Type;
-        TConsoleVariable(std::string inVarName, Type *inVariableStorage, std::string inHelp, EConsoleVariableFlags inFlags = EConsoleVariableFlag::CVF_Default)
-            : IConsoleVariable(inFlags), bIsUserProvidedStorage(true)
+        TConsoleVariable(const std::string &inVarName, const Type& inDefaultValue, const std::string &inHelp, EConsoleVariableFlags inFlags = EConsoleVariableFlag::CVF_Default)
+            : IConsoleVariableArithmetic(inFlags, inVarName, inHelp)
         {
-            storage = static_cast<void*>(inVariableStorage);
-            helper = inHelp;
-            RegisterConsoleVariable();
-        }
-        TConsoleVariable(std::string inVarName, const Type& inDefaultValue, std::string inHelp, EConsoleVariableFlags inFlags = EConsoleVariableFlag::CVF_Default)
-            : IConsoleVariable(inFlags), bIsUserProvidedStorage(false)
-        {
-            storage = static_cast<void*>(Memory::New<Type>(inDefaultValue));
-            helper = inHelp;
+            Set(inDefaultValue);
             RegisterConsoleVariable();
         }
 
-        const Type& Get() { return GetAs<Type>(); }
-        const Type& Get_MainThread() { return GetAs_MainThread<Type>(); }
-        const Type& Get_RenderThread() { return GetAs_RenderThread<Type>(); }
-        const Type& Get_RHIThread() { return GetAs_RHIThread<Type>(); }
+        Type Get()
+        {
+            return IConsoleVariable::Get<Type>();
+        }
 
+        void Set(Type inValue)
+        {
+            return IConsoleVariable::Set(inValue);
+        }
+        
         TConsoleVariable() = delete;
         TConsoleVariable(const TConsoleVariable&) = delete;
         TConsoleVariable(TConsoleVariable&&) = delete;
         const TConsoleVariable& operator=(const TConsoleVariable&) = delete;
         TConsoleVariable&& operator=(TConsoleVariable&&) = delete;
-
-        ~TConsoleVariable()
-        {
-            if (!bIsUserProvidedStorage)
-                Memory::Delete(static_cast<Type*>(storage));
-        }
     private:
         FORCEINLINE void RegisterConsoleVariable()
         {
             CVarManager::Get().RegisterConsoleVariable(this);
         }
-        bool bIsUserProvidedStorage;
+    };
+    
+    template <>
+    class TConsoleVariable<std::string> final: public IConsoleVariableString
+    {
+    public:
+        typedef std::string Type;
+        TConsoleVariable(const std::string &inVarName, const Type& inDefaultValue, const std::string &inHelp, EConsoleVariableFlags inFlags = EConsoleVariableFlag::CVF_Default)
+            : IConsoleVariableString(inFlags, inVarName, inHelp)
+        {
+            RegisterConsoleVariable();
+        }
+
+        std::string Get()
+        {
+            return IConsoleVariable::Get<std::string>();
+        }
+
+        void Set(const std::string & inValue)
+        {
+            return IConsoleVariable::Set(inValue);
+        }
+        TConsoleVariable() = delete;
+        TConsoleVariable(const TConsoleVariable&) = delete;
+        TConsoleVariable(TConsoleVariable&&) = delete;
+        const TConsoleVariable& operator=(const TConsoleVariable&) = delete;
+        TConsoleVariable&& operator=(TConsoleVariable&&) = delete;
+    private:
+        FORCEINLINE void RegisterConsoleVariable()
+        {
+            CVarManager::Get().RegisterConsoleVariable(this);
+        }
     };
 }

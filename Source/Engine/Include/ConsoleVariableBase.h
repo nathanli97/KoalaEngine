@@ -29,111 +29,148 @@ namespace Koala
     {
         CVF_Default             = 0,
         CVF_ReadOnly            = 1 << 0,
-        CVF_TS_MainThread       = 1 << 1,  // This CVar should be considered as thread-safe on MainThread.
-        CVF_TS_RenderThread     = 1 << 2,  // This CVar should be considered as thread-safe on RenderThread.
-        CVF_TS_RHIThread        = 1 << 3,  // This CVar should be considered as thread-safe on RHIThread.
-        CVF_NTS_AnyThread       = 1 << 4,  // This CVar should be considered as non thread-safe on any thread. i.e. Will automatically lock before read&write on anythread.
+        CVF_TS_MainThread       = 1 << 1,  // This CVar should be considered as thread-safe on MainThread. NOT USED NOW.
+        CVF_TS_RenderThread     = 1 << 2,  // This CVar should be considered as thread-safe on RenderThread. NOT USED NOW.
+        CVF_TS_RHIThread        = 1 << 3,  // This CVar should be considered as thread-safe on RHIThread. NOT USED NOW.
+        CVF_NTS_AnyThread       = 1 << 4,  // This CVar should be considered as non thread-safe on any thread. NOT USED NOW.
     };
     typedef uint32_t EConsoleVariableFlags;
     class CVarManager;
     class IConsoleVariable
     {
     public:
-        /**
-         * Get CVar value. Only call this function after engine is early initialized.
-         * @tparam Type What type of data you stored in this CVar?
-         * @tparam bDontCheckThreadSafe If true, this function will not to check thread-safe for speed.
-         * @return The data stored in this CVar.
-         */
-        template<typename Type, bool bDontCheckThreadSafe = false>
-        const Type& GetAs() const
+        virtual ~IConsoleVariable() = default;
+        template <typename T>
+        T Get() const
         {
-            if (flags & (uint32_t)EConsoleVariableFlag::CVF_NTS_AnyThread)
+            using RemoveConstRefType = std::remove_const_t<std::remove_reference_t<T>>;
+            if constexpr (std::is_arithmetic_v<RemoveConstRefType>)
             {
-                return As_Safe<Type>();
+                if (IsArithmetic())
+                {
+                    if constexpr (sizeof(RemoveConstRefType) < 8)
+                    {
+                        return (T)(GetArithmetic());
+                    }
+                    else
+                    {
+                        return GetArithmetic();
+                    }
+                }
+                else
+                {
+                    return 0;
+                }
             }
-
-            if constexpr (bDontCheckThreadSafe)
+            else if constexpr (std::is_same_v<RemoveConstRefType, std::string>)
             {
-                return As_Unsafe<Type>();
+                if (!IsArithmetic())
+                    return GetString();
+                else
+                {
+                    return "";
+                }
             }
-            
+            else
             {
-                EThreadType threadType = GetCurrentThreadId();
-
-                //  If this CVar has been tagged as thread-safe in particular thread, and we are in that thread now
-                if (
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread && threadType == EThreadType::MainThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread && threadType == EThreadType::RenderThread) ||
-                    (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread && threadType == EThreadType::RHIThread))
-                    return As_Unsafe<Type>();
+                return 0;
             }
-
-            return As_Safe<Type>();
         }
-        template<typename Type>
-        const Type& GetAs_MainThread() const
-        {
-            if (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_MainThread)
-                return GetAs<Type, true>();
-            else
-                return As_Safe<Type>();
-        }
-        template<typename Type>
-        const Type& GetAs_RenderThread() const
-        {
-            if (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RenderThread)
-                return GetAs<Type, true>();
-            else
-                return As_Safe<Type>();
-        }
-        template<typename Type>
-        const Type& GetAs_RHIThread() const
-        {
-            if (flags & (uint32_t)EConsoleVariableFlag::CVF_TS_RHIThread)
-                return GetAs<Type, true>();
-            else
-                return As_Safe<Type>();
-        }
-        
-        template<typename Type>
-        void Set(const Type &inValue)
+        template <typename T>
+        void Set(T inValue)
         {
             if (flags & (uint32_t)EConsoleVariableFlag::CVF_ReadOnly)
             {
-                check(false, "You can not set this CVar, because this is read-only CVar.");
+                check(false, "This CVAR is read-only!");
                 return;
             }
-            Set_Safe(inValue);
+            
+            using RemoveConstRefType = std::remove_const_t<std::remove_reference_t<T>>;
+            if constexpr (std::is_arithmetic_v<RemoveConstRefType>)
+            {
+                if (IsArithmetic())
+                {
+                    SetArithmetic(inValue);
+                }
+            }
+            else if constexpr (std::is_same_v<RemoveConstRefType, std::string>)
+            {
+                if (!IsArithmetic())
+                {
+                    SetString(inValue);
+                }
+            }
         }
+
+        IConsoleVariable() = delete;
+        IConsoleVariable(const IConsoleVariable&) = delete;
+        IConsoleVariable(IConsoleVariable&&) = delete;
+        const IConsoleVariable& operator=(const IConsoleVariable&) = delete;
+        IConsoleVariable&& operator=(IConsoleVariable&&) = delete;
     protected:
         friend class CVarManager;
         
-        IConsoleVariable(EConsoleVariableFlags inFlags): flags(inFlags) {}
-        template<typename T>
-        const T& As_Unsafe() const {return *static_cast<const T*>(storage);}
+        virtual size_t GetArithmetic() const = 0;
+        virtual std::string GetString() const = 0;
+        virtual void SetArithmetic(size_t i) = 0;
+        virtual void SetString(std::string inStr) = 0;
+        virtual bool IsArithmetic() const = 0;
         
-        template<typename T>
-        T& As_Unsafe() {return *static_cast<T*>(storage);}
-
-        template<typename T>
-        const T& As_Safe() const
-        {
-            std::shared_lock lock(mutex);
-            return As_Unsafe<T>();
-        }
-
-        template<typename T>
-        void Set_Safe(const T& inValue)
-        {
-            std::unique_lock lock(mutex);
-            As_Unsafe<T>() = inValue;
-        }
-        void* storage{nullptr};
+        IConsoleVariable(EConsoleVariableFlags inFlags, const std::string &inName, const std::string &inHelper)
+            : name(inName), helper(inHelper), flags(inFlags) {}
+        
         std::string name, helper;
         EConsoleVariableFlags flags;
+    };
+
+    class IConsoleVariableString: public IConsoleVariable
+    {
+    public:
+        IConsoleVariableString(EConsoleVariableFlags inFlags, const std::string &inName, const std::string &inHelper)
+            : IConsoleVariable(inFlags, inName, inHelper) {}
+    protected:
+        FORCEINLINE size_t GetArithmetic() const override { return 0; }
+        FORCEINLINE std::string GetString() const override
+        {
+            std::shared_lock lock(mutex);
+            return value;
+        }
+        FORCEINLINE bool IsArithmetic() const override {return false;}
+        FORCEINLINE void SetArithmetic(size_t i) override {}
+        FORCEINLINE void SetString(std::string inStr) override
+        {
+            std::unique_lock lock(mutex);
+            value = inStr;
+        }
     private:
+        std::string value;
         mutable std::shared_mutex mutex;
-        static EThreadType GetCurrentThreadId();
+    };
+    class IConsoleVariableArithmetic: public IConsoleVariable
+    {
+    public:
+        IConsoleVariableArithmetic(EConsoleVariableFlags inFlags, const std::string &inName, const std::string &inHelper)
+            : IConsoleVariable(inFlags, inName, inHelper) {}
+    protected:
+        FORCEINLINE size_t GetArithmetic() const override
+        {
+            return value.load(std::memory_order::acquire);
+        }
+        FORCEINLINE std::string GetString() const override
+        {
+            return "";
+        }
+        FORCEINLINE void SetArithmetic(size_t i) override
+        {
+            value.store(i, std::memory_order::consume);
+        }
+        FORCEINLINE void SetString(std::string inStr) override {}
+        FORCEINLINE bool IsArithmetic() const override
+        {
+            return true;
+        }
+
+    private:
+        std::atomic<size_t> value;
     };
 }

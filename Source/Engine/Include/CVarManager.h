@@ -28,22 +28,16 @@
 
 namespace Koala
 {
-    template <typename InType>
-    class TConsoleVariable;
-
     class IConsoleVariable;
     
     class CVarManager final : protected IModule
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(CVarManager)
-        template<typename T>
-        friend class TConsoleVariable;
 
         bool Initialize_MainThread() override { return true; }
         bool Shutdown_MainThread() override { return true; }
         void Tick_MainThread(float delta_time) override {}
-    protected:
         void RegisterConsoleVariable(IConsoleVariable* inCVar)
         {
             std::lock_guard lock(lockForMapNameToCVar);
