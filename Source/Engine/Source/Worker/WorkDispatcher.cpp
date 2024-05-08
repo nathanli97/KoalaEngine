@@ -103,29 +103,24 @@ namespace Koala
             taskListMainThread.emplace(std::move(task));
         } else
         {
-            undispatchedWorkerTasks.Push(std::move(task));
+            undispatchedWorkerTasks.push(std::move(task));
         }
     }
 
     void WorkDispatcher::DispatchWorkerTasks()
     {
-        std::forward_list<Worker::Worker*> idleWorkers;
+        if (undispatchedWorkerTasks.empty())
+            return;
         for (auto worker: workerThreads)
         {
+            if (undispatchedWorkerTasks.empty())
+                break;
             if (worker->IsIdle())
             {
-                idleWorkers.push_front(worker);
+                worker->AssignTask(std::move(undispatchedWorkerTasks.front()));
+                worker->Execute();
+                undispatchedWorkerTasks.pop();
             }
-        }
-
-        for (auto idleWorker: idleWorkers)
-        {
-            Worker::Task task;
-            if (!undispatchedWorkerTasks.TryPop(task))
-                break;
-
-            idleWorker->AssignTask(std::move(task));
-            idleWorker->Execute();
         }
     }
 

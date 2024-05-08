@@ -67,7 +67,7 @@ namespace Koala
         std::vector<Worker::Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
 
-        QueueTS<Worker::Task> undispatchedWorkerTasks;
+        std::queue<Worker::Task> undispatchedWorkerTasks;
         QueueTS<Worker::Task> finishedNonWorkerTasks;
 
         size_t numWorkerThreads{0};

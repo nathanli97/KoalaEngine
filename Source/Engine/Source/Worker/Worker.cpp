@@ -37,6 +37,7 @@ namespace Koala::Worker
             }
             
             {
+                SCOPED_CPU_MARKER(Colors::Red, "WaitForWork")
                 std::unique_lock lock(mutex);
 
                 while (status != EWorkerStatus::Ready)
