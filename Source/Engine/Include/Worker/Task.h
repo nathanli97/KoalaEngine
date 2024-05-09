@@ -33,6 +33,27 @@ namespace Koala::Worker
 {
     typedef std::function<void(void*)> TaskFuncType;
     typedef void* TaskArgType;
+
+    struct Task;
+    enum class ETaskResolvedReason: uint8_t
+    {
+        Unknown,
+        Finished,
+        Canceled
+    };
+    struct TaskTracker
+    {
+        explicit TaskTracker(uint32_t inTaskCount = 1): taskCount(inTaskCount) {}
+        ~TaskTracker() {}
+        TaskTracker(const TaskTracker&) = delete;
+        TaskTracker(TaskTracker&&) = delete;
+        std::atomic<uint32_t>         resolvedCount;         // Task Resolved means task has been completed or canceled
+        uint32_t                      taskCount;
+        std::atomic<bool>             bHasWaiter;
+        std::condition_variable       cvNotifyTaskResolved;
+        ETaskResolvedReason           taskResolvedReason{ETaskResolvedReason::Unknown};
+    };
+
     struct Task
     {
         Task() = default;
@@ -55,6 +76,7 @@ namespace Koala::Worker
         
         TaskFuncType func;
         TaskArgType  arg;
+        TaskTracker  *tracker{nullptr};
         
         EThreadType assignThread{EThreadType::UnknownThread};
         ETaskPriority taskPriority = ETaskPriority::Normal;
@@ -64,5 +86,6 @@ namespace Koala::Worker
         Task(const TaskFuncType &inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inDefaultPriority):
             func(inFunc), arg(inArg), assignThread(inAssignThread), taskPriority(inDefaultPriority) {}
     };
+
     
 }
