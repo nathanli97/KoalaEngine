@@ -7,11 +7,25 @@ namespace Koala
 {
     enum class ETaskPriority: uint8_t
     {
+        TaskPriorityMaximum = 5, // Not a valid priority, just maximum value of enum
+
         Highest     = 4,
         High        = 3,
         Normal      = 2,
         Low         = 1,
-        Lowest      = 0
+        Lowest      = 0,
+    };
+
+    enum class ETaskPriorityWeight: uint8_t
+    {
+        // The following value stands for the weight when scheduling
+        Highest     = 6,  // 30%
+        High        = 5,  // 25%
+        Normal      = 4,  // 20%
+        Low         = 3,  // 15%
+        Lowest      = 2,  // 10%
+
+        TaskPriorityWeightSum = Lowest + Low + Normal + High + Highest,
     };
 }
 

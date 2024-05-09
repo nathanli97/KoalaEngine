@@ -4,6 +4,8 @@ project(Koala)
 include(ThirdParty.cmake)
 option(BUILD_TESTS "Build Tests" OFF)
 
+set(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY ON)
+
 if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)
     message(STATUS "Using cached environment from GenerateProjectFiles")
     include(${CMAKE_CURRENT_SOURCE_DIR}/BuildEnv.gen.cmake)

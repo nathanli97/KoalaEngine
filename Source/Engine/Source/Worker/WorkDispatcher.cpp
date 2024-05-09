@@ -50,13 +50,13 @@ namespace Koala
             Worker::Task localTask;
             if (bEngineIsShutdowning)
             {
-                if (!pendingAddTasks.TryPop(localTask))
+                if (!CheckOutTaskByPriority(localTask))
                     return;
             }
             else
             {
-                if (!pendingAddTasks.TryPop(localTask))
-                    continue;
+                if (!CheckOutTaskByPriority(localTask))
+                    continue; // TODO: We may need to use wait() for reducing CPU usage here?
             }
 
             // Are we have a valid task?
@@ -95,6 +95,20 @@ namespace Koala
             
         }
     }
+    bool WorkDispatcher::CheckOutTaskByPriority(Worker::Task &out)
+    {
+#define KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Priority) {sum += (uint8_t)ETaskPriorityWeight::Priority;} if (sum > luckyValue) {if (pendingAddTasks[(uint8_t)(ETaskPriority::Priority)].TryPop(out)) return true;}
+        constexpr auto totalTicket = (uint8_t)ETaskPriorityWeight::TaskPriorityWeightSum;
+        uint8_t luckyValue = Random() % totalTicket;
+        int sum = 0;
+        KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Highest)
+        KOALA_CONDITIONAL_CHECKOUT_PRIORITY(High)
+        KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Normal)
+        KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Low)
+        KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Lowest)
+        return false;
+#undef KOALA_CONDITIONAL_PROCESS_PRIORITY
+    }
 
     void WorkDispatcher::ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning)
     {
@@ -105,31 +119,25 @@ namespace Koala
         } else
         {
             int p = (uint8_t)task.taskPriority;
-            workerTaskBuckets[p].push(std::move(task));
+            workerTasks.push(std::move(task));
         }
     }
 
     void WorkDispatcher::DispatchWorkerTasks()
     {
-        // Always check bucket #5: the highest priority
-        for (uint8_t i = Random() % 4; i < 5; i++)
+        if (workerTasks.empty())
+            return;
+        for (auto worker: workerThreads)
         {
-            if (workerTaskBuckets[i].empty())
-                continue;
-            for (auto worker: workerThreads)
+            if (workerTasks.empty())
+                break;
+            if (worker->IsIdle())
             {
-                if (workerTaskBuckets[i].empty())
-                    break;
-                if (worker->IsIdle())
-                {
-                    worker->AssignTask(std::move(workerTaskBuckets[i].front()));
-                    worker->Execute();
-                    workerTaskBuckets[i].pop();
-                }
+                worker->AssignTask(std::move(workerTasks.front()));
+                worker->Execute();
+                workerTasks.pop();
             }
         }
-
-        
         
     }
 

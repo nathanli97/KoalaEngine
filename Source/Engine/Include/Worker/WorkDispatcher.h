@@ -43,12 +43,13 @@ namespace Koala
         template <typename Lambda, typename Arg = nullptr_t>
         void AddTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            pendingAddTasks.Push(Worker::Task(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority));
+            pendingAddTasks[(uint8_t)inTaskPriority].Push(Worker::Task(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority));
         }
 
         FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
     private:
-        QueueTS<Worker::Task> pendingAddTasks;
+        bool CheckOutTaskByPriority(Worker::Task &out);
+        QueueTS<Worker::Task> pendingAddTasks[(uint8_t)ETaskPriority::TaskPriorityMaximum];
         
         std::queue<Worker::Task> taskListMainThread;
         std::mutex mutexTaskMainThread;
@@ -64,7 +65,7 @@ namespace Koala
         std::vector<Worker::Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
 
-        std::array<std::queue<Worker::Task>, 5> workerTaskBuckets;
+        std::queue<Worker::Task> workerTasks;
         QueueTS<Worker::Task> finishedNonWorkerTasks;
 
         size_t numWorkerThreads{0};

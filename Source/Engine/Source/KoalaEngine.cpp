@@ -114,17 +114,16 @@ namespace Koala
         {
             Logger loggerBM("BENCHMARK");
             loggerBM.info("Benchmarking engine: WorkDispatcher performance");
-            loggerBM.info("BENCHMARK : 1000 tasks with maximum 500ms task length");
-            int testmem[10000];
+            loggerBM.info("BENCHMARK : 10000 tasks with maximum 500ms task length");
             for (int i = 0; i < 10000; i++)
             {
-                testmem[i] = std::rand();
+                ETaskPriority p = (ETaskPriority)(i % ((uint8_t)ETaskPriority::TaskPriorityMaximum - 1));
+                AsyncTask([p](void*)
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds((uint8_t)p * 100));
+                }, nullptr, p);
             }
 
-            Async([](void* mem, size_t index)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(500));
-            }, 1000, testmem);
         }
         return true;
     }
