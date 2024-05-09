@@ -1,10 +1,12 @@
 #pragma once
 #include <functional>
 #include <future>
+#include <shared_mutex>
 
 #include "Core/ThreadTypes.h"
 namespace Koala
 {
+    class WorkDispatcher;
     enum class ETaskPriority: uint8_t
     {
         TaskPriorityMaximum = 5, // Not a valid priority, just maximum value of enum
@@ -31,31 +33,27 @@ namespace Koala
 
 namespace Koala::Worker
 {
+    class Worker;
+    
     typedef std::function<void(void*)> TaskFuncType;
     typedef void* TaskArgType;
-
-    struct Task;
-    enum class ETaskResolvedReason: uint8_t
+    
+    enum class ETaskStatus: uint8_t
     {
-        Unknown,
-        Finished,
+        Ready,
+        Running,
+        Completed,
         Canceled
     };
-    struct TaskTracker
+    class Task
     {
-        explicit TaskTracker(uint32_t inTaskCount = 1): taskCount(inTaskCount) {}
-        ~TaskTracker() {}
-        TaskTracker(const TaskTracker&) = delete;
-        TaskTracker(TaskTracker&&) = delete;
-        std::atomic<uint32_t>         resolvedCount;         // Task Resolved means task has been completed or canceled
-        uint32_t                      taskCount;
-        std::atomic<bool>             bHasWaiter;
-        std::condition_variable       cvNotifyTaskResolved;
-        ETaskResolvedReason           taskResolvedReason{ETaskResolvedReason::Unknown};
-    };
-
-    struct Task
-    {
+    public:
+        friend class Worker;
+        friend class WorkDispatcher;
+        Task(TaskFuncType &&inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inDefaultPriority):
+            func(std::move(inFunc)), arg(inArg), assignThread(inAssignThread), taskPriority(inDefaultPriority) {}
+        Task(const TaskFuncType &inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inDefaultPriority):
+            func(inFunc), arg(inArg), assignThread(inAssignThread), taskPriority(inDefaultPriority) {}
         Task() = default;
         Task(const Task&) = delete;
         Task& operator=(const Task&) = delete;
@@ -72,20 +70,68 @@ namespace Koala::Worker
             taskPriority = inTask.taskPriority;
             return *this;
         }
-        
-        
+
+        void Wait()
+        {
+            bHasWaiter.store(true, std::memory_order::release);
+            std::unique_lock lock(mutex);
+            while (status.load() != ETaskStatus::Completed && status.load() != ETaskStatus::Canceled)
+                cvWaitForFinishedOrCanceled.wait(lock);
+        }
+
+        void WaitFor(uint32_t inMS)
+        {
+            bHasWaiter.store(true, std::memory_order::release);
+            std::unique_lock lock(mutex);
+            if (status.load() != ETaskStatus::Completed && status.load() != ETaskStatus::Canceled)
+                cvWaitForFinishedOrCanceled.wait_for(lock, std::chrono::milliseconds(inMS));
+            bHasWaiter.store(false, std::memory_order::relaxed);
+        }
+
+        bool IsCompleted() const
+        {
+            return status.load() == ETaskStatus::Completed;
+        }
+
+        void Cancel()
+        {
+            auto currentStatus = status.load();
+            if (currentStatus == ETaskStatus::Completed || currentStatus == ETaskStatus::Canceled)
+                return;
+            bShouldCancel.store(true, std::memory_order::relaxed);
+        }
+
+        bool IsCanceled() const
+        {
+            return status.load(std::memory_order::relaxed) == ETaskStatus::Canceled;
+        }
+
+        bool IsFinished() const
+        {
+            auto currentStatus = status.load();
+            return currentStatus == ETaskStatus::Completed || currentStatus == ETaskStatus::Canceled;
+        }
+
+        bool ShouldCancel() const
+        {
+            return bShouldCancel.load(std::memory_order::relaxed);
+        }
+    private:
         TaskFuncType func;
         TaskArgType  arg;
-        TaskTracker  *tracker{nullptr};
+        std::atomic<ETaskStatus> status;
+        
+        std::condition_variable  cvWaitForFinishedOrCanceled;
+        mutable std::mutex               mutex;
+        mutable std::atomic<bool>        bHasWaiter{false};
+        std::atomic<bool>                bShouldCancel{false};
         
         EThreadType assignThread{EThreadType::UnknownThread};
         ETaskPriority taskPriority = ETaskPriority::Normal;
-
-        Task(TaskFuncType &&inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inDefaultPriority):
-            func(std::move(inFunc)), arg(inArg), assignThread(inAssignThread), taskPriority(inDefaultPriority) {}
-        Task(const TaskFuncType &inFunc, void* inArg, EThreadType inAssignThread, ETaskPriority inDefaultPriority):
-            func(inFunc), arg(inArg), assignThread(inAssignThread), taskPriority(inDefaultPriority) {}
     };
+}
 
-    
+namespace Koala
+{
+    typedef std::shared_ptr<Worker::Task> TaskPtr;
 }

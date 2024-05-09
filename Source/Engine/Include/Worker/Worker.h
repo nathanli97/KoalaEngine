@@ -47,7 +47,7 @@ namespace Koala::Worker
         void Run() override;
     protected:
         // Reset from Finished to Idle
-        FORCEINLINE Task&& FinishTask()
+        FORCEINLINE TaskPtr&& FinishTask()
         {
             std::unique_lock lock(mutex);
             ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Finished, "Only Finished worker can be reset to Idle");
@@ -55,7 +55,7 @@ namespace Koala::Worker
             return std::move(task);
         }
         // Set new task. Worker status must be Idle. Can only be called when status==Idle.
-        FORCEINLINE void AssignTask(Task&& inTask)
+        FORCEINLINE void AssignTask(TaskPtr&& inTask)
         {
             ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Idle, "Only Idle worker can AssignTask. Do you forgot to call Reset?");
             task = std::move(inTask);
@@ -65,9 +65,9 @@ namespace Koala::Worker
         FORCEINLINE void Execute()
         {
             ensure(status.load(std::memory_order::acquire) == EWorkerStatus::Idle, "Only Idle worker can be Execute. Do you forgot to call Reset?");
-            check(task.func.operator bool(), "Task is empty??");
+            check(task->func.operator bool(), "Task is empty??");
             
-            if (task.func)
+            if (task->func)
             {
                 std::unique_lock lock(mutex);
                 // We need to ensure 'cvWorkerWaitTask.notify_one()' is happened-after 'status.store'!
@@ -105,7 +105,7 @@ namespace Koala::Worker
         std::atomic<bool>          bShouldExit{false};
         
         // Task can only be updated when status==Idle!
-        Task task;
+        std::shared_ptr<Task> task;
         
         std::condition_variable    cvWorkerWaitNewTask;
         std::condition_variable    cvWorkerThreadCreated;

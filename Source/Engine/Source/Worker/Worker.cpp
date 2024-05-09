@@ -42,7 +42,7 @@ namespace Koala::Worker
 
                 while (status != EWorkerStatus::Ready)
                 {
-                    cvWorkerWaitNewTask.wait_for(lock, std::chrono::seconds(1));
+                    cvWorkerWaitNewTask.wait_for(lock, std::chrono::milliseconds(100));
 
                     if (bShouldExit.load())
                         return;
@@ -54,7 +54,7 @@ namespace Koala::Worker
 
             {
                 SCOPED_CPU_MARKER(Colors::Green, "Work")
-                task.func(task.arg);
+                task->func(task->arg);
             }
 
             // Task Finished!

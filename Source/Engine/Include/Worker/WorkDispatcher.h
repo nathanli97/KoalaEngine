@@ -17,7 +17,6 @@
 
 #pragma once
 #include <future>
-#include <unordered_set>
 
 #include "Worker.h"
 #include "Core/SingletonInterface.h"
@@ -41,32 +40,35 @@ namespace Koala
         void Tick_RHIThread();
 
         template <typename Lambda, typename Arg = nullptr_t>
-        void AddTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+        TaskPtr AddTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            pendingAddTasks[(uint8_t)inTaskPriority].Push(Worker::Task(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority));
+            TaskPtr taskPtr = std::make_shared<Worker::Task>(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority);
+            pendingAddTasks[(uint8_t)inTaskPriority].Push(taskPtr);
+            return taskPtr;
         }
 
         FORCEINLINE_DEBUGABLE size_t GetNumWorkerThreads() const { return numWorkerThreads;}
     private:
-        bool CheckOutTaskByPriority(Worker::Task &out);
-        QueueTS<Worker::Task> pendingAddTasks[(uint8_t)ETaskPriority::TaskPriorityMaximum];
+        bool CheckOutTaskByPriority(TaskPtr &out);
+        QueueTS<TaskPtr> pendingAddTasks[(uint8_t)ETaskPriority::TaskPriorityMaximum];
         
-        std::queue<Worker::Task> taskListMainThread;
+        std::queue<TaskPtr> taskListMainThread;
         std::mutex mutexTaskMainThread;
-        std::queue<Worker::Task> taskListRenderThread;
+        std::queue<TaskPtr> taskListRenderThread;
         std::mutex mutexTaskRenderThread;
-        std::queue<Worker::Task> taskListRHIThread;
+        std::queue<TaskPtr> taskListRHIThread;
         std::mutex mutexTaskRHIThread;
 
-        void ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning);
+        void ProcessNewWorkerTask(TaskPtr &&task, bool bInEngineIsShutdowning);
         void DispatchWorkerTasks();
         void ProcessFinishedTasks();
+        bool CheckAndHandleTaskCancel(TaskPtr& task);
 
         std::vector<Worker::Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
 
-        std::queue<Worker::Task> workerTasks;
-        QueueTS<Worker::Task> finishedNonWorkerTasks;
+        std::queue<TaskPtr> workerTasks;
+        QueueTS<TaskPtr> finishedNonWorkerTasks;
 
         size_t numWorkerThreads{0};
     };

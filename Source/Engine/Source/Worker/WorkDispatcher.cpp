@@ -20,18 +20,19 @@
 
 #include <iostream>
 
+#include "CPUProfiler.h"
 #include "KoalaEngine.h"
 #include "Core/ThreadManager.h"
 
 #define PROCESS_LOCAL_TASKS(LIST, MUTEX) { \
-    std::queue<Worker::Task> localQueue; \
+    std::queue<TaskPtr> localQueue; \
     { \
         std::lock_guard lock(MUTEX); localQueue.swap(LIST); \
     } \
     while (!localQueue.empty()) \
     { \
-        Worker::Task t = std::move(localQueue.front()); \
-        t.func(t.arg); \
+        TaskPtr t = std::move(localQueue.front()); \
+        t->func(t->arg); \
         finishedNonWorkerTasks.Push(std::move(t)); \
     } \
     }
@@ -47,7 +48,7 @@ namespace Koala
             ProcessFinishedTasks();
             DispatchWorkerTasks();
             
-            Worker::Task localTask;
+            TaskPtr localTask;
             if (bEngineIsShutdowning)
             {
                 if (!CheckOutTaskByPriority(localTask))
@@ -59,8 +60,11 @@ namespace Koala
                     continue; // TODO: We may need to use wait() for reducing CPU usage here?
             }
 
+            if (CheckAndHandleTaskCancel(localTask))
+                continue;
+
             // Are we have a valid task?
-            auto assignThread = localTask.assignThread;
+            auto assignThread = localTask->assignThread;
             if (assignThread != EThreadType::UnknownThread)
             {
                 switch (assignThread)
@@ -95,7 +99,7 @@ namespace Koala
             
         }
     }
-    bool WorkDispatcher::CheckOutTaskByPriority(Worker::Task &out)
+    bool WorkDispatcher::CheckOutTaskByPriority(TaskPtr &out)
     {
 #define KOALA_CONDITIONAL_CHECKOUT_PRIORITY(Priority) {sum += (uint8_t)ETaskPriorityWeight::Priority;} if (sum > luckyValue) {if (pendingAddTasks[(uint8_t)(ETaskPriority::Priority)].TryPop(out)) return true;}
         constexpr auto totalTicket = (uint8_t)ETaskPriorityWeight::TaskPriorityWeightSum;
@@ -110,7 +114,7 @@ namespace Koala
 #undef KOALA_CONDITIONAL_PROCESS_PRIORITY
     }
 
-    void WorkDispatcher::ProcessNewWorkerTask(Worker::Task &&task, bool bInEngineIsShutdowning)
+    void WorkDispatcher::ProcessNewWorkerTask(TaskPtr &&task, bool bInEngineIsShutdowning)
     {
         if (bInEngineIsShutdowning)
         {
@@ -118,13 +122,19 @@ namespace Koala
             taskListMainThread.emplace(std::move(task));
         } else
         {
-            int p = (uint8_t)task.taskPriority;
+            int p = (uint8_t)task->taskPriority;
             workerTasks.push(std::move(task));
         }
     }
 
     void WorkDispatcher::DispatchWorkerTasks()
     {
+        SCOPED_CPU_MARKER(Colors::Green, "WorkDispatcher::DispatchWorkerTasks")
+
+        while (!workerTasks.empty() && CheckAndHandleTaskCancel(workerTasks.front()))
+        {
+            workerTasks.pop();
+        }
         if (workerTasks.empty())
             return;
         for (auto worker: workerThreads)
@@ -143,6 +153,7 @@ namespace Koala
 
     void WorkDispatcher::ProcessFinishedTasks()
     {
+        SCOPED_CPU_MARKER(Colors::Blue, "WorkDispatcher::ProcessFinishedTasks")
         std::forward_list<Worker::Worker*> finishedWorkers;
         for (auto worker: workerThreads)
         {
@@ -152,21 +163,42 @@ namespace Koala
             }
         }
 
-        std::forward_list<Worker::Task> finishedTasks;
+        std::forward_list<TaskPtr> finishedTasks;
         for (auto worker: finishedWorkers)
         {
             finishedTasks.push_front(worker->FinishTask());
         }
 
-        Worker::Task t;
+        TaskPtr t;
         while (finishedNonWorkerTasks.TryPop(t))
         {
             finishedTasks.push_front(std::move(t));
         }
-        // TODO :Notify task waiters this task has finished (if any)
-        // for (Worker::Task &task: finishedTasks)
-        // {
-        // }
+        for (auto task: finishedTasks)
+        {
+            task->status.store(Worker::ETaskStatus::Completed, std::memory_order::relaxed);
+            if (task->bHasWaiter.load(std::memory_order::relaxed))
+            {
+                std::unique_lock lock(task->mutex);
+                task->cvWaitForFinishedOrCanceled.notify_all();
+            }
+        }
+    }
+
+    bool WorkDispatcher::CheckAndHandleTaskCancel(TaskPtr &task)
+    {
+        SCOPED_CPU_MARKER(Colors::Purple, "WorkDispatcher::CheckAndHandleTaskCancel")
+        if (task->ShouldCancel())
+        {
+            task->status.store(Worker::ETaskStatus::Canceled, std::memory_order::release);
+            if (task->bHasWaiter.load(std::memory_order::relaxed))
+            {
+                std::unique_lock lock(task->mutex);
+                task->cvWaitForFinishedOrCanceled.notify_all();
+            }
+            return true;
+        }
+        return false;
     }
 
     WorkDispatcher::WorkDispatcher()
