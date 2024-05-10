@@ -15,11 +15,11 @@
 // WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Worker/Worker.h"
+#include "AsyncWorker/Worker.h"
 
 #include "CPUProfiler.h"
 
-namespace Koala::Worker
+namespace Koala::AsyncWorker
 {
     void Worker::Run()
     {

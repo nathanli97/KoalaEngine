@@ -16,7 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Worker/WorkDispatcher.h"
+#include "AsyncWorker/WorkDispatcher.h"
 
 #include <iostream>
 
@@ -36,7 +36,7 @@
         finishedNonWorkerTasks.Push(std::move(t)); \
     } \
     }
-namespace Koala
+namespace Koala::AsyncWorker
 {
     static Logger logger("WorkDispatcher");
     void WorkDispatcher::Run()
@@ -44,6 +44,9 @@ namespace Koala
         while (true)
         {
             const bool bEngineIsShutdowning = KoalaEngine::Get().IsEngineExitRequested();
+
+            // How many ms we should wait to reduce CPU load
+            uint32_t waitTime = 1;
             
             ProcessFinishedTasks();
             DispatchWorkerTasks();
@@ -57,7 +60,11 @@ namespace Koala
             else
             {
                 if (!CheckOutTaskByPriority(localTask))
-                    continue; // TODO: We may need to use wait() for reducing CPU usage here?
+                {
+                    if (workerTasks.size() < 10)
+                        std::this_thread::sleep_for(std::chrono::nanoseconds(10));
+                    continue;
+                }
             }
 
             if (CheckAndHandleTaskCancel(localTask))
@@ -135,12 +142,18 @@ namespace Koala
         {
             workerTasks.pop();
         }
+        
         if (workerTasks.empty())
+        {
             return;
+        }
+        
         for (auto worker: workerThreads)
         {
             if (workerTasks.empty())
-                break;
+            {
+                return;
+            }
             if (worker->IsIdle())
             {
                 worker->AssignTask(std::move(workerTasks.front()));
@@ -148,13 +161,12 @@ namespace Koala
                 workerTasks.pop();
             }
         }
-        
     }
 
     void WorkDispatcher::ProcessFinishedTasks()
     {
         SCOPED_CPU_MARKER(Colors::Blue, "WorkDispatcher::ProcessFinishedTasks")
-        std::forward_list<Worker::Worker*> finishedWorkers;
+        std::forward_list<Worker*> finishedWorkers;
         for (auto worker: workerThreads)
         {
             if (worker->IsFinished())
@@ -176,21 +188,22 @@ namespace Koala
         }
         for (auto task: finishedTasks)
         {
-            task->status.store(Worker::ETaskStatus::Completed, std::memory_order::relaxed);
+            task->status.store(ETaskStatus::Completed, std::memory_order::relaxed);
             if (task->bHasWaiter.load(std::memory_order::relaxed))
             {
                 std::unique_lock lock(task->mutex);
                 task->cvWaitForFinishedOrCanceled.notify_all();
             }
         }
+
     }
 
     bool WorkDispatcher::CheckAndHandleTaskCancel(TaskPtr &task)
     {
         SCOPED_CPU_MARKER(Colors::Purple, "WorkDispatcher::CheckAndHandleTaskCancel")
-        if (task->ShouldCancel())
+        if (task->RequiredShouldCancel())
         {
-            task->status.store(Worker::ETaskStatus::Canceled, std::memory_order::release);
+            task->status.store(ETaskStatus::Canceled, std::memory_order::release);
             if (task->bHasWaiter.load(std::memory_order::relaxed))
             {
                 std::unique_lock lock(task->mutex);
@@ -206,6 +219,10 @@ namespace Koala
     {
         if (numWorkerThreads > 6)
             numWorkerThreads -= 4;
+        else
+        {
+            numWorkerThreads = 2;
+        }
     }
 
     bool WorkDispatcher::Initialize_MainThread()
@@ -214,9 +231,9 @@ namespace Koala
 
         workerThreads.resize(nCores);
         
-        for (Worker::Worker* &worker: workerThreads)
+        for (Worker* &worker: workerThreads)
         {
-            worker = new Worker::Worker();
+            worker = new Worker();
             ThreadManager::Get().CreateThreadManaged(worker);
             worker->WaitForThreadCreated();
         }

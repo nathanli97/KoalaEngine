@@ -26,7 +26,7 @@
 #include "../RHI/VulkanRHI/VulkanRHI.h"
 #include "Core/ThreadManager.h"
 #include "Renderer/Core/RenderCmdProcessor.h"
-#include "Worker/WorkDispatcher.h"
+#include "AsyncWorker/WorkDispatcher.h"
 
 namespace Koala
 {
@@ -106,8 +106,11 @@ namespace Koala
                 logger.info("Engine exit was requested. Trying to shutdown RenderThread...");
                 break;
             }
+            // TODO: remove this sleep after actual render logic is written
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
             
-            WorkDispatcher::Get().Tick_RenderThread();
+            AsyncWorker::WorkDispatcher::Get().Tick_RenderThread();
             // TODO: Render!!!!!!!!!!!!!
         }
 

@@ -21,12 +21,10 @@
 #include "Core/Check.h"
 #include "Task.h"
 
-namespace Koala
+namespace Koala::AsyncWorker
 {
     class WorkDispatcher;
-}
-namespace Koala::Worker
-{
+
     enum class EWorkerStatus: uint8_t
     {
         Uninitialized = 0,
@@ -43,7 +41,7 @@ namespace Koala::Worker
     public:
         Worker() = default;
         ~Worker() override {}
-        friend class Koala::WorkDispatcher;
+        friend class WorkDispatcher;
         void Run() override;
     protected:
         // Reset from Finished to Idle

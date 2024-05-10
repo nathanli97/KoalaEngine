@@ -1,12 +1,10 @@
 #pragma once
 #include <functional>
 #include <future>
-#include <shared_mutex>
 
 #include "Core/ThreadTypes.h"
 namespace Koala
 {
-    class WorkDispatcher;
     enum class ETaskPriority: uint8_t
     {
         TaskPriorityMaximum = 5, // Not a valid priority, just maximum value of enum
@@ -31,8 +29,9 @@ namespace Koala
     };
 }
 
-namespace Koala::Worker
+namespace Koala::AsyncWorker
 {
+    class WorkDispatcher;
     class Worker;
     
     typedef std::function<void(void*)> TaskFuncType;
@@ -112,7 +111,7 @@ namespace Koala::Worker
             return currentStatus == ETaskStatus::Completed || currentStatus == ETaskStatus::Canceled;
         }
 
-        bool ShouldCancel() const
+        bool RequiredShouldCancel() const
         {
             return bShouldCancel.load(std::memory_order::relaxed);
         }
@@ -133,5 +132,5 @@ namespace Koala::Worker
 
 namespace Koala
 {
-    typedef std::shared_ptr<Worker::Task> TaskPtr;
+    typedef std::shared_ptr<AsyncWorker::Task> TaskPtr;
 }

@@ -80,8 +80,28 @@ namespace Koala
 
             return true;
         }
+
+        bool IsEmpty() const
+        {
+            std::unique_lock lock(mutex);
+
+            return Super::empty();
+        }
+
+        // Wait but do not pop
+        bool Wait(int maxWaitMilliseconds = 1000)
+        {
+            std::unique_lock lock(mutex);
+
+            if (Super::empty())
+                cv.wait_for(lock, std::chrono::milliseconds(maxWaitMilliseconds));
+            if (Super::empty())
+                return false;
+
+            return true;
+        }
     private:
-        std::mutex mutex;
+        mutable std::mutex mutex;
         std::condition_variable cv;
     };
 }

@@ -16,8 +16,6 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <future>
-
 #include "Worker.h"
 #include "Core/SingletonInterface.h"
 #include "Core/ThreadTypes.h"
@@ -25,7 +23,7 @@
 #include "TSContainer/QueueTS.h"
 #include "Task.h"
 
-namespace Koala
+namespace Koala::AsyncWorker
 {
     class WorkDispatcher: public IThreadedModule
     {
@@ -40,9 +38,9 @@ namespace Koala
         void Tick_RHIThread();
 
         template <typename Lambda, typename Arg = nullptr_t>
-        TaskPtr AddTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+        TaskPtr EnqueueNewTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
         {
-            TaskPtr taskPtr = std::make_shared<Worker::Task>(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority);
+            TaskPtr taskPtr = std::make_shared<Task>(std::forward<Lambda>(inTask), inArg, inAssignThread, inTaskPriority);
             pendingAddTasks[(uint8_t)inTaskPriority].Push(taskPtr);
             return taskPtr;
         }
@@ -64,7 +62,7 @@ namespace Koala
         void ProcessFinishedTasks();
         bool CheckAndHandleTaskCancel(TaskPtr& task);
 
-        std::vector<Worker::Worker*>       workerThreads;
+        std::vector<Worker*>       workerThreads;
         std::mutex                mutexWorkerThreads;
 
         std::queue<TaskPtr> workerTasks;
@@ -72,22 +70,4 @@ namespace Koala
 
         size_t numWorkerThreads{0};
     };
-
-    template <typename Lambda, typename Arg = nullptr_t>
-    void AsyncTask(Lambda&& inTask, Arg inArg = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
-    {
-        WorkDispatcher::Get().AddTask(std::forward<Lambda>(inTask), inArg, inTaskPriority, inAssignThread);
-    }
-
-    template <typename Lambda>
-    void Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
-    {
-        for (size_t index = 0; index < numOfTasks; index++)
-        {
-            WorkDispatcher::Get().AddTask([index, inTask](void* mem)
-            {
-                inTask(mem, index);
-            }, inMem, inTaskPriority, inAssignThread);
-        }
-    }
 }
