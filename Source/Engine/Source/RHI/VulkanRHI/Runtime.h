@@ -41,6 +41,8 @@
 
 namespace Koala::RHI
 {
+    // Deprecated: This struct will be removed in the future.
+    // Do not add new members in this struct!
     struct VulkanRuntime {
         VkInstance instance{};
         VkSurfaceKHR surfaceKhr{};
