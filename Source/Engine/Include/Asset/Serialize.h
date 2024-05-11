@@ -1,4 +1,4 @@
-//Copyright 2024 Li Xingru
+﻿//Copyright 2024 Li Xingru
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //associated documentation files (the “Software”), to deal in the Software without restriction,
@@ -15,13 +15,45 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 #pragma once
-#include "Asset.h"
+#include <vector>
 
 namespace Koala
 {
-    class StaticMesh : public Asset
+    class SerializeTarget;
+    // Serialize Container 
+    template <
+        typename T,
+        typename ElementType
+    >
+    void Serialize(SerializeTarget& file, std::vector<T> &data)
     {
-        
-    };
+        uint32_t count;
+        Serialize<uint32_t>(file, count);
+
+            
+        if (file.IsLoading())
+        {
+            data.resize(count);
+            for (uint32_t index = 0; index < count; index++)
+            {
+                    
+            }
+        }
+    }
+
+    // Serialize Scalar reference
+    template <typename T>
+    void Serialize(SerializeTarget&, T &data) requires std::is_scalar_v<T>
+    {}
+
+    // Serialize Scalar
+    template <typename T>
+    void Serialize(SerializeTarget&, T &&data) requires std::is_scalar_v<T>
+    {}
+
+    // Serialize Pointer to Any Asset
+    template <typename T> requires std::disjunction_v<std::is_same<Asset, T>, std::is_base_of<Asset, T>>
+    void Serialize(SerializeTarget&, T *data){}
 }

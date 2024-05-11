@@ -62,12 +62,12 @@ def generate(generator, arch):
 
     if Global.args.verbose:
         Logger.verbose(f'Running cmake {command}')
-        CMake.run_cmake(command, capture_output=False)
+        CMake.run_cmake(command)
     else:
         print(f'Running cmake for project files generation...')
         with open(os.path.join(Global.build_dir, 'CMake_ProjectGeneration.log'), 'w', encoding='utf8') as file:
             try:
-                CMake.run_cmake(command, capture_output=True, stdout=file, stderr=file)
+                CMake.run_cmake(command, stdout=file, stderr=file)
             except subprocess.CalledProcessError:
                 Logger.error(
                     f'Failed to generate project files. For more details, see {Global.build_dir}/CMake_ProjectGeneration.log')

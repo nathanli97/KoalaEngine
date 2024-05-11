@@ -1,5 +1,6 @@
 import os
 import subprocess
+from urllib import request
 
 from libs import Global
 
@@ -18,6 +19,12 @@ def find_git():
 
 
 def run_git(cmd: str or list, cwd=Global.source_dir, capture_output=True):
+    proxies = request.getproxies()
+    for proxy in proxies:
+        if proxy == 'http':
+            os.environ['http_proxy'] = proxies[proxy]
+        elif proxy == 'https':
+            os.environ['https_proxy'] = proxies[proxy]
     command = ''
     if isinstance(cmd, list):
         command = ' '.join(cmd)

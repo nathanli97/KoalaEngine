@@ -59,19 +59,15 @@ def available():
     return cmake is not None
 
 
-def run_cmake(cmd: str or list, cwd=Global.source_dir, capture_output=True, stdout=None, stderr=None):
+def run_cmake(cmd: str or list, cwd=Global.source_dir, stdout=None, stderr=None):
     if isinstance(cmd, list):
         command = ' '.join(cmd)
     else:
         command = cmd
     assert available()
 
-    if capture_output:
-        proc = subprocess.run(f'{cmake} {command}', shell=True, capture_output=True, check=True, cwd=cwd, stdout=stdout, stderr=stderr)
-        return proc.stdout.decode('utf-8')
-    else:
-        proc = subprocess.run(f'{cmake} {command}', shell=True, check=True, cwd=cwd, stdout=stdout, stderr=stderr)
-        return None
+    proc = subprocess.run(f'{cmake} {command}', shell=True, check=True, cwd=cwd, stdout=stdout, stderr=stderr)
+    return proc.returncode == 0
 
 
 def setup_cmake():

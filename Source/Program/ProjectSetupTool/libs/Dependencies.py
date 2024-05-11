@@ -83,14 +83,13 @@ class Dependence:
             print(f'!!! Configuring dependence {self.name} at commit {required_commit}...')
             try:
                 CMake.run_cmake(
-                    configuration_cmd, cwd=build_path, capture_output=False)
+                    configuration_cmd, cwd=build_path)
             except subprocess.CalledProcessError:
                 raise RuntimeError(f'Configure dependence {self.name} failed.')
 
             print(f'!!! Building dependence {self.name} at commit {required_commit}...')
             try:
-                CMake.run_cmake(install_cmd, cwd=build_path,
-                                capture_output=False)
+                CMake.run_cmake(install_cmd, cwd=build_path)
             except subprocess.CalledProcessError:
                 raise RuntimeError(f'Build dependence {self.name} failed.')
 
