@@ -1,7 +1,18 @@
 include(SourceFiles.gen.cmake)
-
+include(CMakeDependentOption)
 add_compile_definitions(INCLUDE_RHI_VULKAN=1)
 # the following two definitions is work on if RHI_ENABLE_GPU_DEBUG is enabled
+set(CMAKE_PREFIX_PATH "E:/KoalaEngine/ThirdParty/Target")
+message(STATUS "${CMAKE_PREFIX_PATH}")
+
+find_package(Vulkan REQUIRED)
+find_package(glfw3 CONFIG REQUIRED)
+find_package(Eigen3 CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
+find_package(VulkanMemoryAllocator CONFIG REQUIRED)
+find_package(Python REQUIRED Development)
+find_package(volk REQUIRED)
 
 option(RHI_GPU_DEBUG "Enable GPU Debug features" ON)
 option(ENABLE_CPU_PROFILE "Enable CPU Markers for profiling (PIX for Windows)" ON)
@@ -38,10 +49,7 @@ target_include_directories(KoalaEngine
 )
 
 if (${ENABLE_CPU_PROFILE})
-    target_include_directories(KoalaEngine
-            PUBLIC ${CMAKE_SOURCE_DIR}/ThirdParty/pix_for_windows/include
-    )
-    target_link_libraries(KoalaEngine PUBLIC ${CMAKE_SOURCE_DIR}/ThirdParty/pix_for_windows/lib/WinPixEventRuntime.lib)
+    target_link_libraries(KoalaEngine PUBLIC WinPixEventRuntime.lib)
 endif ()
 
 target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES})

@@ -2,11 +2,12 @@ import argparse
 import os
 import shutil
 
-from libs import SyncDependence, Global, Logger, Git
+from libs import Dependencies, Global, Logger, Git, CMake
 
 
 def main():
     Global.set_source_dir(os.getcwd())
+    CMake.setup_cmake()
 
     thirdparty_path = os.path.join(Global.source_dir, 'ThirdParty')
 
@@ -34,7 +35,7 @@ def main():
     if not os.path.isdir(thirdparty_path):
         os.makedirs(thirdparty_path)
 
-    SyncDependence.sync_dependencies()
+    Dependencies.sync_dependencies()
 
     with open(os.path.join(thirdparty_path, '.sync_ok'), 'w') as f:
         pass

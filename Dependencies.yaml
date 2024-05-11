@@ -2,6 +2,11 @@ Dependencies:
   eigen3:
     git: 'https://gitlab.com/libeigen/eigen.git'
     commit: '5635d37f46acc2985aa66d9385665a76c3b9d5c7'
+    cmake_build_config:
+      - '-DEIGEN_BUILD_DOC=OFF'
+      - '-DEIGEN_BUILD_DEMOS=OFF'
+      - '-DEIGEN_BUILD_TESTING=OFF'
+    
   fmt:
     git: 'https://github.com/fmtlib/fmt.git'
     commit: 'e69e5f977d458f2650bb346dadf2ad30c5320281'
@@ -14,6 +19,8 @@ Dependencies:
   volk:
     git: 'https://github.com/zeux/volk.git'
     commit: '3a8068a57417940cf2bf9d837a7bb60d015ca2f1'
+    cmake_build_config:
+      - '-DVOLK_INSTALL=ON'
   vma:
     git: 'https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git'
     commit: '5677097bafb8477097c6e3354ce68b7a44fd01a4'
@@ -23,3 +30,7 @@ Dependencies:
   pix_for_windows:
     git: 'https://github.com/nathanli97/thirdparty_winpix.git'
     commit: 'b2abd23f25569d6fad872257a10f80c3289ff5fc'
+    nobuild: True
+    install:
+      - 'include'
+      - 'lib'

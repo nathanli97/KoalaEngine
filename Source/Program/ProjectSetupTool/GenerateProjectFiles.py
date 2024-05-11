@@ -2,63 +2,13 @@
 import argparse
 import os.path
 import platform
-import re
 import shutil
 import subprocess
 import sys
 
-from libs import Global, SyncDependence, Logger, Git, Vulkan
+from libs import Global, Dependencies, Logger, Git, Vulkan, CMake
 from libs.SourceFiles import gather_source
 from libs.VisualStudio import select_generator_visualstudio, select_arch_visualstudio
-
-
-class CMakeVersion:
-    major = 0
-    minor = 0
-    patch = 0
-
-    def __init__(self, major, minor, patch):
-        self.major = major
-        self.minor = minor
-        self.patch = patch
-
-    def __eq__(self, other):
-        return self.major == other.major and self.minor == other.minor and self.patch == other.patch
-
-    def __gt__(self, other):
-        return self.major == other.major and self.minor == other.minor and self.patch > other.patch or \
-            self.major == other.major and self.minor > other.minor or \
-            self.major > other.major
-
-    def __lt__(self, other):
-        return not self.__eq__(other) and not self.__gt__(other)
-
-    def __str__(self):
-        return f'{self.major}.{self.minor}.{self.patch}'
-
-    def __ge__(self, other):
-        return self.__gt__(other) or self.__eq__(other)
-
-
-def parse_cmake_version(in_version_output: str) -> CMakeVersion:
-    m = re.match(r'cmake version (\d+)\.(\d+)\.(\d+)', in_version_output)
-    if m is None:
-        return CMakeVersion(0, 0, 0)  #Unknown version
-    return CMakeVersion(int(m.group(1)), int(m.group(2)), int(m.group(3)))
-
-
-def find_cmake():
-    cmake_version = None
-    proc = subprocess.run('cmake --version', shell=True, capture_output=True)
-    if proc is not None and proc.returncode == 0:
-        cmake_version = parse_cmake_version(proc.stdout.decode('utf-8'))
-        if cmake_version >= CMakeVersion(3, 25, 0):
-            return 'cmake'
-
-    if cmake_version is None:
-        raise RuntimeError(f'Could not find cmake')
-    else:
-        raise RuntimeError(f'CMake version is too old: required 3.25.0, found {cmake_version}')
 
 
 def select_generator():
@@ -84,28 +34,43 @@ def select_generator():
         return 'Xcode'
 
 
-def generate(cmake, generator, arch):
+def generate(generator, arch):
+    target_path = os.path.join(Global.source_dir, 'ThirdParty', 'Target')
+
     if arch is not None:
-        command = f'{cmake} -B "{Global.build_dir}" -S "{Global.source_dir}" -G "{generator}" -A {arch}'
+        command = f'-B "{Global.build_dir}" -S "{Global.source_dir}" -DCMAKE_PREFIX_PATH="{target_path}" -G "{generator}" -A {arch}'
     else:
-        command = f'{cmake} -B "{Global.build_dir}" -S "{Global.source_dir}" -G "{generator}"'
+        command = f'-B "{Global.build_dir}" -S "{Global.source_dir}" -DCMAKE_PREFIX_PATH="{target_path}" -G "{generator}"'
     if Global.args.test:
         command += f' -DBUILD_TESTS=1'
     if os.path.isfile(os.path.join(Global.build_dir, '.clang-format')):
         os.remove(os.path.join(Global.build_dir, '.clang-format'))
 
     shutil.copy(os.path.join(Global.source_dir, '.clang-format'), os.path.join(Global.build_dir, '.clang-format'))
-    
+
+    if Global.args.env_cache:
+        with open(os.path.join(Global.source_dir, 'BuildEnv.gen.cmake'), 'wt', encoding='utf-8') as file:
+            lines = [
+                'macro(set_koala_build_env)\n',
+                f'\tset(CMAKE_PREFIX_PATH "{target_path.replace('\\', '/')}")\n',
+            ]
+            if Vulkan.available():
+                vksdk = Vulkan.get_vksdk()
+                lines.append(f'\tset(ENV{{VULKAN_SDK}} "{vksdk.replace('\\', '/')}")\n')
+            lines.append('endmacro()\n')
+            file.writelines(lines)
+
     if Global.args.verbose:
-        Logger.verbose(f'Running {command}')
-        subprocess.run(command, shell=True, check=True)
+        Logger.verbose(f'Running cmake {command}')
+        CMake.run_cmake(command, capture_output=False)
     else:
         print(f'Running cmake for project files generation...')
         with open(os.path.join(Global.build_dir, 'CMake_ProjectGeneration.log'), 'w', encoding='utf8') as file:
             try:
-                subprocess.run(command, shell=True, check=True, stdout=file, stderr=file)
+                CMake.run_cmake(command, capture_output=True, stdout=file, stderr=file)
             except subprocess.CalledProcessError:
-                Logger.error(f'Failed to generate project files. For more details, see {Global.build_dir}/CMake_ProjectGeneration.log')
+                Logger.error(
+                    f'Failed to generate project files. For more details, see {Global.build_dir}/CMake_ProjectGeneration.log')
                 sys.exit(1)
 
 
@@ -121,6 +86,7 @@ def clean():
 
 def main():
     Global.set_source_dir(os.getcwd())
+    CMake.setup_cmake()
 
     if not os.path.isdir(Global.build_dir):
         os.makedirs(Global.build_dir)
@@ -163,8 +129,7 @@ def main():
     if args.build_dir:
         Global.set_build_dir(args.build_dir)
 
-    cmake = find_cmake()
-    Vulkan.find_vulkan()
+    Vulkan.setup_vulkan()
     generator = select_generator()
     arch = None
 
@@ -172,7 +137,7 @@ def main():
         arch = select_arch_visualstudio()
 
     if not os.path.isfile(os.path.join(Global.source_dir, 'ThirdParty/.sync_ok')):
-        if SyncDependence.need_sync_dependencies():
+        if Dependencies.need_sync_dependencies():
             Logger.error('Need to sync the dependencies before generating project files! Please run Setup.')
             exit(1)
     Logger.info(f'Generating project files for {generator}')
@@ -182,7 +147,7 @@ def main():
         clean()
     if not args.no_gather_files:
         gather_source()
-    generate(cmake, generator, arch)
+    generate(generator, arch)
     print('Generation Finished')
 
 

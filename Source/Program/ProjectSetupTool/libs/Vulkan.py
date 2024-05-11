@@ -2,6 +2,8 @@ import os
 
 from libs import Logger, Global
 
+vulkan_sdk = None
+
 
 def handle_vulkan_not_found():
     print('Failed')
@@ -31,13 +33,17 @@ def find_vulkan():
 
     print(f'Found at {sdk_path}')
 
-    if Global.args.env_cache:
-        with open(os.path.join(Global.source_dir, 'BuildEnv.gen.cmake'), 'wt', encoding='utf-8') as file:
-            lines = [
-                'macro(set_koala_build_env)\n',
-                f'\tset(ENV{{VULKAN_SDK}} "{sdk_path.replace('\\', '/')}")\n',
-                'endmacro()\n'
-            ]
-            file.writelines(lines)
-
     return sdk_path
+
+
+def get_vksdk():
+    return vulkan_sdk
+
+def available():
+    return get_vksdk() is not None
+
+
+def setup_vulkan():
+    global vulkan_sdk
+    if vulkan_sdk is None:
+        vulkan_sdk = find_vulkan()
