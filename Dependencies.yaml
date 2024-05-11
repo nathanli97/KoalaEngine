@@ -27,6 +27,9 @@ Dependencies:
   glfw:
     git: 'https://github.com/glfw/glfw.git'
     commit: '7b6aead9fb88b3623e3b3725ebb42670cbe4c579'
+  assimp:
+    git: 'https://github.com/assimp/assimp.git'
+    commit: '8b9ed34eaa3e6ad24254cb7e058fb9150f66b865'
   pix_for_windows:
     git: 'https://github.com/nathanli97/thirdparty_winpix.git'
     commit: 'b2abd23f25569d6fad872257a10f80c3289ff5fc'
