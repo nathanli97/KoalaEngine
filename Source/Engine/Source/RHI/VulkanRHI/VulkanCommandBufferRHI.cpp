@@ -40,13 +40,13 @@ namespace Koala::RHI
         // TODO: short-live support? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT 
         vkCommandPoolCreateInfo.queueFamilyIndex = vkQueue->queueFamilyIndex;
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateCommandPool(VulkanRHI::GetVkRuntime()->device, &vkCommandPoolCreateInfo, nullptr, &pool->vkCommandPool))
+        VK_CHECK_RESULT_SUCCESS(vkCreateCommandPool(VulkanRHI::GetVkRenderDevice()->device, &vkCommandPoolCreateInfo, nullptr, &pool->vkCommandPool))
         return pool;
     }
 
     void VulkanCommandBufferInterface::ReleaseCommandPool(const VulkanCommandPool& inCommandPool)
     {
-        vkDestroyCommandPool(VulkanRHI::GetVkRuntime()->device, inCommandPool.vkCommandPool, nullptr);
+        vkDestroyCommandPool(VulkanRHI::GetVkRenderDevice()->device, inCommandPool.vkCommandPool, nullptr);
     }
     
     VulkanCommandPool::~VulkanCommandPool()

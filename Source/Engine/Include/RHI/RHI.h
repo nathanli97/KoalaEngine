@@ -28,12 +28,10 @@
 
 namespace Koala::RHI
 {
+    class IRenderDevice;
     class ITextureInterface;
     class IBufferInterface;
-}
-
-namespace Koala::RHI
-{
+    
     struct IRenderHardware: public ISingleton{
         virtual ~IRenderHardware() = default;
 
@@ -57,9 +55,9 @@ namespace Koala::RHI
         virtual bool Tick_MainThread() = 0;
 
         // The following functions only can be called on RenderThread.
-        // Return the GPU using for rendering.
-        // Return NULL if none of GPU is suitable or not choosed yet.
-        virtual const char* GetGPUName() = 0;
+        // And only call after RHI is initialized!
+        virtual void GetRenderDevices(std::forward_list<const IRenderDevice*>& outDevices) = 0;
+        virtual const IRenderDevice* GetUsingRenderDevice() = 0;
         virtual ITextureInterface* GetTextureInterface() = 0;
         virtual IBufferInterface* GetBufferInterface() = 0;
     };

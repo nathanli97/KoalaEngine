@@ -44,7 +44,6 @@ namespace Koala::RHI
     struct VulkanRuntime {
         VkInstance instance{};
         VkSurfaceKHR surfaceKhr{};
-        VkPhysicalDevice physicalDevice{};
 
         VmaAllocator vmaAllocator{};
 
@@ -64,8 +63,6 @@ namespace Koala::RHI
             }
         } queueInfo;
         
-        VkDevice device{};
-
         struct
         {
             std::vector<VkImage> images;
@@ -78,7 +75,7 @@ namespace Koala::RHI
     struct GLFWRuntime {
         GLFWwindow *window{};
     };
-    struct SwapChainSupportDetails {
+    struct VulkanSwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;
         std::vector<VkSurfaceFormatKHR> formats;
         std::vector<VkPresentModeKHR> presentModes;

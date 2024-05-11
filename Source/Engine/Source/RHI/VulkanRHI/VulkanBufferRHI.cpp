@@ -108,7 +108,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVkBufferRHI.buffer);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRenderDevice()->device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

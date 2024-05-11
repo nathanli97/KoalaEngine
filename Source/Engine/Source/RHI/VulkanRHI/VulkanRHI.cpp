@@ -42,13 +42,6 @@ namespace Koala::RHI {
             VulkanInitialize();
     }
 
-    const char* VulkanRHI::GetGPUName()
-    {
-        if (gpu_name.empty())
-            return nullptr;
-        return gpu_name.c_str();
-    }
-
     void VulkanRHI::Shutdown_RenderThread()
     {
         VulkanShutdown();
@@ -59,31 +52,34 @@ namespace Koala::RHI {
         return GLFWTick();
     }
 
-    bool VulkanRHI::VulkanInitialize()
-    {
-        return InitVulkanInstance() &&
-                ChooseRenderDevice() &&
-                InitVulkanDeviceAndQueue() &&
-                InitMemoryAlloctor() &&
-                CreateSwapChain() &&
-                CreateSwapChainViews();
-    }
-
     void VulkanRHI::CleanSwapChain()
     {
         for (auto &view: vk.swapChain.imageViews)
         {
             if (view)
             {
-                vkDestroyImageView(vk.device, view, nullptr);
+                vkDestroyImageView(renderDevice->device, view, nullptr);
             }
         }
 
         if (vk.swapChain.swapchainKhr)
         {
-            vkDestroySwapchainKHR(vk.device, vk.swapChain.swapchainKhr, nullptr);
+            vkDestroySwapchainKHR(renderDevice->device, vk.swapChain.swapchainKhr, nullptr);
         }
         vk.swapChain.images.clear();
+    }
+
+    void VulkanRHI::GetRenderDevices(std::forward_list<const IRenderDevice *>& outDevices)
+    {
+        for (const auto &device: vulkanRenderDevices)
+        {
+            outDevices.push_front(&device);
+        }
+    }
+
+    const IRenderDevice * VulkanRHI::GetUsingRenderDevice()
+    {
+        return renderDevice;
     }
 
     ITextureInterface* VulkanRHI::GetTextureInterface()

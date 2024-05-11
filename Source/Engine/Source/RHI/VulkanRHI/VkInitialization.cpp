@@ -63,10 +63,35 @@ static VkDebugUtilsMessengerEXT GVkDebugMessenger{};
 
 namespace Koala::RHI
 {
-    static std::vector<const char *> VK_DeviceRequiredExtensions = {
+    static std::vector<const char *> VulkanDeviceRequiredExtensions = {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
-    bool VulkanRHI::InitVulkanInstance()
+    bool VulkanRHI::VulkanInitialize()
+    {
+        if (!InitializeVulkanInstance())
+            return false;
+        
+        DiscoverRenderDevices(vulkanRenderDevices);
+        
+        if (!ChooseRenderDevice())
+            return false;
+        
+        if (!InitVulkanDeviceAndQueue())
+            return false;
+        
+        if (!InitMemoryAlloctor())
+            return false;
+        
+        if (!CreateSwapChain())
+            return false;
+        
+        if (!CreateSwapChainViews())
+            return false;
+
+        return true;
+    }
+    
+    bool VulkanRHI::InitializeVulkanInstance()
     {
         logger.info("Initializating Vulkan(using VK API v{}.{}.{})... ", VK_VERSION_MAJOR(VK_APIVERSION), VK_VERSION_MINOR(VK_APIVERSION), VK_VERSION_PATCH(VK_APIVERSION));
         VkApplicationInfo vkApplicationInfo{};
@@ -137,78 +162,77 @@ namespace Koala::RHI
         VK_CHECK_RESULT_SUCCESS(glfwCreateWindowSurface(vk.instance, glfw.window, nullptr, &vk.surfaceKhr))
         return true;
     }
-    bool VulkanRHI::ChooseRenderDevice()
+    
+    void VulkanRHI::DiscoverRenderDevices(std::forward_list<VulkanRenderDevice> &outRenderDevices)
     {
+        outRenderDevices.clear();
+        
         uint32_t countDevices = 0;
-        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, nullptr));
+        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, nullptr))
         std::vector<VkPhysicalDevice> physicalDevices(countDevices);
-        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, physicalDevices.data()));
-
-        std::unordered_map<std::string, VkPhysicalDevice> suitableDevices;
-        std::unordered_map<std::string, VkPhysicalDeviceProperties> suitableDeviceProps;
-        std::unordered_map<std::string, VkPhysicalDeviceFeatures> suitableDevicesFeatures;
-
-        logger.info("We found {} devices which can render Vulkan.", countDevices);
-
-        auto preferedDeviceName = Config::Get().GetSetting("render.device");
-
+        VK_CHECK_RESULT_SUCCESS(vkEnumeratePhysicalDevices(vk.instance, &countDevices, physicalDevices.data()))
+        
         for (const auto device : physicalDevices)
         {
-            VkPhysicalDeviceProperties deviceProperties;
-            VkPhysicalDeviceFeatures deviceFeatures;
-            vkGetPhysicalDeviceProperties(device, &deviceProperties);
-            vkGetPhysicalDeviceFeatures(device, &deviceFeatures);
+            VulkanRenderDevice vulkanRenderDevice;
+            vulkanRenderDevice.bSuitable = true;
 
-            bool bIsDeviceSuitable = true;
+            vulkanRenderDevice.physicalDevice = device;
+            vkGetPhysicalDeviceProperties(device, &vulkanRenderDevice.physicalDeviceProperties);
+            vkGetPhysicalDeviceFeatures(device, &vulkanRenderDevice.physicalDeviceFeatures);
 
             uint32_t deviceExtensionCount = 0;
             vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, nullptr);
-            std::vector<VkExtensionProperties> availableExtensions(deviceExtensionCount);
-            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, availableExtensions.data());
-            for (const std::string &requiredExtensionName : VK_DeviceRequiredExtensions) {
-                if (std::find_if(availableExtensions.cbegin(),
-                                 availableExtensions.cend(),
+            vulkanRenderDevice.physicalDeviceExtensions.resize(deviceExtensionCount);
+            vkEnumerateDeviceExtensionProperties(device, nullptr, &deviceExtensionCount, vulkanRenderDevice.physicalDeviceExtensions.data());
+
+            for (const std::string &requiredExtensionName : VulkanDeviceRequiredExtensions) {
+                if (std::find_if(vulkanRenderDevice.physicalDeviceExtensions.cbegin(),
+                                 vulkanRenderDevice.physicalDeviceExtensions.cend(),
                                  [&](const VkExtensionProperties &extensionProperties) -> bool {
                                    return requiredExtensionName == extensionProperties.extensionName;
-                                 }) == availableExtensions.cend()) {
-                    bIsDeviceSuitable = false;
+                                 }) == vulkanRenderDevice.physicalDeviceExtensions.cend()) {
+                    vulkanRenderDevice.bSuitable = false;
+#ifdef RHI_ENABLE_GPU_DEBUG
+                    vulkanRenderDevice.nonSuitableReasonsForDebug.push_front(fmt::format("Missing required Vulkan device extension: {}", requiredExtensionName));
+#endif
                     break;
                 }
             }
 
-            const std::string vkExtNamePortabilitySubset = "VK_KHR_portability_subset";
-            if (std::find_if(availableExtensions.cbegin(), availableExtensions.cend(), [&](const VkExtensionProperties &extensionProperties) -> bool {
-                                   return vkExtNamePortabilitySubset == extensionProperties.extensionName;
-                             }) != availableExtensions.cend())
-            {
-                VK_DeviceRequiredExtensions.push_back("VK_KHR_portability_subset");
-            }
+            
+            VulkanSwapChainSupportDetails chainSupportDetails;
 
-            if (!bIsDeviceSuitable)
-                continue;
-
-            SwapChainSupportDetails chainSupportDetails;
-
-            if (!QuerySwapChainSupport(device, chainSupportDetails)) {
-                bIsDeviceSuitable = false;
-            }
+            QuerySwapChainSupport(device, chainSupportDetails);
+            
             if (chainSupportDetails.formats.empty() || chainSupportDetails.presentModes.empty()) {
-                bIsDeviceSuitable = false;
+                vulkanRenderDevice.bSuitable = false;
+#ifdef RHI_ENABLE_GPU_DEBUG
+                vulkanRenderDevice.nonSuitableReasonsForDebug.push_front(fmt::format("Can not find suitable swap chain support on this device"));
+#endif
             }
+            vulkanRenderDevice.name = vulkanRenderDevice.physicalDeviceProperties.deviceName;
+            vulkanRenderDevice.type = vulkanRenderDevice.physicalDeviceProperties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU ? ERenderDeviceType::Dedicated :ERenderDeviceType::Integrated;
+            outRenderDevices.push_front(vulkanRenderDevice);
+        }
+    }
 
-            if (!bIsDeviceSuitable)
-                continue;
+    bool VulkanRHI::ChooseRenderDevice()
+    {
+        auto preferedDeviceName = Config::Get().GetSetting("render.device");
 
-            suitableDevices.emplace(deviceProperties.deviceName, device);
-            suitableDeviceProps.emplace(deviceProperties.deviceName, deviceProperties);
-            suitableDevicesFeatures.emplace(deviceProperties.deviceName, deviceFeatures);
+        std::unordered_map<std::string, VulkanRenderDevice*> devices;
+
+        for (VulkanRenderDevice &device: vulkanRenderDevices)
+        {
+            devices.emplace(device.name, &device);
         }
 
         if (preferedDeviceName.has_value())
         {
-            if (suitableDevices.count(preferedDeviceName.value()) != 0)
+            if (devices.contains(preferedDeviceName.value()))
             {
-                vk.physicalDevice = suitableDevices.at(preferedDeviceName.value());
+                renderDevice = devices.at(preferedDeviceName.value());
                 logger.info("Choosed prefered GPU: {}", preferedDeviceName.value());
                 return true;
             }
@@ -217,60 +241,51 @@ namespace Koala::RHI
                 logger.warning("Prefered GPU {} is not avaliable or not suitable", preferedDeviceName.value());
             }
         }
-
-
-        const bool bNeedPrintGpuInfo = CmdParser::Get().HasArg("printgpus");
-
-        VkPhysicalDevice chooseDevice{nullptr};
-
-        bool bUsingDiscreteGpu = false;
-        for (auto const & gpu: suitableDevices)
+        
+        for (auto const & device: devices)
         {
-            auto const &prop = suitableDeviceProps[gpu.first];
-            if (bNeedPrintGpuInfo)
-                logger.info("GPU '{}' Type={}", gpu.first, string_VkPhysicalDeviceType(prop.deviceType));
+            auto const &prop = device.second->physicalDeviceProperties;
 
-            if (!chooseDevice && prop.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
+            if (!renderDevice && device.second->bSuitable && device.second->type == ERenderDeviceType::Dedicated)
             {
-                gpu_name = prop.deviceName;
-                logger.debug("We choosed GPU '{}' because it is an discreted GPU.", prop.deviceName);
-                chooseDevice = gpu.second;
-                bUsingDiscreteGpu = true;
+                logger.debug("We choose GPU '{}' because it is an dedicated GPU.", prop.deviceName);
+                renderDevice = device.second;
             }
         }
 
-        if (!chooseDevice)
+        if (!renderDevice)
         {
-            chooseDevice = suitableDevices.begin()->second;
-            gpu_name = suitableDevices.begin()->first;
+            for (auto const & device: devices)
+            {
+                auto const &prop = device.second->physicalDeviceProperties;
+
+                if (!renderDevice && device.second->bSuitable)
+                {
+                    renderDevice = device.second;
+                }
+            }
         }
 
-        if (!chooseDevice || suitableDevices.empty())
+        if (!renderDevice)
         {
-            logger.error("No suitable GPUs found! Try use --printgpus to check all the suitable GPUs.");
+            logger.error("No suitable GPUs found!");
             return false;
         }
 
-        if (!bUsingDiscreteGpu)
-        {
-            logger.warning("No discrete GPU(s) is found!");
-        }
-
-        logger.info("Using GPU: {}", gpu_name);
-        vk.physicalDevice = chooseDevice;
+        logger.info("Using GPU: {}, Is Dedicated GPU={}", renderDevice->name, renderDevice->type==ERenderDeviceType::Dedicated);
         return true;
     }
     bool VulkanRHI::InitVulkanDeviceAndQueue()
     {
         uint32_t queueFamilyCount = 0;
-        vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, nullptr);
+        vkGetPhysicalDeviceQueueFamilyProperties(renderDevice->physicalDevice, &queueFamilyCount, nullptr);
         std::vector<VkQueueFamilyProperties> queueFamilies(queueFamilyCount);
-        vkGetPhysicalDeviceQueueFamilyProperties(vk.physicalDevice, &queueFamilyCount, queueFamilies.data());
+        vkGetPhysicalDeviceQueueFamilyProperties(renderDevice->physicalDevice, &queueFamilyCount, queueFamilies.data());
         
         auto IsCurrentQueueFamilySupportsPresent = [this](uint32_t index)->bool
         {
             VkBool32 bPresentSupported = VK_FALSE;
-            vkGetPhysicalDeviceSurfaceSupportKHR(vk.physicalDevice, index, vk.surfaceKhr, &bPresentSupported);
+            vkGetPhysicalDeviceSurfaceSupportKHR(renderDevice->physicalDevice, index, vk.surfaceKhr, &bPresentSupported);
             return bPresentSupported == VK_TRUE;
         };
 
@@ -398,7 +413,15 @@ namespace Koala::RHI
             queueCreateInfo.pQueuePriorities = &queuePriority;
             queueCreateInfos.push_back(queueCreateInfo);
         }
-
+        
+        const std::string vkExtNamePortabilitySubset = "VK_KHR_portability_subset";
+        if (std::find_if(renderDevice->physicalDeviceExtensions.cbegin(), renderDevice->physicalDeviceExtensions.cend(), [&](const VkExtensionProperties &extensionProperties) -> bool {
+                               return vkExtNamePortabilitySubset == extensionProperties.extensionName;
+                         }) != renderDevice->physicalDeviceExtensions.cend())
+        {
+            VulkanDeviceRequiredExtensions.push_back("VK_KHR_portability_subset");
+        }
+        
         VkPhysicalDeviceFeatures deviceFeatures{};
         VkDeviceCreateInfo deviceCreateInfo{};
         deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -406,8 +429,8 @@ namespace Koala::RHI
         deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(uniqueQueueFamilies.size());
         deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
         deviceCreateInfo.enabledLayerCount = 0;
-        deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(VK_DeviceRequiredExtensions.size());
-        deviceCreateInfo.ppEnabledExtensionNames = VK_DeviceRequiredExtensions.data();
+        deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(VulkanDeviceRequiredExtensions.size());
+        deviceCreateInfo.ppEnabledExtensionNames = VulkanDeviceRequiredExtensions.data();
 
 #if RHI_ENABLE_VALIDATION
         const std::vector<const char *> validationLayers = {
@@ -417,8 +440,8 @@ namespace Koala::RHI
         deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
 #endif
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateDevice(vk.physicalDevice, &deviceCreateInfo, nullptr, &vk.device));
-        volkLoadDevice(vk.device);
+        VK_CHECK_RESULT_SUCCESS(vkCreateDevice(renderDevice->physicalDevice, &deviceCreateInfo, nullptr, &renderDevice->device));
+        volkLoadDevice(renderDevice->device);
         
         {
             auto &queueRegister = VulkanCommandQueueRegister::Get();
@@ -435,10 +458,10 @@ namespace Koala::RHI
             compute->queueFamilyIndex = vk.queueInfo.computeQueueIndex.value();
             transfer->queueFamilyIndex = vk.queueInfo.transferQueueIndex.value();
             
-            vkGetDeviceQueue(vk.device, preset->queueFamilyIndex, 0, &preset->vkQueue);
-            vkGetDeviceQueue(vk.device, graphics->queueFamilyIndex, 0, &graphics->vkQueue);
-            vkGetDeviceQueue(vk.device, compute->queueFamilyIndex, 0, &compute->vkQueue);
-            vkGetDeviceQueue(vk.device, transfer->queueFamilyIndex, 0, &transfer->vkQueue);
+            vkGetDeviceQueue(renderDevice->device, preset->queueFamilyIndex, 0, &preset->vkQueue);
+            vkGetDeviceQueue(renderDevice->device, graphics->queueFamilyIndex, 0, &graphics->vkQueue);
+            vkGetDeviceQueue(renderDevice->device, compute->queueFamilyIndex, 0, &compute->vkQueue);
+            vkGetDeviceQueue(renderDevice->device, transfer->queueFamilyIndex, 0, &transfer->vkQueue);
         }
         
         return true;
@@ -452,8 +475,8 @@ namespace Koala::RHI
         
         VmaAllocatorCreateInfo allocatorCreateInfo = {};
         allocatorCreateInfo.vulkanApiVersion = VK_APIVERSION;
-        allocatorCreateInfo.physicalDevice = vk.physicalDevice;
-        allocatorCreateInfo.device = vk.device;
+        allocatorCreateInfo.physicalDevice = renderDevice->physicalDevice;
+        allocatorCreateInfo.device = renderDevice->device;
         allocatorCreateInfo.instance = vk.instance;
         allocatorCreateInfo.pVulkanFunctions = &vmaVulkanFunctions;
 
@@ -466,8 +489,8 @@ namespace Koala::RHI
     {
         VkExtent2D extent;
 
-        SwapChainSupportDetails chainSupportDetails;
-        QuerySwapChainSupport(vk.physicalDevice, chainSupportDetails);
+        VulkanSwapChainSupportDetails chainSupportDetails;
+        QuerySwapChainSupport(renderDevice->physicalDevice, chainSupportDetails);
 
         VkSurfaceFormatKHR surface_format = chainSupportDetails.formats[0];
         for (const auto &format: chainSupportDetails.formats)
@@ -582,11 +605,11 @@ namespace Koala::RHI
         swapchainCreateInfo.clipped = VK_TRUE;
         swapchainCreateInfo.oldSwapchain = VK_NULL_HANDLE;
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateSwapchainKHR(vk.device, &swapchainCreateInfo, nullptr, &vk.swapChain.swapchainKhr));
+        VK_CHECK_RESULT_SUCCESS(vkCreateSwapchainKHR(renderDevice->device, &swapchainCreateInfo, nullptr, &vk.swapChain.swapchainKhr));
         
-        vkGetSwapchainImagesKHR(vk.device, vk.swapChain.swapchainKhr, &imageCount, nullptr);
+        vkGetSwapchainImagesKHR(renderDevice->device, vk.swapChain.swapchainKhr, &imageCount, nullptr);
         vk.swapChain.images.resize(imageCount);
-        vkGetSwapchainImagesKHR(vk.device, vk.swapChain.swapchainKhr, &imageCount, vk.swapChain.images.data());
+        vkGetSwapchainImagesKHR(renderDevice->device, vk.swapChain.swapchainKhr, &imageCount, vk.swapChain.images.data());
         vk.swapChain.imageFormat = surface_format.format;
         vk.swapChain.imageExtent = extent;
         
@@ -616,7 +639,7 @@ namespace Koala::RHI
             vkImageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
             vkImageViewCreateInfo.subresourceRange.layerCount = 1;
 
-            VK_CHECK_RESULT_SUCCESS(vkCreateImageView(vk.device, &vkImageViewCreateInfo, nullptr, &vk.swapChain.imageViews[index++]))
+            VK_CHECK_RESULT_SUCCESS(vkCreateImageView(renderDevice->device, &vkImageViewCreateInfo, nullptr, &vk.swapChain.imageViews[index++]))
         }
         return true;
     }
@@ -624,7 +647,7 @@ namespace Koala::RHI
 
 
 
-    bool VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails& chainSupportDetails)
+    void VulkanRHI::QuerySwapChainSupport(VkPhysicalDevice device, VulkanSwapChainSupportDetails& chainSupportDetails)
     {
         VK_CHECK_RESULT_SUCCESS(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, vk.surfaceKhr, &chainSupportDetails.capabilities))
         uint32_t formatCount{};
@@ -644,8 +667,6 @@ namespace Koala::RHI
                                                                &presentModeCount,
                                                                chainSupportDetails.presentModes.data()))
         }
-        
-        return true;
     }
 
     void VulkanRHI::VulkanShutdown()
@@ -657,9 +678,9 @@ namespace Koala::RHI
             return;
         }
 
-        if (vk.device)
+        if (renderDevice && renderDevice->device)
         {
-            vkDestroyDevice(vk.device, nullptr);
+            vkDestroyDevice(renderDevice->device, nullptr);
         }
 
 #if RHI_ENABLE_VALIDATION

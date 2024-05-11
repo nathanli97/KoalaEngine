@@ -264,7 +264,7 @@ namespace Koala::RHI
         vkImageViewCreateInfo.subresourceRange.layerCount = image.cachedTextureCreateInfo.numTextureArray;
 
 
-        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(VulkanRHI::GetVkRuntime()->device, &vkImageViewCreateInfo, nullptr, &outImageView))
+        VK_CHECK_RESULT_SUCCESS(vkCreateImageView(VulkanRHI::GetVkRenderDevice()->device, &vkImageViewCreateInfo, nullptr, &outImageView))
     }
     void VulkanTextureInterface::ReleaseTexture(VulkanTextureRHI& inTexture)
     {
@@ -272,7 +272,7 @@ namespace Koala::RHI
     }
     void VulkanTextureInterface::ReleaseTextureView(VulkanTextureView& inTextureView)
     {
-        vkDestroyImageView(VulkanRHI::GetVkRuntime()->device, inTextureView.imageView, nullptr);
+        vkDestroyImageView(VulkanRHI::GetVkRenderDevice()->device, inTextureView.imageView, nullptr);
     }
     VulkanTextureRHI::~VulkanTextureRHI()
     {
@@ -290,7 +290,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureRHI.image);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRenderDevice()->device, &vkDebugUtilsObjectNameInfoExt);
     }
     void VulkanTextureInterface::SetTextureViewDebugName(const VulkanTextureView& inVulkanTextureViewRHI, const char *inLabel)
     {
@@ -299,7 +299,7 @@ namespace Koala::RHI
         vkDebugUtilsObjectNameInfoExt.objectHandle = reinterpret_cast<uint64_t>(inVulkanTextureViewRHI.imageView);
         vkDebugUtilsObjectNameInfoExt.pObjectName = inLabel;
 
-        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRuntime()->device, &vkDebugUtilsObjectNameInfoExt);
+        vkSetDebugUtilsObjectNameEXT(VulkanRHI::GetVkRenderDevice()->device, &vkDebugUtilsObjectNameInfoExt);
     }
 #endif
 }

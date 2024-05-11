@@ -17,6 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include "VulkanRenderDevice.h"
 
 #ifdef INCLUDE_RHI_VULKAN
 #include "Runtime.h"
@@ -30,7 +31,8 @@ public:
     // ===== Caller: RT =======
     bool Initialize_RenderThread() override;
     void Shutdown_RenderThread() override;
-    const char* GetGPUName() override;
+    void GetRenderDevices(std::forward_list<const IRenderDevice *>&) override;
+    const IRenderDevice * GetUsingRenderDevice() override;
     ITextureInterface* GetTextureInterface() override;
     IBufferInterface * GetBufferInterface() override;
 
@@ -43,13 +45,21 @@ public:
     {
         return &Get().vk;
     }
+
+    NODISCARD FORCEINLINE static VulkanRenderDevice* GetVkRenderDevice()
+    {
+        return Get().renderDevice;
+    }
     
     static void HandleVulkanFuncFailed(VkResult result, const char * func, const char * file, size_t line);
 private:
     VulkanRuntime vk{};
     GLFWRuntime glfw{};
 
-    std::string gpu_name;
+    std::forward_list<VulkanRenderDevice> vulkanRenderDevices;
+    VulkanRenderDevice*                   renderDevice{};
+
+    // std::string gpu_name;
 
     bool GLFWInitialize();
     void GLFWShutdown();
@@ -64,14 +74,15 @@ private:
     void VulkanShutdown();
 
     // ------Vulkan Initialization Functions------
-    bool InitVulkanInstance();
+    bool InitializeVulkanInstance();
+    void DiscoverRenderDevices(std::forward_list<VulkanRenderDevice> &outRenderDevices);
     bool ChooseRenderDevice();
     bool InitVulkanDeviceAndQueue();
     bool InitMemoryAlloctor();
     bool CreateSwapChain();
     bool CreateSwapChainViews();
 
-    bool QuerySwapChainSupport(VkPhysicalDevice device, SwapChainSupportDetails &chainSupportDetails);
+    void QuerySwapChainSupport(VkPhysicalDevice device, VulkanSwapChainSupportDetails &chainSupportDetails);
 
     VkExtent2D GetFrameBufferSizeFromGLFW(const VkSurfaceCapabilitiesKHR &capabilities);
 
