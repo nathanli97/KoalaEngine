@@ -17,12 +17,15 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <fstream>
 #include <vector>
 
 namespace Koala
 {
     class Asset
     {
+    public:
+        virtual bool LoadAsset(std::ifstream &file) = 0;
     protected:
         bool bBaked{false};
         

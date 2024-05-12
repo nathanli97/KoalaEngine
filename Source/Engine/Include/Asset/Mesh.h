@@ -29,6 +29,9 @@ namespace Koala
     };
     class Mesh : public Asset
     {
+    public:
+        bool LoadAsset(std::ifstream &file) override;
+
     private:
         std::vector<Vector>   vertices;
         std::vector<uint32_t> indices;
