@@ -48,14 +48,8 @@ namespace Koala
             {
                 if (IsArithmetic())
                 {
-                    if constexpr (sizeof(RemoveConstRefType) < 8)
-                    {
-                        return (T)(GetArithmetic());
-                    }
-                    else
-                    {
-                        return GetArithmetic();
-                    }
+                    size_t value = GetArithmetic();
+                    return *(reinterpret_cast<T*>(&value));
                 }
                 else
                 {
@@ -90,7 +84,32 @@ namespace Koala
             {
                 if (IsArithmetic())
                 {
-                    SetArithmetic(inValue);
+                    size_t value;
+                    if constexpr (sizeof(T) == sizeof(uint64_t))
+                    {
+                        value = *(reinterpret_cast<size_t*>(&inValue));
+                    }
+                    else if constexpr (sizeof(T) == sizeof(uint32_t))
+                    {
+                        uint32_t value32 = *(reinterpret_cast<uint32_t *>(&inValue));
+                        value = value32;
+                        value |= (value << 32);
+                    }
+                    else if constexpr (sizeof(T) == sizeof(uint16_t))
+                    {
+                        uint32_t value16 = *(reinterpret_cast<uint16_t *>(&inValue));
+                        value = value16;
+                        value |= (value << 32);
+                        value |= (value << 16);
+                    }
+                    else {
+                        uint32_t value8 = *(reinterpret_cast<uint16_t *>(&inValue));
+                        value = value8;
+                        value |= (value << 32);
+                        value |= (value << 16);
+                        value |= (value << 8);
+                    }
+                    SetArithmetic(value);
                 }
             }
             else if constexpr (std::is_same_v<RemoveConstRefType, std::string>)

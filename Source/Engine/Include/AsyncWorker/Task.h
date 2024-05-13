@@ -57,7 +57,7 @@ namespace Koala::AsyncWorker
         Task(const Task&) = delete;
         Task& operator=(const Task&) = delete;
         Task(Task&& inTask) noexcept
-            : func(std::move(inTask.func)), arg(inTask.arg), assignThread(inTask.assignThread), taskPriority(std::move(inTask.taskPriority)) {}
+            : func(std::move(inTask.func)), arg(inTask.arg), assignThread(inTask.assignThread), taskPriority(inTask.taskPriority) {}
         Task& operator=(Task&& inTask) noexcept
         {
             if (&inTask == this)

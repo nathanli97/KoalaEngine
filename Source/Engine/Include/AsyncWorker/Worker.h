@@ -23,8 +23,6 @@
 
 namespace Koala::AsyncWorker
 {
-    class WorkDispatcher;
-
     enum class EWorkerStatus: uint8_t
     {
         Uninitialized = 0,
@@ -41,9 +39,7 @@ namespace Koala::AsyncWorker
     public:
         Worker() = default;
         ~Worker() override {}
-        friend class WorkDispatcher;
         void Run() override;
-    protected:
         // Reset from Finished to Idle
         FORCEINLINE TaskPtr&& FinishTask()
         {

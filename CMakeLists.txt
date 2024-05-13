@@ -25,14 +25,6 @@ if (${VulkanRHI})
     find_package(Vulkan REQUIRED)
 endif ()
 
-if (BUILD_TESTS)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ThirdParty/catch2)
-    set_target_properties(Catch2 PROPERTIES FOLDER "ThirdParty")
-    set_target_properties(Catch2WithMain PROPERTIES FOLDER "ThirdParty")
-endif()
-
-
-
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(Source/Engine)
