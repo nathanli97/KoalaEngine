@@ -18,30 +18,35 @@
 
 #pragma once
 #include "File.h"
-#include "AsyncWorker/Task.h"
+#include "Asset/Asset.h"
+#include "AsyncWorker/Worker.h"
+#include "Core/ThreadedModule.h"
+#include "TSContainer/QueueTS.h"
 
-namespace Koala::FileIO
-{
-    enum class EIOTaskType
+namespace Koala {
+    class AssetLoader: public IThread
     {
-        IORead,
-        IOWrite
+    public:
+        void Run() override;
+        FORCEINLINE void Exit()
+        {
+            bShouldExit.store(true);
+        }
+    private:
+        QueueTS<IAsset*> assetsToLoad;
+        std::atomic<bool> bShouldExit{false};
     };
 
-    struct IOTask: AsyncWorker::Task
+    class AssetSaver: public IThread
     {
-        static void DoIoWork(void* inPtr);
-        IOTask(): Task(DoIoWork, this, EThreadType::UnknownThread, ETaskPriority::Normal){}
-        IOTask(FileHandle inFileHanle, void *inBuffer, EIOTaskType inIOTaskType):
-            Task(DoIoWork, this, EThreadType::UnknownThread, ETaskPriority::Normal),
-            fileHandle(std::move(inFileHanle)),
-            buffer(inBuffer),
-            type(inIOTaskType) {}
-        FileHandle fileHandle;
-        size_t      offset, size;
-        void        *buffer{nullptr};
-        EIOTaskType type{EIOTaskType::IORead};
+    public:
+        void Run() override;
+        FORCEINLINE void Exit()
+        {
+            bShouldExit.store(true);
+        }
+    private:
+        QueueTS<IAsset*> assetsToSave;
+        std::atomic<bool> bShouldExit{false};
     };
-
-    typedef std::shared_ptr<IOTask> IOTaskPtr;
 }

@@ -17,15 +17,19 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <fstream>
-#include <vector>
+
+#include "Core/StringHash.h"
+#include "FileSystem/FileStream.h"
 
 namespace Koala
 {
-    class Asset
+    class IAsset
     {
     public:
-        virtual bool LoadAsset(std::ifstream &file) = 0;
+        // This function will be executed in AsyncLoading thread when loading this asset.
+        virtual bool LoadAsset(ReadFileStream &file) = 0;
+        virtual bool SaveAsset(WriteFileStream &file) = 0;
+        virtual StringHash GetAssetFilePath() = 0;
     protected:
         bool bBaked{false};
         

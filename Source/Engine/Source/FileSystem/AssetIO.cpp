@@ -1,4 +1,4 @@
-//Copyright 2024 Li Xingru
+﻿//Copyright 2024 Li Xingru
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //associated documentation files (the “Software”), to deal in the Software without restriction,
@@ -15,30 +15,49 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#pragma once
-#include "Asset.h"
-#include "Math/MathDefinations.h"
+
+#include "FileSystem/AssetIO.h"
 
 namespace Koala
 {
-    struct Vector
+    void AssetLoader::Run()
     {
-        Vec3f position;
-        Vec3f normal;
-        Vec2f uv;
-    };
-    class Mesh : public IAsset
-    {
-    public:
-        bool LoadAsset(ReadFileStream &file) override;
-        bool SaveAsset(WriteFileStream &file) override;
-        inline StringHash GetAssetFilePath() override
+        while (!bShouldExit.load())
         {
-            return 0;
-        }
+            IAsset* asset{nullptr};
+            if (!assetsToLoad.WaitAndPop(asset, 100))
+            {
+                continue;
+            }
 
-    private:
-        std::vector<Vector>   vertices;
-        std::vector<uint32_t> indices;
-    };
+            std::fstream file(asset->GetAssetFilePath().GetString(), std::ios::in | std::ios::binary);
+
+            auto fsize = file.tellg();
+            file.seekg(0, std::ios::end);
+            fsize = file.tellg() - fsize;
+            file.seekg(0, std::ios::beg);
+            
+            ReadFileStream stream(&file, 0, (size_t)fsize);
+
+            asset->LoadAsset(stream);
+        }
+    }
+
+    void AssetSaver::Run()
+    {
+        while (!bShouldExit.load())
+        {
+            IAsset* asset{nullptr};
+            if (!assetsToSave.WaitAndPop(asset, 100))
+            {
+                continue;
+            }
+
+            std::fstream file(asset->GetAssetFilePath().GetString(), std::ios::out | std::ios::binary);
+            
+            WriteFileStream stream(&file, 0, 0);
+
+            asset->SaveAsset(stream);
+        }
+    }
 }

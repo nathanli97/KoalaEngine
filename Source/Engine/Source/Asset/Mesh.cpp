@@ -23,16 +23,6 @@ constexpr uint32_t MeshFileCurrentVersion = 0x1;
 namespace Koala
 {
     Logger logger("MeshAsset");
-    static size_t GetFileSize(std::ifstream& file)
-    {
-        auto currOffset = file.tellg();
-        file.seekg( 0, std::ios::beg );
-        auto fsize = file.tellg();
-        file.seekg( 0, std::ios::end );
-        fsize = file.tellg() - fsize;
-        file.seekg( currOffset, std::ios::beg );
-        return fsize;
-    }
     
     struct AssetFileMetaData
     {
@@ -43,17 +33,14 @@ namespace Koala
         uint64_t offsetIndices;
     };
     
-    bool Mesh::LoadAsset(std::ifstream &file)
+    bool Mesh::LoadAsset(ReadFileStream &file)
     {
-        if (!file.is_open())
-            return false;
-        
-        size_t fileSize = GetFileSize(file);
+        size_t fileSize = file.GetFileSize();
         if (fileSize < sizeof(AssetFileMetaData))
             return false;
         
         AssetFileMetaData metaData;
-        file.read((char*)&metaData, sizeof(AssetFileMetaData));
+        file.Read((char*)&metaData, sizeof(AssetFileMetaData));
 
         if (metaData.fileMagicMask != MeshFileMagicMask)
         {
@@ -86,7 +73,7 @@ namespace Koala
 
             for (uint64_t i = 0; i < metaData.numVertices; ++i)
             {
-                file.read((char*)vecDataPtr, sizeof(Vector));
+                file.Read((char*)vecDataPtr, sizeof(Vector));
                 vecDataPtr++;
             }
             remainingFileSize += verticesAreaSize;
@@ -105,7 +92,7 @@ namespace Koala
 
             for (uint64_t i = 0; i < metaData.numIndices; ++i)
             {
-                file.read((char*)indicesDataPtr, sizeof(Vector));
+                file.Read((char*)indicesDataPtr, sizeof(Vector));
                 indicesDataPtr++;
             }
 
