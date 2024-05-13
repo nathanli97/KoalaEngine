@@ -33,7 +33,7 @@ if (${ENABLE_CPU_PROFILE})
     add_compile_definitions(ENABLE_CPU_PROFILE=1)
 endif ()
 
-set(COMMON_LIBRARIES Eigen3::Eigen glfw Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator volk::volk)
+set(COMMON_LIBRARIES Eigen3::Eigen glfw spdlog::spdlog_header_only Python::Python fmt::fmt GPUOpen::VulkanMemoryAllocator volk::volk)
 
 add_library(KoalaEngine STATIC ${MODULE_SOURCE_FILES} ${MODULE_INCLUDE_FILES})
 
@@ -49,13 +49,6 @@ if (${ENABLE_CPU_PROFILE})
 endif ()
 
 target_link_libraries(KoalaEngine PRIVATE ${Vulkan_LIBRARIES} ${COMMON_LIBRARIES})
-
-if (MINGW)
-    target_link_libraries(KoalaEngine PUBLIC spdlog::spdlog_header_only)
-else ()
-    target_link_libraries(KoalaEngine PUBLIC spdlog::spdlog)
-endif ()
-
 
 target_compile_features(KoalaEngine PUBLIC cxx_std_17)
 
