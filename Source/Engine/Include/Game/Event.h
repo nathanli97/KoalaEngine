@@ -17,13 +17,12 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include <vector>
+#include <cstdint>
 
-namespace Koala
-{
-    // Serializable object interface.
-    class ISerialize
+namespace Koala {
+    struct Event
     {
-        virtual bool Serialize(bool bIsSaving);
+        uint64_t event;
+        void*    data;
     };
 }

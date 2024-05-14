@@ -131,12 +131,25 @@ namespace Koala
 
     void KoalaEngine::Tick()
     {
+        static std::chrono::time_point prevTime = std::chrono::system_clock::now();
+        auto currTime = std::chrono::system_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::seconds>(currTime - prevTime);
         // TODO: Pass actual deltatime to the function.
-        float deltaTime = 0.01;
+        float deltaTime = (float)duration.count() * std::chrono::seconds::period::num / std::chrono::seconds::period::den;
+        
+        if (!currScene)
+        {
+            currScene = std::make_shared<Scene>();
+            currScene->Load();
+        }
+        
+        currScene->Update(deltaTime);
         RenderThread::Get().Tick_MainThread(deltaTime);
         AsyncWorker::WorkDispatcher::Get().Tick_MainThread(deltaTime);
         // TODO: remove this sleep
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
+        prevTime = currTime;
     }
 
     void KoalaEngine::Shutdown()

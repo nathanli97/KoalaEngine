@@ -15,39 +15,19 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 #pragma once
-
-#include "Core/StringHash.h"
-#include "FileSystem/FileStream.h"
+#include <memory>
+#include <vector>
 
 namespace Koala
 {
-    class IAsset
+    class Component
     {
     public:
-        virtual ~IAsset() = default;
-        // Load the asset. The implementation of LoadAsset should check
-        // The input data is baked or not.
-        virtual bool LoadAsset(ReadFileStream &file) = 0;
-        // Save Unbaked Asset. Only unbaked asset can be saved via this function.
-        virtual bool SaveAssetUnbaked(WriteFileStream &file) = 0;
-        
-        // Bake current unbaked data into baked format.
-        // Default implementation is use the same format between baked and unbaked version of asset.
-        // If asset's baked data format is different with unbaked version (e.g. Textures),
-        // Override it.
-        virtual bool Bake(WriteFileStream &file)
-        {
-            return SaveAssetUnbaked(file);
-        }
-        virtual StringHash GetAssetFilePath() = 0;
-
-        FORCEINLINE bool IsBakedData() const
-        {
-            return bBaked;
-        }
-    protected:
-        bool bBaked{false};
+        virtual ~Component() = default;
+        virtual void PreLoad() = 0;
+        virtual void DoLoad() = 0;
+        virtual void PostLoad() = 0;
+        std::vector<std::shared_ptr<Component>> subComponents;
     };
 }

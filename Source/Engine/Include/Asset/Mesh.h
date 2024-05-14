@@ -31,7 +31,8 @@ namespace Koala
     {
     public:
         bool LoadAsset(ReadFileStream &file) override;
-        bool SaveAsset(WriteFileStream &file) override;
+        bool SaveAssetUnbaked(WriteFileStream &file) override;
+
         inline StringHash GetAssetFilePath() override
         {
             return 0;

@@ -21,7 +21,7 @@
 
 namespace Koala
 {
-    class BakedAsset: public Asset
+    class BakedAsset: public IAsset
     {
     };
 }

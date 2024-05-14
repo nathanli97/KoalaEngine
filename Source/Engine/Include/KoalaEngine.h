@@ -20,6 +20,7 @@
 
 #pragma once
 #include "Definations.h"
+#include "Game/Scene.h"
 
 namespace Koala {
     enum class EEngineStage
@@ -77,6 +78,8 @@ namespace Koala {
         void Shutdown();
 
         std::atomic<EEngineStage> engineStage {EEngineStage::UnInitialized};
+
+        std::shared_ptr<Scene> currScene;
     };
 
     FORCEINLINE void LaunchKoala(int argc, char **argv)

@@ -24,23 +24,22 @@ namespace Koala
 {
     Logger logger("MeshAsset");
     
-    struct AssetFileMetaData
+    struct MeshAssetMetaData
     {
         uint32_t fileMagicMask {0};
         uint32_t fileVersion {0};
         uint64_t numVertices;
         uint64_t numIndices;
-        uint64_t offsetIndices;
     };
     
     bool Mesh::LoadAsset(ReadFileStream &file)
     {
         size_t fileSize = file.GetFileSize();
-        if (fileSize < sizeof(AssetFileMetaData))
+        if (fileSize < sizeof(MeshAssetMetaData))
             return false;
         
-        AssetFileMetaData metaData;
-        file.Read((char*)&metaData, sizeof(AssetFileMetaData));
+        MeshAssetMetaData metaData;
+        file.Read((char*)&metaData, sizeof(MeshAssetMetaData));
 
         if (metaData.fileMagicMask != MeshFileMagicMask)
         {
@@ -56,7 +55,7 @@ namespace Koala
         {
             logger.warning("This asset file is too old, may cause some problems!");
         }
-        size_t remainingFileSize = fileSize - sizeof(AssetFileMetaData);
+        size_t remainingFileSize = fileSize - sizeof(MeshAssetMetaData);
 
         {
             size_t verticesAreaSize = metaData.numVertices * sizeof(Vector);
@@ -98,6 +97,20 @@ namespace Koala
 
             remainingFileSize += indicesAreaSize;
         }
+
+        return true;
+    }
+
+    bool Mesh::SaveAssetUnbaked(WriteFileStream &file)
+    {
+        MeshAssetMetaData metaData;
+        metaData.fileMagicMask = MeshFileMagicMask;
+        metaData.fileVersion = MeshFileCurrentVersion;
+        metaData.numVertices = vertices.size();
+        metaData.numIndices = indices.size();
+
+        file.Write(vertices.data(), vertices.size() * sizeof(Vector));
+        file.Write(indices.data(), indices.size() * sizeof(uint32_t));
 
         return true;
     }

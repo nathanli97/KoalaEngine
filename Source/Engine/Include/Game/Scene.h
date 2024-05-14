@@ -1,4 +1,4 @@
-//Copyright 2024 Li Xingru
+﻿//Copyright 2024 Li Xingru
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //associated documentation files (the “Software”), to deal in the Software without restriction,
@@ -17,37 +17,18 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <list>
+#include <memory>
 
-#include "Core/StringHash.h"
-#include "FileSystem/FileStream.h"
+#include "Actor.h"
 
 namespace Koala
 {
-    class IAsset
-    {
+    class Scene {
     public:
-        virtual ~IAsset() = default;
-        // Load the asset. The implementation of LoadAsset should check
-        // The input data is baked or not.
-        virtual bool LoadAsset(ReadFileStream &file) = 0;
-        // Save Unbaked Asset. Only unbaked asset can be saved via this function.
-        virtual bool SaveAssetUnbaked(WriteFileStream &file) = 0;
-        
-        // Bake current unbaked data into baked format.
-        // Default implementation is use the same format between baked and unbaked version of asset.
-        // If asset's baked data format is different with unbaked version (e.g. Textures),
-        // Override it.
-        virtual bool Bake(WriteFileStream &file)
-        {
-            return SaveAssetUnbaked(file);
-        }
-        virtual StringHash GetAssetFilePath() = 0;
-
-        FORCEINLINE bool IsBakedData() const
-        {
-            return bBaked;
-        }
+        void Load();
+        void Update(float deltaTime);
     protected:
-        bool bBaked{false};
+        std::list<std::shared_ptr<Actor>> actors;
     };
 }
