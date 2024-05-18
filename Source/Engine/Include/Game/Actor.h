@@ -20,7 +20,7 @@
 
 #include "Event.h"
 #include "Asset/Asset.h"
-#include "Asset/Mesh.h"
+#include "Asset/MeshAsset.h"
 
 namespace Koala
 {
@@ -37,6 +37,6 @@ namespace Koala
         virtual void OnEvent(Event event) {}
 
     private:
-        std::shared_ptr<Mesh> mesh;
+        std::shared_ptr<MeshAsset> mesh;
     };
 }

@@ -1,4 +1,4 @@
-//Copyright 2024 Li Xingru
+﻿//Copyright 2024 Li Xingru
 //
 //Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
 //associated documentation files (the “Software”), to deal in the Software without restriction,
@@ -15,31 +15,16 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-#pragma once
-#include "Asset.h"
-#include "Math/MathDefinations.h"
 
-namespace Koala
+#pragma once
+#include "Asset/MeshAsset.h"
+
+namespace Koala::Asset
 {
-    struct Vector
-    {
-        Vec3f position;
-        Vec3f normal;
-        Vec2f uv;
-    };
-    class Mesh : public IAsset
+    class TriangleMesh : public MeshAsset
     {
     public:
-        bool LoadAsset(ReadFileStream &file) override;
-        bool SaveAssetUnbaked(WriteFileStream &file) override;
-
-        inline StringHash GetAssetFilePath() override
-        {
-            return 0;
-        }
-
-    private:
-        std::vector<Vector>   vertices;
-        std::vector<uint32_t> indices;
+        bool IsHardcodedAsset() override;
+        bool Initialize() override;
     };
 }

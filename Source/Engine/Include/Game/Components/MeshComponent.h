@@ -17,7 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #pragma once
 #include "Component.h"
-#include "Asset/Mesh.h"
+#include "Asset/MeshAsset.h"
 
 namespace Koala
 {
@@ -29,6 +29,6 @@ namespace Koala
         void PostLoad() override {}
 
     protected:
-        std::vector<std::shared_ptr<Mesh>> meshes;
+        std::vector<std::shared_ptr<MeshAsset>> meshes;
     };
 }

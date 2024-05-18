@@ -16,48 +16,27 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "FileSystem/AssetIO.h"
+#include "TriangleMesh.h"
 
-namespace Koala
+namespace Koala::Asset
 {
-    void AssetLoader::Run()
+    bool TriangleMesh::IsHardcodedAsset()
     {
-        while (!bShouldExit.load())
-        {
-            IAsset* asset{nullptr};
-            if (!assetsToLoad.WaitAndPop(asset, 100))
-            {
-                continue;
-            }
-
-            std::fstream file(asset->GetAssetFilePath().GetString(), std::ios::in | std::ios::binary);
-
-            auto fsize = file.tellg();
-            file.seekg(0, std::ios::end);
-            fsize = file.tellg() - fsize;
-            file.seekg(0, std::ios::beg);
-            
-            ReadFileStream stream(&file, 0, (size_t)fsize);
-
-            asset->LoadAsset(stream);
-        }
+        return true;
     }
 
-    void AssetSaver::Run()
+    bool TriangleMesh::Initialize()
     {
-        while (!bShouldExit.load())
-        {
-            IAsset* asset{nullptr};
-            if (!assetsToSave.WaitAndPop(asset, 100))
-            {
-                continue;
-            }
+        vertices.resize(3);
+        indices.resize(3);
 
-            std::fstream file(asset->GetAssetFilePath().GetString(), std::ios::out | std::ios::binary);
-            
-            WriteFileStream stream(&file, 0, 0);
-
-            asset->SaveAssetUnbaked(stream);
-        }
+        vertices[0].position = {-0.5f, -0.5f, 0};
+        vertices[1].position = {0.5f, -0.5f, 0};
+        vertices[2].position = {0.0f, 0.5f, 0};
+        indices[0] = 0;
+        indices[1] = 1;
+        indices[2] = 2;
+        
+        return true;
     }
 }

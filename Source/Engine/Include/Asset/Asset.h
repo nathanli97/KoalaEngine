@@ -32,6 +32,9 @@ namespace Koala
         virtual bool LoadAsset(ReadFileStream &file) = 0;
         // Save Unbaked Asset. Only unbaked asset can be saved via this function.
         virtual bool SaveAssetUnbaked(WriteFileStream &file) = 0;
+
+        virtual bool IsHardcodedAsset() { return false; }
+        virtual bool Initialize() { return true; }
         
         // Bake current unbaked data into baked format.
         // Default implementation is use the same format between baked and unbaked version of asset.

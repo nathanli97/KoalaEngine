@@ -16,7 +16,7 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#include "Asset/Mesh.h"
+#include "Asset/MeshAsset.h"
 
 constexpr uint32_t MeshFileMagicMask = 0x12341234;
 constexpr uint32_t MeshFileCurrentVersion = 0x1;
@@ -32,7 +32,7 @@ namespace Koala
         uint64_t numIndices;
     };
     
-    bool Mesh::LoadAsset(ReadFileStream &file)
+    bool MeshAsset::LoadAsset(ReadFileStream &file)
     {
         size_t fileSize = file.GetFileSize();
         if (fileSize < sizeof(MeshAssetMetaData))
@@ -101,7 +101,7 @@ namespace Koala
         return true;
     }
 
-    bool Mesh::SaveAssetUnbaked(WriteFileStream &file)
+    bool MeshAsset::SaveAssetUnbaked(WriteFileStream &file)
     {
         MeshAssetMetaData metaData;
         metaData.fileMagicMask = MeshFileMagicMask;
