@@ -25,44 +25,65 @@
 
 namespace Koala::FileIO
 {
-    struct FileHandleData
+    enum class EOpenFileMode
     {
-        std::fstream fileStream;
-        std::ios::openmode openmode;
+        OpenAsBinary = 1 << 0,
+        OpenAsText   = 1 << 1,
+        OpenAtAppend = 1 << 2,
+    };
 
+    typedef uint32_t EOpenFileModes;
+    
+    struct FileHandleDataBase
+    {
+        StringHash    fileName;
+        size_t        fileSize;
+        EOpenFileMode openMode;
 
-        StringHash               fileName;
-        size_t                   fileSize;
-        std::atomic<size_t>      currOffset;
+        FileHandleDataBase() = default;
+    };
 
-        FileHandleData() = default;
+    struct FileReadHandleData: public FileHandleDataBase
+    {
+        std::ifstream fileStream;
         FORCEINLINE bool IsVaild()
         {
             return fileStream.is_open();
         }
-        ~FileHandleData()
+        ~FileReadHandleData()
         {
             fileStream.close();
         }
     };
 
-    typedef std::shared_ptr<FileHandleData> FileHandle;
-
-    enum EOpenFileMode
+    struct FileWriteHandleData: public FileHandleDataBase
     {
-        Read,
-        Write,
-        ReadAndWrite
+        std::ofstream fileStream;
+        FORCEINLINE bool IsVaild()
+        {
+            return fileStream.is_open();
+        }
+        ~FileWriteHandleData()
+        {
+            fileStream.close();
+        }
     };
+
+    typedef std::shared_ptr<FileReadHandleData> ReadFileHandle;
+    typedef std::shared_ptr<FileWriteHandleData> WriteFileHandle;
+    
     class FileManager: public ISingleton
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(FileManager)
-        FileHandle OpenFile(StringHash path, EOpenFileMode openMode);
-        void CloseFile(StringHash path);
-        void CloseFile(FileHandle &handle);
+        ReadFileHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
+        WriteFileHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
+        
+        void CloseFile(ReadFileHandle &handle);
+        void CloseFile(WriteFileHandle &handle);
     private:
-        std::unordered_map<StringHash, FileHandle> openedFiles;
-        std::mutex                                 mutex;
+        std::unordered_map<StringHash, ReadFileHandle>  openedFilesForRead;
+        std::unordered_map<StringHash, WriteFileHandle> openedFilesForWrite;
+        std::mutex                                      mutex;
     };
 }
