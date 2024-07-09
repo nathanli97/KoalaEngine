@@ -106,4 +106,32 @@ namespace Koala::FileIO
             return handle;
         }
     }
+
+    void FileManager::CloseFile(ReadFileHandle &handle)
+    {
+        if (handle->fileStream.is_open())
+            handle->fileStream.close();
+
+        {
+            std::scoped_lock lock(mutex);
+            if (openedFilesForRead.contains(handle->fileName))
+            {
+                openedFilesForRead.erase(handle->fileName);
+            }
+        }
+    }
+
+    void FileManager::CloseFile(WriteFileHandle &handle)
+    {
+        if (handle->fileStream.is_open())
+            handle->fileStream.close();
+
+        {
+            std::scoped_lock lock(mutex);
+            if (openedFilesForWrite.contains(handle->fileName))
+            {
+                openedFilesForWrite.erase(handle->fileName);
+            }
+        }
+    }
 }
