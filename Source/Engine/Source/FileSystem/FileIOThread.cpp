@@ -16,24 +16,42 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#pragma once
+#include "FileSystem/FileIOThread.h"
 
-#include "Core/ThreadInterface.h"
-
-#include <functional>
 namespace Koala::FileIO
 {
-    class FileIOThread: public IThread
+    void FileIOThread::Run()
     {
-    public:
-        FileIOThread() = default;
-        void Run() override;
-        void AssignNewTask(std::function<void()> newTask);
-        void ShutdownIOThread();
-    private:
-        std::atomic<bool> atomicHasNewTask{false};
-        std::atomic<bool> atomicShouldShutdown{false};
-        std::atomic<bool> atomicTaskCompleted{false};
-        std::function<void()> task{nullptr};
-    };
+        while (!atomicShouldShutdown.load())
+        {
+            while (!task)
+                atomicHasNewTask.wait(true);
+            
+            if (atomicShouldShutdown.load() == true)
+                break;
+
+            task();
+
+            atomicTaskCompleted.store(true);
+            atomicTaskCompleted.notify_all();
+        }
+    }
+
+    void FileIOThread::AssignNewTask(std::function<void()> newTask)
+    {
+        task = newTask;
+        atomicTaskCompleted.store(false);
+        atomicHasNewTask.store(true);
+        atomicHasNewTask.notify_all();
+    }
+
+    void FileIOThread::ShutdownIOThread()
+    {
+        while (atomicTaskCompleted.load() == false)
+            atomicTaskCompleted.wait(true);
+        // assign a new dummy task
+        task = []() {};
+        atomicShouldShutdown.store(true);
+        atomicShouldShutdown.notify_all();
+    }
 }

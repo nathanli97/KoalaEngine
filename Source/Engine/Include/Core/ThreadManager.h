@@ -60,12 +60,14 @@ namespace Koala
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(ThreadManager)
+        // Create managed thread. The thread instance will be automatically deleted when engine is shutdowning.
         void CreateThreadManaged(IThread* inThread)
         {
             IThread * thread = inThread;
             threadObjects.push_back(thread);
             CreateThread(thread);
         }
+        // Create new thread.
         void CreateThread(IThread* inThread)
         {
             std::lock_guard lock(mutexForThreadList);
@@ -75,6 +77,7 @@ namespace Koala
                     inThread->Run();
                 });
         }
+        // Create thread by using lambda function.
         template <typename Callable>
         void CreateThread(Callable inFunc) requires std::invocable<Callable>
         {

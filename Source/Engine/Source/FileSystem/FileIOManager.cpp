@@ -16,27 +16,50 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 #include "FileSystem/FileIOManager.h"
+
+#include "Core/ThreadManager.h"
+#include "FileSystem/FileIOThread.h"
+
 namespace Koala::FileIO
 {
     bool FileIOManager::Initialize_MainThread()
     {
         auto numCPUCores = std::thread::hardware_concurrency();
-        CheckDiskPerformance();
 
-        uint32_t numReadThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).first);
-        uint32_t numWriteThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).second);
+        numReadThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).first);
+        numWriteThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).second);
+        
+        for (auto i = 0; i < numReadThreads; i++)
+        {
+            auto handle = new FileIOThread();
+            readThreadHandles.push_back(handle);
+            ThreadManager::Get().CreateThreadManaged(handle);
+        }
+
+        for (auto i = 0; i < numWriteThreads; i++)
+        {
+            auto handle = new FileIOThread();
+            readThreadHandles.push_back(handle);
+            ThreadManager::Get().CreateThreadManaged(handle);
+        }
+        return true;
     }
 
     bool FileIOManager::Shutdown_MainThread()
     {
+        for (auto handle: readThreadHandles)
+        {
+            auto t = static_cast<FileIOThread*> (handle);
+            t->ShutdownIOThread();
+        }
+
+        for (auto handle: writeThreadHandles)
+        {
+            auto t = static_cast<FileIOThread*> (handle);
+            t->ShutdownIOThread();
+        }
     }
 
-    void FileIOManager::Tick_MainThread(float deltaTime)
-    {
-    }
-
-    void FileIOManager::CheckDiskPerformance()
-    {
-        
-    }
+    void FileIOManager::Tick_MainThread(float /*deltaTime*/) {}
+    
 }

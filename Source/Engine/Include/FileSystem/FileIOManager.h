@@ -45,14 +45,17 @@ namespace Koala::FileIO
     class FileIOManager: IModule
     {
     public:
+        KOALA_IMPLEMENT_SINGLETON(FileIOManager)
         bool Initialize_MainThread() override;
         bool Shutdown_MainThread() override;
         void Tick_MainThread(float deltaTime) override;
 
     private:
-        void CheckDiskPerformance();
-        int numReadThreads{1};
-        int numWriteThreads{1};
+        uint32_t numReadThreads{1};
+        uint32_t numWriteThreads{1};
+
+        std::vector<IThread*> writeThreadHandles;
+        std::vector<IThread*> readThreadHandles;
 
         EDiskSpeedGrade diskSpeedGrade{EDiskSpeedGrade::Normal};
     };
