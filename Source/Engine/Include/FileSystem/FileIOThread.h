@@ -29,11 +29,15 @@ namespace Koala::FileIO
         FileIOThread() = default;
         void Run() override;
         void AssignNewTask(std::function<void()> newTask);
+        bool IsIdle() const
+        {
+            return atomicTaskInProgress.load() == false;
+        }
         void ShutdownIOThread();
     private:
         std::atomic<bool> atomicHasNewTask{false};
         std::atomic<bool> atomicShouldShutdown{false};
-        std::atomic<bool> atomicTaskCompleted{false};
+        std::atomic<bool> atomicTaskInProgress{true};
         std::function<void()> task{nullptr};
     };
 }

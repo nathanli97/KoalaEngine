@@ -17,6 +17,7 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <queue>
 #include <unordered_map>
 
 #include "Core/ModuleInterface.h"
@@ -35,11 +36,18 @@ namespace Koala::FileIO
 
     // Setting for uplimit of Read/Write threads
     const inline std::unordered_map<EDiskSpeedGrade, std::pair<int, int>> IOThreadNumDiskGradeMapping{
-        {EDiskSpeedGrade::SuperFast, {16, 2}},
+        {EDiskSpeedGrade::SuperFast, {16, 4}},
         {EDiskSpeedGrade::Fast, {8, 2}},
         {EDiskSpeedGrade::Normal, {4, 1}},
         {EDiskSpeedGrade::Slow, {2, 1}},
         {EDiskSpeedGrade::SuperSlow, {1, 1}},
+    };
+
+    struct FileIOTask
+    {
+        size_t offset;
+        size_t remainingSize;
+        void   *bufferStart;
     };
     
     class FileIOManager: IModule
@@ -56,7 +64,9 @@ namespace Koala::FileIO
 
         std::vector<IThread*> writeThreadHandles;
         std::vector<IThread*> readThreadHandles;
-
+        
         EDiskSpeedGrade diskSpeedGrade{EDiskSpeedGrade::Normal};
+        std::queue<FileIOTask> remainingReadTasks, remainingWriteTasks;
+        
     };
 }

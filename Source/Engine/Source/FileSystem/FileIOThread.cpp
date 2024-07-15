@@ -32,23 +32,23 @@ namespace Koala::FileIO
 
             task();
 
-            atomicTaskCompleted.store(true);
-            atomicTaskCompleted.notify_all();
+            atomicTaskInProgress.store(false);
+            atomicTaskInProgress.notify_all();
         }
     }
 
     void FileIOThread::AssignNewTask(std::function<void()> newTask)
     {
         task = newTask;
-        atomicTaskCompleted.store(false);
+        atomicTaskInProgress.store(false);
         atomicHasNewTask.store(true);
         atomicHasNewTask.notify_all();
     }
 
     void FileIOThread::ShutdownIOThread()
     {
-        while (atomicTaskCompleted.load() == false)
-            atomicTaskCompleted.wait(true);
+        while (atomicTaskInProgress.load() == true)
+            atomicTaskInProgress.wait(false);
         // assign a new dummy task
         task = []() {};
         atomicShouldShutdown.store(true);

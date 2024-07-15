@@ -29,14 +29,14 @@ namespace Koala::FileIO
         numReadThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).first);
         numWriteThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).second);
         
-        for (auto i = 0; i < numReadThreads; i++)
+        for (uint32_t i = 0; i < numReadThreads; i++)
         {
             auto handle = new FileIOThread();
             readThreadHandles.push_back(handle);
             ThreadManager::Get().CreateThreadManaged(handle);
         }
 
-        for (auto i = 0; i < numWriteThreads; i++)
+        for (uint32_t i = 0; i < numWriteThreads; i++)
         {
             auto handle = new FileIOThread();
             readThreadHandles.push_back(handle);
@@ -49,17 +49,62 @@ namespace Koala::FileIO
     {
         for (auto handle: readThreadHandles)
         {
-            auto t = static_cast<FileIOThread*> (handle);
+            auto t = dynamic_cast<FileIOThread*> (handle);
             t->ShutdownIOThread();
         }
 
         for (auto handle: writeThreadHandles)
         {
-            auto t = static_cast<FileIOThread*> (handle);
+            auto t = dynamic_cast<FileIOThread*> (handle);
             t->ShutdownIOThread();
         }
+
+        return true;
     }
 
-    void FileIOManager::Tick_MainThread(float /*deltaTime*/) {}
+    void FileIOManager::Tick_MainThread(float /*deltaTime*/)
+    {
+        std::vector<FileIOThread*> idleReadThreads, idleWriteThreads;
+        idleReadThreads.reserve(numReadThreads);
+        idleWriteThreads.reserve(numWriteThreads);
+        
+        for (auto handle: readThreadHandles)
+        {
+            auto t = dynamic_cast<FileIOThread*> (handle);
+            if (t->IsIdle())
+                idleReadThreads.push_back(t);
+        }
+
+        for (auto handle: writeThreadHandles)
+        {
+            auto t = dynamic_cast<FileIOThread*> (handle);
+            if (t->IsIdle())
+                idleWriteThreads.push_back(t);
+        }
+
+        if (idleReadThreads.size() > 0)
+        {
+            for (auto &thread: idleReadThreads)
+            {
+                if (remainingReadTasks.empty())
+                    break;
+                
+                auto task = remainingReadTasks.front();
+                remainingReadTasks.pop();
+
+                auto func = [task]()
+                {
+                    
+                };
+            }
+        }
+
+        if (idleWriteThreads.size() > 0)
+        {
+            
+        }
+        
+        
+    }
     
 }
