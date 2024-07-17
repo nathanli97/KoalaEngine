@@ -26,8 +26,8 @@ namespace Koala::FileIO
     {
         auto numCPUCores = std::thread::hardware_concurrency();
 
-        numReadThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).first);
-        numWriteThreads = std::min(numCPUCores, (uint32_t)IOThreadNumDiskGradeMapping.at(diskSpeedGrade).second);
+        numReadThreads = std::min(numCPUCores, numReadThreads);
+        numWriteThreads = std::min(numCPUCores, numWriteThreads);
         
         for (uint32_t i = 0; i < numReadThreads; i++)
         {
@@ -92,8 +92,15 @@ namespace Koala::FileIO
                 auto task = remainingReadTasks.front();
                 remainingReadTasks.pop();
 
+                if (!task.handle->IsVaild())
+                    continue;
+                
                 auto func = [task]()
                 {
+                    if (!task.handle->IsVaild())
+                        return;
+
+                    constexpr size_t BlockSize = 4096;
                     
                 };
             }
@@ -106,5 +113,10 @@ namespace Koala::FileIO
         
         
     }
-    
+
+    void FileIOManager::TickFileReadIOThread(size_t threadIdx)
+    {
+        FileIOThread* thread = dynamic_cast<FileIOThread*> (readThreadHandles.at(threadIdx));
+        
+    }
 }

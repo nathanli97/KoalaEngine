@@ -21,7 +21,7 @@
 namespace Koala::FileIO
 {
     static Logger logger("FileIO");
-    ReadFileHandle FileManager::OpenFileForRead(StringHash path, EOpenFileModes openMode)
+    FileReadHandle FileManager::OpenFileForRead(StringHash path, EOpenFileModes openMode)
     {
         std::scoped_lock lock(mutex);
         if (openedFilesForWrite.contains(path))
@@ -64,7 +64,7 @@ namespace Koala::FileIO
         }
     }
 
-    WriteFileHandle FileManager::OpenFileForWrite(StringHash path, EOpenFileModes openMode)
+    FileWriteHandle FileManager::OpenFileForWrite(StringHash path, EOpenFileModes openMode)
     {
         std::scoped_lock lock(mutex);
         if (openedFilesForRead.contains(path))
@@ -107,7 +107,7 @@ namespace Koala::FileIO
         }
     }
 
-    void FileManager::CloseFile(ReadFileHandle &handle)
+    void FileManager::CloseFile(FileReadHandle &handle)
     {
         if (handle->fileStream.is_open())
             handle->fileStream.close();
@@ -121,7 +121,7 @@ namespace Koala::FileIO
         }
     }
 
-    void FileManager::CloseFile(WriteFileHandle &handle)
+    void FileManager::CloseFile(FileWriteHandle &handle)
     {
         if (handle->fileStream.is_open())
             handle->fileStream.close();

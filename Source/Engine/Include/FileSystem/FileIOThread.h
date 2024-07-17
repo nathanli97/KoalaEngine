@@ -21,6 +21,9 @@
 #include "Core/ThreadInterface.h"
 
 #include <functional>
+
+#include "FileIOTask.h"
+
 namespace Koala::FileIO
 {
     class FileIOThread: public IThread
@@ -28,16 +31,25 @@ namespace Koala::FileIO
     public:
         FileIOThread() = default;
         void Run() override;
-        void AssignNewTask(std::function<void()> newTask);
         bool IsIdle() const
         {
             return atomicTaskInProgress.load() == false;
         }
         void ShutdownIOThread();
-    private:
-        std::atomic<bool> atomicHasNewTask{false};
+        virtual void DoIOTask() = 0;
+    protected:
+        std::atomic<bool> atomicHasPendingTask{false};
         std::atomic<bool> atomicShouldShutdown{false};
-        std::atomic<bool> atomicTaskInProgress{true};
-        std::function<void()> task{nullptr};
+        std::atomic<bool> atomicTaskInProgress{false};
+    };
+
+    class FileReadIOThread final: public FileIOThread
+    {
+    public:
+        void SetTask(FileReadIOTask &&);
+        void DoIOTask() override;
+
+    private:
+        FileReadIOTask task{};
     };
 }

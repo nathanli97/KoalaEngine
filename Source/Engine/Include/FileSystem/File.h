@@ -69,21 +69,21 @@ namespace Koala::FileIO
         }
     };
 
-    typedef std::shared_ptr<FileReadHandleData> ReadFileHandle;
-    typedef std::shared_ptr<FileWriteHandleData> WriteFileHandle;
+    typedef std::shared_ptr<FileReadHandleData> FileReadHandle;
+    typedef std::shared_ptr<FileWriteHandleData> FileWriteHandle;
     
     class FileManager: public ISingleton
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(FileManager)
-        ReadFileHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
-        WriteFileHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
+        FileReadHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
+        FileWriteHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
         
-        void CloseFile(ReadFileHandle &handle);
-        void CloseFile(WriteFileHandle &handle);
+        void CloseFile(FileReadHandle &handle);
+        void CloseFile(FileWriteHandle &handle);
     private:
-        std::unordered_map<StringHash, ReadFileHandle>  openedFilesForRead;
-        std::unordered_map<StringHash, WriteFileHandle> openedFilesForWrite;
+        std::unordered_map<StringHash, FileReadHandle>  openedFilesForRead;
+        std::unordered_map<StringHash, FileWriteHandle> openedFilesForWrite;
         std::mutex                                      mutex;
     };
 }

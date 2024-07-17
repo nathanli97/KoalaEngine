@@ -21,33 +21,26 @@
 #include <unordered_map>
 
 #include "File.h"
-#include "FileIOTask.h"
 #include "Core/ModuleInterface.h"
 #include "Core/ThreadInterface.h"
 
 namespace Koala::FileIO
 {
-    class FileIOManager: IModule
+    struct FileIOTask
     {
-    public:
-        KOALA_IMPLEMENT_SINGLETON(FileIOManager)
-        bool Initialize_MainThread() override;
-        bool Shutdown_MainThread() override;
-        void Tick_MainThread(float deltaTime) override;
+        size_t offset;
+        size_t remainingSize;
+        void   *bufferStart;
+        std::function<void(bool bOk, size_t size, void *buffer)> callback;
+    };
 
-    private:
-        void TickFileReadIOThread(size_t threadIdx);
+    struct FileReadIOTask: public FileIOTask
+    {
+        FileReadHandle handle;
+    };
 
-        uint32_t numReadThreads{4};
-        uint32_t numWriteThreads{2};
-
-        std::vector<IThread*> writeThreadHandles;
-        std::vector<IThread*> readThreadHandles;
-        
-        std::queue<FileReadIOTask> remainingReadTasks;
-        std::queue<FileWriteIOTask> remainingWriteTasks;
-
-        
-        
+    struct FileWriteIOTask: public FileIOTask
+    {
+        FileWriteHandle handle;
     };
 }

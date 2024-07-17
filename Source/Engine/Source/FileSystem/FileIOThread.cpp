@@ -20,38 +20,65 @@
 
 namespace Koala::FileIO
 {
+    constexpr size_t BlockSize = 4096;
+    constexpr size_t MaxContinuousReadBlocks = 64;
+
     void FileIOThread::Run()
     {
         while (!atomicShouldShutdown.load())
         {
-            while (!task)
-                atomicHasNewTask.wait(true);
-            
-            if (atomicShouldShutdown.load() == true)
-                break;
-
-            task();
-
-            atomicTaskInProgress.store(false);
-            atomicTaskInProgress.notify_all();
+            while (atomicHasPendingTask.load() == false)
+                atomicHasPendingTask.wait(true);
+            DoIOTask();
         }
-    }
-
-    void FileIOThread::AssignNewTask(std::function<void()> newTask)
-    {
-        task = newTask;
-        atomicTaskInProgress.store(false);
-        atomicHasNewTask.store(true);
-        atomicHasNewTask.notify_all();
     }
 
     void FileIOThread::ShutdownIOThread()
     {
         while (atomicTaskInProgress.load() == true)
             atomicTaskInProgress.wait(false);
-        // assign a new dummy task
-        task = []() {};
+        
+        atomicHasPendingTask.store(true);
+        atomicHasPendingTask.notify_all();
+        
         atomicShouldShutdown.store(true);
         atomicShouldShutdown.notify_all();
+    }
+    
+
+    void FileReadIOThread::SetTask(FileReadIOTask && inTask)
+    {
+        task = std::move(inTask);
+    }
+
+    void FileReadIOThread::DoIOTask()
+    {
+        if (task.remainingSize != 0 && task.bufferStart)
+        {
+            size_t sizeHaveRead = 0;
+            char * buffer = static_cast<char*>(task.bufferStart) + task.offset;
+            
+            FileReadHandle handle = task.handle;
+            
+            size_t blocks = std::min(task.remainingSize / BlockSize, MaxContinuousReadBlocks);
+
+            if (blocks == 0)
+                blocks = 1;
+
+            for (auto i = 0; i < blocks; ++i)
+            {
+                int64_t readSize = std::min(BlockSize, task.remainingSize);
+                
+                handle->fileStream.read(buffer + sizeHaveRead, readSize);
+                sizeHaveRead += handle->fileStream.gcount();
+            }
+
+            task.offset += sizeHaveRead;
+            
+            if (!handle->fileStream.eof())
+                task.remainingSize -= sizeHaveRead;
+            else
+                task.remainingSize = 0;
+        }
     }
 }
