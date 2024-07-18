@@ -18,8 +18,11 @@
 
 #pragma once
 #include <queue>
+#include <stdbool.h>
 #include <unordered_map>
+#include <unordered_set>
 
+#include "Core/StringHash.h"
 #include "File.h"
 #include "FileIOTask.h"
 #include "Core/ModuleInterface.h"
@@ -35,6 +38,8 @@ namespace Koala::FileIO
         bool Shutdown_MainThread() override;
         void Tick_MainThread(float deltaTime) override;
 
+        void RequestReadFileAsync(FileReadHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
+        void RequestWriteFileAsync(FileWriteHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
     private:
         void TickFileReadIOThread(size_t threadIdx);
 
@@ -43,11 +48,11 @@ namespace Koala::FileIO
 
         std::vector<IThread*> writeThreadHandles;
         std::vector<IThread*> readThreadHandles;
-        
-        std::queue<FileReadIOTask> remainingReadTasks;
-        std::queue<FileWriteIOTask> remainingWriteTasks;
 
+        std::unordered_map<FileReadHandle, uint32_t> readingFileMap_ThreadIdx;
+        std::unordered_set<FileWriteHandle, uint32_t> writingFileSet_ThreadIdx;
         
-        
+        // std::queue<FileReadIOTask> remainingReadTasks;
+        // std::queue<FileWriteIOTask> remainingWriteTasks;
     };
 }

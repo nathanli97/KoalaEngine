@@ -23,6 +23,7 @@
 #include <functional>
 
 #include "FileIOTask.h"
+#include "TSContainer/QueueTS.h"
 
 namespace Koala::FileIO
 {
@@ -37,7 +38,9 @@ namespace Koala::FileIO
         }
         void ShutdownIOThread();
         virtual void DoIOTask() = 0;
+        
     protected:
+
         std::atomic<bool> atomicHasPendingTask{false};
         std::atomic<bool> atomicShouldShutdown{false};
         std::atomic<bool> atomicTaskInProgress{false};
@@ -46,10 +49,16 @@ namespace Koala::FileIO
     class FileReadIOThread final: public FileIOThread
     {
     public:
-        void SetTask(FileReadIOTask &&);
         void DoIOTask() override;
-
     private:
-        FileReadIOTask task{};
+        std::queue<FileReadTask> taskQueue;
+    };
+
+    class FileWriteIOThread final: public FileIOThread
+    {
+    public:
+        void DoIOTask() override;
+    private:
+        std::queue<FileWriteTask> taskQueue;
     };
 }

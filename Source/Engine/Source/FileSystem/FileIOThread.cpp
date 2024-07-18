@@ -21,8 +21,24 @@
 namespace Koala::FileIO
 {
     constexpr size_t BlockSize = 4096;
-    constexpr size_t MaxContinuousReadBlocks = 64;
+    constexpr size_t MaxContinuousIOWorkBlocks = 64;
 
+    size_t FilePriorityToBlockNum(EFilePriority inPriority)
+    {
+        switch (inPriority)
+        {
+        case EFilePriority::Highest:
+            return 64;
+        case EFilePriority::High:
+            return 32;
+        case EFilePriority::Normal:
+            return 16;
+        case EFilePriority::Low:
+            return 8;
+        case EFilePriority::Lowest:
+            return 4;
+        }
+    }
     void FileIOThread::Run()
     {
         while (!atomicShouldShutdown.load())
@@ -35,24 +51,20 @@ namespace Koala::FileIO
 
     void FileIOThread::ShutdownIOThread()
     {
-        while (atomicTaskInProgress.load() == true)
-            atomicTaskInProgress.wait(false);
-        
-        atomicHasPendingTask.store(true);
-        atomicHasPendingTask.notify_all();
-        
         atomicShouldShutdown.store(true);
         atomicShouldShutdown.notify_all();
     }
     
 
-    void FileReadIOThread::SetTask(FileReadIOTask && inTask)
-    {
-        task = std::move(inTask);
-    }
-
     void FileReadIOThread::DoIOTask()
     {
+        if (!taskQueue.empty())
+            return;
+
+        auto task = taskQueue.front();
+        taskQueue.pop();
+        
+        
         if (task.remainingSize != 0 && task.bufferStart)
         {
             size_t sizeHaveRead = 0;
@@ -60,11 +72,12 @@ namespace Koala::FileIO
             
             FileReadHandle handle = task.handle;
             
-            size_t blocks = std::min(task.remainingSize / BlockSize, MaxContinuousReadBlocks);
-
+            size_t blocks = std::min(task.remainingSize / BlockSize, FilePriorityToBlockNum(task.handle->priority));
+            blocks = std::min(blocks, MaxContinuousIOWorkBlocks);
+            
             if (blocks == 0)
                 blocks = 1;
-
+            
             for (auto i = 0; i < blocks; ++i)
             {
                 int64_t readSize = std::min(BlockSize, task.remainingSize);
@@ -72,7 +85,7 @@ namespace Koala::FileIO
                 handle->fileStream.read(buffer + sizeHaveRead, readSize);
                 sizeHaveRead += handle->fileStream.gcount();
             }
-
+            
             task.offset += sizeHaveRead;
             
             if (!handle->fileStream.eof())
@@ -80,5 +93,10 @@ namespace Koala::FileIO
             else
                 task.remainingSize = 0;
         }
+    }
+
+    void FileWriteIOThread::DoIOTask()
+    {
+        // TODO...
     }
 }
