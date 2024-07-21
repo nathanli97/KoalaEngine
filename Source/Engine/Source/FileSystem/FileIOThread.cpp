@@ -68,8 +68,6 @@ namespace Koala::FileIO
         
         if (task.remainingSize != 0 && task.bufferStart)
         {
-            int64_t size = 0;
-            char * buffer = static_cast<char*>(task.bufferStart) + task.offset;
             
             FileHandle handle = task.handle;
             
@@ -79,31 +77,40 @@ namespace Koala::FileIO
             if (blocks == 0)
                 blocks = 1;
 
+            int64_t remainingSize = task.remainingSize;
+            int64_t size = 0;
+
             if (bIsReadThread)
             {
+                char * buffer = static_cast<char*>(task.bufferStart) + task.offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
-                    int64_t blockSize = std::min(BlockSize, task.remainingSize);
+                    int64_t blockSize = std::min(BlockSize, remainingSize);
 
                     handle->fileStream.read(buffer + size, blockSize);
-                    size += handle->fileStream.gcount();
+                    int64_t readSize = handle->fileStream.gcount();
+                    size += readSize;
+                    remainingSize -= readSize;
                 }
             }
             else
             {
+                const char * buffer = static_cast<const char*>(task.bufferStart) + task.offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
-                    int64_t blockSize = std::min(BlockSize, task.remainingSize);
+                    int64_t blockSize = std::min(BlockSize, remainingSize);
 
                     handle->fileStream.write(buffer + size, blockSize);
-                    size += handle->fileStream.gcount();
+                    int64_t writeSize = handle->fileStream.gcount();
+                    size += writeSize;
+                    remainingSize -= writeSize;
                 }
             }
             
             task.offset += size;
             
             if (!bIsReadThread || !handle->IsEOF() && handle->IsValid())
-                task.remainingSize -= size;
+                task.remainingSize = remainingSize;
             else
                 task.remainingSize = 0;
         }

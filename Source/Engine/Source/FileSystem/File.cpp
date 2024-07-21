@@ -63,7 +63,7 @@ namespace Koala::FileIO
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
-
+            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenAsRead;
             
             openedFilesForRead.emplace(path, handle) ;
 
@@ -111,7 +111,7 @@ namespace Koala::FileIO
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
-
+            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenAsWrite;
             
             openedFilesForWrite.emplace(path, handle) ;
 
