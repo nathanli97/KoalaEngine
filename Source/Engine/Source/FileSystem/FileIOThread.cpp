@@ -20,10 +20,10 @@
 
 namespace Koala::FileIO
 {
-    constexpr size_t BlockSize = 4096;
-    constexpr size_t MaxContinuousIOWorkBlocks = 64;
+    constexpr int64_t BlockSize = 4096;
+    constexpr int64_t MaxContinuousIOWorkBlocks = 64;
 
-    size_t FilePriorityToBlockNum(EFilePriority inPriority)
+    int64_t FilePriorityToBlockNum(EFilePriority inPriority)
     {
         switch (inPriority)
         {
@@ -37,6 +37,7 @@ namespace Koala::FileIO
             return 8;
         case EFilePriority::Lowest:
             return 4;
+        default: return 1;
         }
     }
     void FileIOThread::Run()
@@ -54,9 +55,9 @@ namespace Koala::FileIO
         atomicShouldShutdown.store(true);
         atomicShouldShutdown.notify_all();
     }
-    
 
-    void FileReadIOThread::DoIOTask()
+
+    void FileIOThread::DoWork()
     {
         if (!taskQueue.empty())
             return;
@@ -67,36 +68,44 @@ namespace Koala::FileIO
         
         if (task.remainingSize != 0 && task.bufferStart)
         {
-            size_t sizeHaveRead = 0;
+            int64_t size = 0;
             char * buffer = static_cast<char*>(task.bufferStart) + task.offset;
             
-            FileReadHandle handle = task.handle;
+            FileHandle handle = task.handle;
             
-            size_t blocks = std::min(task.remainingSize / BlockSize, FilePriorityToBlockNum(task.handle->priority));
+            int64_t blocks = std::min(task.remainingSize / BlockSize, FilePriorityToBlockNum(task.handle->priority));
             blocks = std::min(blocks, MaxContinuousIOWorkBlocks);
             
             if (blocks == 0)
                 blocks = 1;
-            
-            for (auto i = 0; i < blocks; ++i)
+
+            if (bIsReadThread)
             {
-                int64_t readSize = std::min(BlockSize, task.remainingSize);
-                
-                handle->fileStream.read(buffer + sizeHaveRead, readSize);
-                sizeHaveRead += handle->fileStream.gcount();
+                for (auto i = 0; i < blocks; ++i)
+                {
+                    int64_t blockSize = std::min(BlockSize, task.remainingSize);
+
+                    handle->fileStream.read(buffer + size, blockSize);
+                    size += handle->fileStream.gcount();
+                }
+            }
+            else
+            {
+                for (auto i = 0; i < blocks; ++i)
+                {
+                    int64_t blockSize = std::min(BlockSize, task.remainingSize);
+
+                    handle->fileStream.write(buffer + size, blockSize);
+                    size += handle->fileStream.gcount();
+                }
             }
             
-            task.offset += sizeHaveRead;
+            task.offset += size;
             
-            if (!handle->fileStream.eof())
-                task.remainingSize -= sizeHaveRead;
+            if (!bIsReadThread || !handle->IsEOF() && handle->IsValid())
+                task.remainingSize -= size;
             else
                 task.remainingSize = 0;
         }
-    }
-
-    void FileWriteIOThread::DoIOTask()
-    {
-        // TODO...
     }
 }

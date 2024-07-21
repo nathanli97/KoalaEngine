@@ -18,29 +18,18 @@
 
 #pragma once
 #include <queue>
-#include <unordered_map>
 
 #include "File.h"
-#include "Core/ModuleInterface.h"
-#include "Core/ThreadInterface.h"
 
 namespace Koala::FileIO
 {
+    typedef std::function<void(bool bOk, int64_t size, void *buffer)> FileIOCallback;
     struct FileIOTask
     {
-        size_t offset;
-        size_t remainingSize;
+        int64_t offset;
+        int64_t remainingSize;
         void   *bufferStart;
-        std::function<void(bool bOk, size_t size, void *buffer)> callback;
-    };
-
-    struct FileReadIOTask: public FileIOTask
-    {
-        FileReadHandle handle;
-    };
-
-    struct FileWriteIOTask: public FileIOTask
-    {
-        FileWriteHandle handle;
+        FileIOCallback callback;
+        FileHandle handle;
     };
 }

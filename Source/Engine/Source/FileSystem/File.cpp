@@ -18,11 +18,15 @@
 
 #include "FileSystem/File.h"
 
+#include "Core/Check.h"
+
 namespace Koala::FileIO
 {
     static Logger logger("FileIO");
-    FileReadHandle FileManager::OpenFileForRead(StringHash path, EOpenFileModes openMode)
+    FileHandle FileManager::OpenFileForRead(StringHash path, EOpenFileModes openMode)
     {
+        check(openMode & (uint32_t)EOpenFileMode::OpenAsRead);
+
         std::scoped_lock lock(mutex);
         if (openedFilesForWrite.contains(path))
         {
@@ -33,7 +37,7 @@ namespace Koala::FileIO
             return openedFilesForRead[path];
         else
         {
-            std::ifstream stream;
+            std::fstream stream;
             std::ios::openmode mode{};
             if (openMode & (uint32_t)EOpenFileMode::OpenAsBinary)
             {
@@ -44,6 +48,9 @@ namespace Koala::FileIO
             {
                 // Ignore.
             }
+
+            mode |= std::ios::in;
+
             stream.open(path.GetString(), mode);
 
             if (!stream.is_open())
@@ -52,7 +59,7 @@ namespace Koala::FileIO
                 return nullptr;
             }
             
-            auto handle = std::make_shared<FileReadHandleData>();
+            auto handle = std::make_shared<FileHandleData>();
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
@@ -64,8 +71,10 @@ namespace Koala::FileIO
         }
     }
 
-    FileWriteHandle FileManager::OpenFileForWrite(StringHash path, EOpenFileModes openMode)
+    FileHandle FileManager::OpenFileForWrite(StringHash path, EOpenFileModes openMode)
     {
+        check(openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
+
         std::scoped_lock lock(mutex);
         if (openedFilesForRead.contains(path))
         {
@@ -76,7 +85,7 @@ namespace Koala::FileIO
             return openedFilesForWrite[path];
         else
         {
-            std::ofstream stream;
+            std::fstream stream;
             std::ios::openmode mode{};
             if (openMode & (uint32_t)EOpenFileMode::OpenAsBinary)
             {
@@ -87,6 +96,9 @@ namespace Koala::FileIO
             {
                 mode |= std::ios::app;
             }
+
+            mode |= std::ios::out;
+
             stream.open(path.GetString(), mode);
 
             if (!stream.is_open())
@@ -95,7 +107,7 @@ namespace Koala::FileIO
                 return nullptr;
             }
             
-            auto handle = std::make_shared<FileWriteHandleData>();
+            auto handle = std::make_shared<FileHandleData>();
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
@@ -107,30 +119,25 @@ namespace Koala::FileIO
         }
     }
 
-    void FileManager::CloseFile(FileReadHandle &handle)
+    void FileManager::CloseFile(FileHandle &handle)
     {
         if (handle->fileStream.is_open())
             handle->fileStream.close();
-
         {
             std::scoped_lock lock(mutex);
-            if (openedFilesForRead.contains(handle->fileName))
+            if (handle->IsOpenedForReadOnly())
             {
-                openedFilesForRead.erase(handle->fileName);
+                if (openedFilesForRead.contains(handle->fileName))
+                {
+                    openedFilesForRead.erase(handle->fileName);
+                }
             }
-        }
-    }
-
-    void FileManager::CloseFile(FileWriteHandle &handle)
-    {
-        if (handle->fileStream.is_open())
-            handle->fileStream.close();
-
-        {
-            std::scoped_lock lock(mutex);
-            if (openedFilesForWrite.contains(handle->fileName))
+            else
             {
-                openedFilesForWrite.erase(handle->fileName);
+                if (openedFilesForWrite.contains(handle->fileName))
+                {
+                    openedFilesForWrite.erase(handle->fileName);
+                }
             }
         }
     }

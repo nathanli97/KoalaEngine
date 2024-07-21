@@ -30,60 +30,76 @@ namespace Koala::FileIO
         OpenAsBinary = 1 << 0,
         OpenAsText   = 1 << 1,
         OpenAtAppend = 1 << 2,
+        OpenAsRead   = 1 << 3,
+        OpenAsWrite  = 1 << 4,
     };
-
     typedef uint32_t EOpenFileModes;
-    
-    struct FileHandleDataBase
-    {
-        StringHash    fileName;
-        size_t        fileSize;
-        EOpenFileMode openMode;
 
-        FileHandleDataBase() = default;
+    enum class EFilePriority
+    {
+        Highest = 5,
+        High    = 4,
+        Normal  = 3,
+        Low     = 2,
+        Lowest  = 1
     };
 
-    struct FileReadHandleData: public FileHandleDataBase
+    struct FileHandleData
     {
-        std::ifstream fileStream;
-        FORCEINLINE bool IsVaild()
+        StringHash     fileName;
+        size_t         fileSize;
+        EOpenFileModes openMode;
+        EFilePriority  priority;
+        std::fstream   fileStream;
+
+
+        FileHandleData() = default;
+
+        FORCEINLINE bool IsValid() const
+        {
+            return fileName.GetHash() != 0 && fileStream.is_open() && fileStream.good();
+        }
+
+        FORCEINLINE bool IsEOF() const
+        {
+            return fileStream.eof();
+        }
+
+        FORCEINLINE bool IsOpened() const
         {
             return fileStream.is_open();
         }
-        ~FileReadHandleData()
+
+        FORCEINLINE bool IsOpenedForReadOnly() const
         {
-            fileStream.close();
+            return openMode & (uint32_t)EOpenFileMode::OpenAsRead &&
+                !(openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
+        }
+
+        FORCEINLINE bool CanRead() const
+        {
+            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenAsRead;
+        }
+
+        FORCEINLINE bool CanWrite() const
+        {
+            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenAsWrite;
         }
     };
 
-    struct FileWriteHandleData: public FileHandleDataBase
-    {
-        std::ofstream fileStream;
-        FORCEINLINE bool IsVaild()
-        {
-            return fileStream.is_open();
-        }
-        ~FileWriteHandleData()
-        {
-            fileStream.close();
-        }
-    };
+    typedef std::shared_ptr<FileHandleData> FileHandle;
 
-    typedef std::shared_ptr<FileReadHandleData> FileReadHandle;
-    typedef std::shared_ptr<FileWriteHandleData> FileWriteHandle;
-    
     class FileManager: public ISingleton
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(FileManager)
-        FileReadHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
-        FileWriteHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
+        FileHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
+        FileHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
         
-        void CloseFile(FileReadHandle &handle);
-        void CloseFile(FileWriteHandle &handle);
+        void CloseFile(FileHandle &handle);
     private:
-        std::unordered_map<StringHash, FileReadHandle>  openedFilesForRead;
-        std::unordered_map<StringHash, FileWriteHandle> openedFilesForWrite;
+        std::unordered_map<StringHash, FileHandle>  openedFilesForRead;
+        std::unordered_map<StringHash, FileHandle> openedFilesForWrite;
         std::mutex                                      mutex;
     };
 }

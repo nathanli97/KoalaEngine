@@ -31,34 +31,25 @@ namespace Koala::FileIO
     {
     public:
         FileIOThread() = default;
+        explicit FileIOThread(bool bInIsReadThread): bIsReadThread(bInIsReadThread) {}
+
         void Run() override;
         bool IsIdle() const
         {
             return atomicTaskInProgress.load() == false;
         }
         void ShutdownIOThread();
+        void DoWork();
         virtual void DoIOTask() = 0;
         
     protected:
+        std::queue<FileIOTask> taskQueue;
+
+        bool bIsReadThread{true};
 
         std::atomic<bool> atomicHasPendingTask{false};
         std::atomic<bool> atomicShouldShutdown{false};
         std::atomic<bool> atomicTaskInProgress{false};
     };
 
-    class FileReadIOThread final: public FileIOThread
-    {
-    public:
-        void DoIOTask() override;
-    private:
-        std::queue<FileReadTask> taskQueue;
-    };
-
-    class FileWriteIOThread final: public FileIOThread
-    {
-    public:
-        void DoIOTask() override;
-    private:
-        std::queue<FileWriteTask> taskQueue;
-    };
 }
