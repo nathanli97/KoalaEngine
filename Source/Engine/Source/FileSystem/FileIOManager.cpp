@@ -22,6 +22,7 @@
 
 namespace Koala::FileIO
 {
+    constexpr uint32_t IOThreadMaxQueueLength = 500;
     bool FileIOManager::Initialize_MainThread()
     {
         auto numCPUCores = std::thread::hardware_concurrency();
@@ -31,14 +32,14 @@ namespace Koala::FileIO
         
         for (uint32_t i = 0; i < numReadThreads; i++)
         {
-            auto handle = new FileIOThread();
+            auto handle = new FileIOThread(true);
             readThreadHandles.push_back(handle);
             ThreadManager::Get().CreateThreadManaged(handle);
         }
 
         for (uint32_t i = 0; i < numWriteThreads; i++)
         {
-            auto handle = new FileIOThread();
+            auto handle = new FileIOThread(false);
             readThreadHandles.push_back(handle);
             ThreadManager::Get().CreateThreadManaged(handle);
         }
@@ -64,59 +65,61 @@ namespace Koala::FileIO
 
     void FileIOManager::Tick_MainThread(float /*deltaTime*/)
     {
-        std::vector<FileIOThread*> idleReadThreads, idleWriteThreads;
-        idleReadThreads.reserve(numReadThreads);
-        idleWriteThreads.reserve(numWriteThreads);
+        std::vector<FileIOThread*> readThreads, writeThreads;
+
+        // Process finished tasks
+        for (auto threadHandle: readThreadHandles)
+        {
+            TickFileIOThread(threadHandle);
+        }
+
+        for (auto threadHandle: writeThreadHandles)
+        {
+            TickFileIOThread(threadHandle);
+        }
+
+        // Process new tasks
+        if (remainingReadTasks.empty() && remainingWriteTasks.empty())
+            return;
         
-        for (auto handle: readThreadHandles)
+        readThreads.reserve(readThreadHandles.size());
+        writeThreads.reserve(writeThreadHandles.size());
+        for (auto threadHandle: readThreadHandles)
         {
-            auto t = dynamic_cast<FileIOThread*> (handle);
-            if (t->IsIdle())
-                idleReadThreads.push_back(t);
+            readThreads.push_back(dynamic_cast<FileIOThread*>(threadHandle));
         }
 
-        for (auto handle: writeThreadHandles)
+        for (auto threadHandle: writeThreadHandles)
         {
-            auto t = dynamic_cast<FileIOThread*> (handle);
-            if (t->IsIdle())
-                idleWriteThreads.push_back(t);
+            writeThreads.push_back(dynamic_cast<FileIOThread*>(threadHandle));
         }
 
-        if (idleReadThreads.size() > 0)
+        std::sort(readThreads.begin(), readThreads.end(), [](FileIOThread* a, FileIOThread* b)
         {
-            for (auto &thread: idleReadThreads)
-            {
-                if (remainingReadTasks.empty())
-                    break;
-                
-                auto task = remainingReadTasks.front();
-                remainingReadTasks.pop();
+            return a->GetQueueLength() < b->GetQueueLength();
+        });
 
-                if (!task.handle->IsVaild())
-                    continue;
-                
-                auto func = [task]()
-                {
-                    if (!task.handle->IsVaild())
-                        return;
-
-                    constexpr size_t BlockSize = 4096;
-                    
-                };
-            }
-        }
-
-        if (idleWriteThreads.size() > 0)
+        std::sort(writeThreads.begin(), writeThreads.end(), [](FileIOThread* a, FileIOThread* b)
         {
-            
-        }
-        
+            return a->GetQueueLength() < b->GetQueueLength();
+        });
+
         
     }
 
-    void FileIOManager::TickFileReadIOThread(size_t threadIdx)
+    void FileIOManager::TickFileIOThread(IThread* threadHandle)
     {
-        FileIOThread* thread = dynamic_cast<FileIOThread*> (readThreadHandles.at(threadIdx));
-        
+        FileIOThread* thread = dynamic_cast<FileIOThread*> (threadHandle);
+        std::list<FileIOTask> finishedTasks;
+
+        thread->GetFinishedTasks(finishedTasks);
+
+        for (auto &task: finishedTasks)
+        {
+            if (task.callback)
+            {
+                task.callback(task.bOK, task.remainingSize, task.bufferStart);
+            }
+        }
     }
 }

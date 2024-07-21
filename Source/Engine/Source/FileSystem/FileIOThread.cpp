@@ -46,7 +46,7 @@ namespace Koala::FileIO
         {
             while (atomicHasPendingTask.load() == false)
                 atomicHasPendingTask.wait(true);
-            DoIOTask();
+            DoWork();
         }
     }
 
@@ -59,11 +59,18 @@ namespace Koala::FileIO
 
     void FileIOThread::DoWork()
     {
-        if (!taskQueue.empty())
-            return;
+        FileIOTask task;
+        
+        {
+            std::lock_guard lock(mutexTQ);
+            if (!taskQueue.empty())
+                return;
 
-        auto task = taskQueue.front();
-        taskQueue.pop();
+            task = std::move(taskQueue.front());
+            taskQueue.pop();
+
+            atomicTQLength.fetch_sub(1);
+        }
         
         
         if (task.remainingSize != 0 && task.bufferStart)
@@ -108,11 +115,37 @@ namespace Koala::FileIO
             }
             
             task.offset += size;
+            task.remainingSize = remainingSize;
+
+            if (remainingSize == 0)
+            {
+                task.bOK = true;
+                task.bFinished = true;
+            }
             
-            if (!bIsReadThread || !handle->IsEOF() && handle->IsValid())
-                task.remainingSize = remainingSize;
-            else
-                task.remainingSize = 0;
+            if (handle->IsEOF() || !handle->IsValid())
+            {
+                task.bOK = false;
+                task.bFinished = true;
+            }
         }
+
+        if (!task.bFinished && task.bOK)
+        {
+            std::lock_guard lock(mutexTQ);
+            taskQueue.push(std::move(task));
+        }
+        else
+        {
+            std::lock_guard lock(mutexFinishedTaskList);
+            finishedTasks.push_back(task);
+        }
+    }
+
+    void FileIOThread::PushTask(FileIOTask && inTask)
+    {
+        std::lock_guard lock(mutexTQ);
+        taskQueue.push(std::move(inTask));
+        atomicTQLength.fetch_add(1);
     }
 }

@@ -41,7 +41,7 @@ namespace Koala::FileIO
         void RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
         void RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
     private:
-        void TickFileReadIOThread(size_t threadIdx);
+        void TickFileIOThread(IThread* threadHandle);
 
         uint32_t numReadThreads{4};
         uint32_t numWriteThreads{2};
@@ -49,10 +49,10 @@ namespace Koala::FileIO
         std::vector<IThread*> writeThreadHandles;
         std::vector<IThread*> readThreadHandles;
 
-        std::unordered_map<FileHandle, uint32_t> readingFileMap_ThreadIdx;
-        std::unordered_set<FileHandle, uint32_t> writingFileSet_ThreadIdx;
+        std::unordered_map<FileHandle, IThread*> readingFileMap_ThreadIdx;
+        std::unordered_set<FileHandle, IThread*> writingFileSet_ThreadIdx;
         
-        // std::queue<FileReadIOTask> remainingReadTasks;
-        // std::queue<FileWriteIOTask> remainingWriteTasks;
+        std::queue<FileIOTask> remainingReadTasks;
+        std::queue<FileIOTask> remainingWriteTasks;
     };
 }

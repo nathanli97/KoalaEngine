@@ -34,16 +34,28 @@ namespace Koala::FileIO
         explicit FileIOThread(bool bInIsReadThread): bIsReadThread(bInIsReadThread) {}
 
         void Run() override;
-        bool IsIdle() const
+        size_t GetQueueLength() const
         {
-            return atomicTaskInProgress.load() == false;
+            return atomicTQLength.load();
         }
+
+        void GetFinishedTasks(std::list<FileIOTask> &v)
+        {
+            std::lock_guard lock(mutexFinishedTaskList);
+            v.swap(finishedTasks);
+        }
+        
+        void PushTask(FileIOTask &&);
         void ShutdownIOThread();
         void DoWork();
-        virtual void DoIOTask() = 0;
-        
     protected:
         std::queue<FileIOTask> taskQueue;
+        std::mutex             mutexTQ;
+
+        std::list<FileIOTask> finishedTasks;
+        std::mutex            mutexFinishedTaskList;
+
+        std::atomic<size_t>    atomicTQLength;
 
         bool bIsReadThread{true};
 
