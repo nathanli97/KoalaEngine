@@ -118,7 +118,7 @@ namespace Koala::FileIO
         {
             if (task.callback)
             {
-                task.callback(task.bOK, task.remainingSize, task.bufferStart);
+                task.callback(task.bOK, task.performedSize, task.bufferStart);
             }
         }
     }

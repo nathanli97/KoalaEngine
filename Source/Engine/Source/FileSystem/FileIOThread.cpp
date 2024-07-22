@@ -71,6 +71,28 @@ namespace Koala::FileIO
 
             atomicTQLength.fetch_sub(1);
         }
+
+        if (!task.bOK || task.bCanceled)
+        {
+            std::lock_guard lock(mutexFinishedTaskList);
+            finishedTasks.push_back(task);
+            
+            return;
+        }
+
+        if (task.bCancelRequested)
+        {
+            task.bOK = false;
+            task.bCanceled = true;
+            task.bFinished = true;
+            
+            {
+                std::lock_guard lock(mutexFinishedTaskList);
+                finishedTasks.push_back(task);
+            }
+            
+            return;
+        }
         
         
         if (task.remainingSize != 0 && task.bufferStart)
@@ -115,12 +137,14 @@ namespace Koala::FileIO
             }
             
             task.offset += size;
+            task.performedSize += size;
             task.remainingSize = remainingSize;
 
             if (remainingSize == 0)
             {
                 task.bOK = true;
                 task.bFinished = true;
+                task.bCompleted = true;
             }
             
             if (handle->IsEOF() || !handle->IsValid())
@@ -130,10 +154,11 @@ namespace Koala::FileIO
             }
         }
 
-        if (!task.bFinished && task.bOK)
+        if (!task.bFinished && !task.bCanceled && task.bOK)
         {
             std::lock_guard lock(mutexTQ);
             taskQueue.push(std::move(task));
+            atomicTQLength.fetch_add(1);
         }
         else
         {

@@ -26,15 +26,19 @@ namespace Koala::FileIO
     typedef std::function<void(bool bOk, int64_t size, const void *buffer)> FileIOCallback;
     struct FileIOTask
     {
-        int64_t offset;
-        int64_t remainingSize;
+        int64_t offset{0};
+        int64_t remainingSize{0};
+        int64_t performedSize{0};
         void   *bufferStart;
         FileIOCallback callback;
         FileHandle handle;
 
         // Indicates status is good (no error)
-        bool  bOK{true};
-        // Indicates task has been finished (success or error)
-        bool  bFinished{false};
+        uint8_t  bOK             :  1{true};
+        // Indicates task has been finished (success or error or canceled)
+        uint8_t  bFinished       :  1{false};
+        uint8_t  bCanceled       :  1{false};
+        uint8_t  bCompleted      :  1{false};
+        uint8_t  bCancelRequested:  1{false};
     };
 }
