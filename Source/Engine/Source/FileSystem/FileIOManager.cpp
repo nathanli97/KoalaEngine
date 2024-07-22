@@ -65,8 +65,6 @@ namespace Koala::FileIO
 
     void FileIOManager::Tick_MainThread(float /*deltaTime*/)
     {
-        std::vector<FileIOThread*> readThreads, writeThreads;
-
         // Process finished tasks
         for (auto threadHandle: readThreadHandles)
         {
@@ -82,29 +80,13 @@ namespace Koala::FileIO
         if (remainingReadTasks.empty() && remainingWriteTasks.empty())
             return;
         
-        readThreads.reserve(readThreadHandles.size());
-        writeThreads.reserve(writeThreadHandles.size());
         for (auto threadHandle: readThreadHandles)
         {
-            readThreads.push_back(dynamic_cast<FileIOThread*>(threadHandle));
+            auto thread = dynamic_cast<FileIOThread*>(threadHandle);
+            if (thread->GetQueueLength() > IOThreadMaxQueueLength)
+                continue;
+            
         }
-
-        for (auto threadHandle: writeThreadHandles)
-        {
-            writeThreads.push_back(dynamic_cast<FileIOThread*>(threadHandle));
-        }
-
-        std::sort(readThreads.begin(), readThreads.end(), [](FileIOThread* a, FileIOThread* b)
-        {
-            return a->GetQueueLength() < b->GetQueueLength();
-        });
-
-        std::sort(writeThreads.begin(), writeThreads.end(), [](FileIOThread* a, FileIOThread* b)
-        {
-            return a->GetQueueLength() < b->GetQueueLength();
-        });
-
-        
     }
 
     void FileIOManager::TickFileIOThread(IThread* threadHandle)
