@@ -26,8 +26,8 @@ namespace Koala
 {
     class Scene {
     public:
-        void Load();
-        void Update(float deltaTime);
+        void Load() {}
+        void Update(float deltaTime) {}
     protected:
         std::list<std::shared_ptr<Actor>> actors;
     };
