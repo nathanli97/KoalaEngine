@@ -79,14 +79,10 @@ namespace Koala::FileIO
         // Process new tasks
         if (remainingReadTasks.empty() && remainingWriteTasks.empty())
             return;
-        
-        for (auto threadHandle: readThreadHandles)
-        {
-            auto thread = dynamic_cast<FileIOThread*>(threadHandle);
-            if (thread->GetQueueLength() > IOThreadMaxQueueLength)
-                continue;
-            
-        }
+
+        // Consider remaining tasks
+        TickRemainingIOTasks(remainingReadTasks, readingFileMap_ThreadHandle, readThreadHandles);
+        TickRemainingIOTasks(remainingWriteTasks, writingFileMap_ThreadHandle, writeThreadHandles);
     }
 
     void FileIOManager::TickFileIOThread(IThread* threadHandle)
@@ -102,6 +98,40 @@ namespace Koala::FileIO
             {
                 task.callback(task.bOK, task.performedSize, task.bufferStart);
             }
+        }
+    }
+
+    void FileIOManager::TickRemainingIOTasks(std::queue<FileIOTask> &taskQueue, const std::unordered_map<StringHash, IThread*> &fileMap_ThreadHandle, const std::vector<IThread*> &threadHandles)
+    {
+        while (!taskQueue.empty())
+        {
+            auto task = taskQueue.front();
+            auto fileName = task.handle->fileName;
+            if (fileMap_ThreadHandle.contains(fileName))
+            {
+                auto threadHandle = fileMap_ThreadHandle.at(fileName);
+                FileIOThread* thread = dynamic_cast<FileIOThread*> (threadHandle);
+                thread->PushTask(std::move(task));
+            }
+            else
+            {
+                FileIOThread* minThread{nullptr};
+                for (auto threadHandle: threadHandles)
+                {
+                    FileIOThread* thread = dynamic_cast<FileIOThread*> (threadHandle);
+                    if (!minThread || thread->GetQueueLength() < minThread->GetQueueLength())
+                    {
+                        minThread = thread;
+                    }
+                }
+
+                if (minThread->GetQueueLength() > IOThreadMaxQueueLength)
+                    break;
+
+                minThread->PushTask(std::move(task));
+            }
+
+            taskQueue.pop();
         }
     }
 }
