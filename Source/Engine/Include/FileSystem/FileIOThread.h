@@ -55,13 +55,13 @@ namespace Koala::FileIO
         std::list<FileIOTask> finishedTasks;
         std::mutex            mutexFinishedTaskList;
 
-        std::atomic<size_t>    atomicTQLength;
+        std::atomic<size_t>     atomicTQLength;
 
         bool bIsReadThread{true};
 
-        std::atomic<bool> atomicHasPendingTask{false};
         std::atomic<bool> atomicShouldShutdown{false};
-        std::atomic<bool> atomicTaskInProgress{false};
+
+        std::atomic<bool> atomicAwakeSignal{false};
     };
 
 }

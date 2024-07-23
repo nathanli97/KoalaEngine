@@ -25,6 +25,7 @@
 #include "RenderThread.h"
 #include "Core/ThreadManager.h"
 #include "AsyncWorker/AsyncTask.h"
+#include "FileSystem/FileIOManager.h"
 
 
 namespace Koala
@@ -77,6 +78,8 @@ namespace Koala
     {
         engineStage = EEngineStage::InitStage;
         Logger loggerEngineInit("EngineInitialize");
+
+        FileIO::FileIOManager::Get().Initialize_MainThread();
 
         Scripting::Initialize();
 
@@ -146,6 +149,7 @@ namespace Koala
         currScene->Update(deltaTime);
         RenderThread::Get().Tick_MainThread(deltaTime);
         AsyncWorker::WorkDispatcher::Get().Tick_MainThread(deltaTime);
+        FileIO::FileIOManager::Get().Tick_MainThread(deltaTime);
         // TODO: remove this sleep
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
@@ -161,6 +165,7 @@ namespace Koala
         AsyncWorker::WorkDispatcher::Get().Shutdown_MainThread();
         Config::Get().Shutdown_MainThread();
         Scripting::Shutdown();
+        FileIO::FileIOManager::Get().Shutdown_MainThread();
     }
 
 }

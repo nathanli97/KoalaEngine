@@ -23,13 +23,15 @@
 namespace Koala::FileIO
 {
     constexpr uint32_t IOThreadMaxQueueLength = 500;
+    Logger logger("FileIOManager");
     bool FileIOManager::Initialize_MainThread()
     {
         auto numCPUCores = std::thread::hardware_concurrency();
 
         numReadThreads = std::min(numCPUCores, numReadThreads);
         numWriteThreads = std::min(numCPUCores, numWriteThreads);
-        
+
+        logger.info("Creating IO Threads: {} readThreads, {} writeThreads", numReadThreads, numWriteThreads);
         for (uint32_t i = 0; i < numReadThreads; i++)
         {
             auto handle = new FileIOThread(true);
@@ -48,6 +50,7 @@ namespace Koala::FileIO
 
     bool FileIOManager::Shutdown_MainThread()
     {
+        logger.info("Shutdowning IO Threads...");
         for (auto handle: readThreadHandles)
         {
             auto t = dynamic_cast<FileIOThread*> (handle);

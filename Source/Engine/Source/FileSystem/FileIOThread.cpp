@@ -44,8 +44,8 @@ namespace Koala::FileIO
     {
         while (!atomicShouldShutdown.load())
         {
-            while (atomicHasPendingTask.load() == false)
-                atomicHasPendingTask.wait(true);
+            while (atomicAwakeSignal.load() == false)
+                atomicAwakeSignal.wait(false);
             DoWork();
         }
     }
@@ -54,6 +54,8 @@ namespace Koala::FileIO
     {
         atomicShouldShutdown.store(true);
         atomicShouldShutdown.notify_all();
+        atomicAwakeSignal.store(true);
+        atomicAwakeSignal.notify_all();
     }
 
 
@@ -63,8 +65,12 @@ namespace Koala::FileIO
         
         {
             std::lock_guard lock(mutexTQ);
-            if (!taskQueue.empty())
+            if (taskQueue.empty())
+            {
+                // Put the thread to sleep until we has new task.
+                atomicAwakeSignal.store(false);
                 return;
+            }
 
             task = std::move(taskQueue.front());
             taskQueue.pop();
@@ -172,5 +178,7 @@ namespace Koala::FileIO
         std::lock_guard lock(mutexTQ);
         taskQueue.push(std::move(inTask));
         atomicTQLength.fetch_add(1);
+        atomicAwakeSignal.store(true);
+        atomicAwakeSignal.notify_all();
     }
 }
