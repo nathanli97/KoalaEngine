@@ -23,22 +23,22 @@
 namespace Koala::FileIO
 {
     constexpr int64_t BlockSize = 4096;
-    constexpr int64_t MaxContinuousIOWorkBlocks = 64;
+    constexpr int64_t MaxContinuousIOWorkBlocks = 64 * 2;
 
     int64_t FilePriorityToBlockNum(EFilePriority inPriority)
     {
         switch (inPriority)
         {
         case EFilePriority::Highest:
-            return 64;
+            return 64 * 2;
         case EFilePriority::High:
-            return 32;
+            return 32 * 2;
         case EFilePriority::Normal:
-            return 16;
+            return 16 * 2;
         case EFilePriority::Low:
-            return 8;
+            return 8 * 2;
         case EFilePriority::Lowest:
-            return 4;
+            return 4 * 2;
         default: return 1;
         }
     }
@@ -124,6 +124,10 @@ namespace Koala::FileIO
                 {
                     int64_t blockSize = std::min(BlockSize, remainingSize);
 
+                    auto fileOffset = handle->fileStream.tellg() + size;
+                    if (fileOffset != task.offset)
+                        handle->fileStream.seekg(task.offset, std::ios::beg);
+                    
                     handle->fileStream.read(buffer + size, blockSize);
                     int64_t readSize = handle->fileStream.gcount();
                     size += readSize;
@@ -135,12 +139,13 @@ namespace Koala::FileIO
                 const char * buffer = static_cast<const char*>(task.bufferStart) + task.offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
+                    check(handle->openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
+                    check(handle->fileStream.good());
                     int64_t blockSize = std::min(BlockSize, remainingSize);
 
                     handle->fileStream.write(buffer + size, blockSize);
-                    int64_t writeSize = handle->fileStream.gcount();
-                    size += writeSize;
-                    remainingSize -= writeSize;
+                    size += blockSize;
+                    remainingSize -= blockSize;
                 }
             }
             

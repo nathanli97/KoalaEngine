@@ -102,6 +102,8 @@ namespace Koala::FileIO
         
         void CloseFile(FileHandle &handle);
     private:
+        void CalcFileSize(FileHandle & inHandle);
+
         std::unordered_map<StringHash, FileHandle>  openedFilesForRead;
         std::unordered_map<StringHash, FileHandle> openedFilesForWrite;
         std::mutex                                      mutex;

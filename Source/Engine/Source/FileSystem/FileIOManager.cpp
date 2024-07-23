@@ -42,7 +42,7 @@ namespace Koala::FileIO
         for (uint32_t i = 0; i < numWriteThreads; i++)
         {
             auto handle = new FileIOThread(false);
-            readThreadHandles.push_back(handle);
+            writeThreadHandles.push_back(handle);
             ThreadManager::Get().CreateThreadManaged(handle);
         }
         return true;

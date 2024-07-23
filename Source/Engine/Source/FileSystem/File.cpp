@@ -39,7 +39,7 @@ namespace Koala::FileIO
         {
             std::fstream stream;
             std::ios::openmode mode{};
-            if (openMode & (uint32_t)EOpenFileMode::OpenAsBinary)
+            if (!(openMode & (uint32_t)EOpenFileMode::OpenAsText))
             {
                 mode = std::ios::binary;
             }
@@ -64,6 +64,7 @@ namespace Koala::FileIO
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
             handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenAsRead;
+            CalcFileSize(handle);
             
             openedFilesForRead.emplace(path, handle) ;
 
@@ -87,7 +88,7 @@ namespace Koala::FileIO
         {
             std::fstream stream;
             std::ios::openmode mode{};
-            if (openMode & (uint32_t)EOpenFileMode::OpenAsBinary)
+            if (!(openMode & (uint32_t)EOpenFileMode::OpenAsText))
             {
                 mode = std::ios::binary;
             }
@@ -140,5 +141,22 @@ namespace Koala::FileIO
                 }
             }
         }
+    }
+
+    void FileManager::CalcFileSize(FileHandle &inHandle)
+    {
+        if (!inHandle)
+            return;
+        auto currOffset = inHandle->fileStream.tellg();
+        std::streampos fsize = 0;
+        
+        inHandle->fileStream.seekg(0, std::ios::beg);
+        fsize = inHandle->fileStream.tellg();
+        inHandle->fileStream.seekg(0, std::ios::end);
+        fsize = inHandle->fileStream.tellg() - fsize;
+
+        inHandle->fileStream.seekg(currOffset, std::ios::beg);
+
+        inHandle->fileSize = fsize;
     }
 }
