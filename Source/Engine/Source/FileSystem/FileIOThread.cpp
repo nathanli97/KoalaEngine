@@ -18,6 +18,8 @@
 
 #include "FileSystem/FileIOThread.h"
 
+#include "Core/Check.h"
+
 namespace Koala::FileIO
 {
     constexpr int64_t BlockSize = 4096;
@@ -175,7 +177,13 @@ namespace Koala::FileIO
 
     void FileIOThread::PushTask(FileIOTask && inTask)
     {
+        check(
+            inTask.handle->currWorkingIOThread == nullptr || inTask.handle->currWorkingIOThread == this,
+            "The task is already assigned to other I/O thread. Reassigning is currently unsupported!");
         std::lock_guard lock(mutexTQ);
+
+        if (inTask.handle->currWorkingIOThread == nullptr)
+            inTask.handle->currWorkingIOThread = this;
         taskQueue.push(std::move(inTask));
         atomicTQLength.fetch_add(1);
         atomicAwakeSignal.store(true);

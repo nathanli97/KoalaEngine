@@ -34,7 +34,7 @@ namespace Koala::FileIO
         explicit FileIOThread(bool bInIsReadThread): bIsReadThread(bInIsReadThread) {}
 
         void Run() override;
-        size_t GetQueueLength() const
+        NODISCARD size_t GetQueueLength() const
         {
             return atomicTQLength.load();
         }
@@ -48,6 +48,16 @@ namespace Koala::FileIO
         void PushTask(FileIOTask &&);
         void ShutdownIOThread();
         void DoWork();
+
+        NODISCARD bool IsIOReadThread() const
+        {
+            return bIsReadThread;
+        }
+
+        NODISCARD  bool IsIOWriteThread() const
+        {
+            return !IsIOReadThread();
+        }
     protected:
         std::queue<FileIOTask> taskQueue;
         std::mutex             mutexTQ;

@@ -22,6 +22,8 @@
 
 #include "Core/ModuleInterface.h"
 #include "Core/StringHash.h"
+#include "Core/ThreadInterface.h"
+
 
 namespace Koala::FileIO
 {
@@ -51,6 +53,8 @@ namespace Koala::FileIO
         EOpenFileModes openMode;
         EFilePriority  priority;
         std::fstream   fileStream;
+
+        IThread        *currWorkingIOThread{nullptr};
 
 
         FileHandleData() = default;
