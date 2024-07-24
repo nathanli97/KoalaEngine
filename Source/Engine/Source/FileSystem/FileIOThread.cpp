@@ -22,7 +22,7 @@
 
 namespace Koala::FileIO
 {
-    constexpr int64_t BlockSize = 4096;
+    constexpr int64_t BlockSize = 16384;
     constexpr int64_t MaxContinuousIOWorkBlocks = 256;
 
     int64_t FilePriorityToBlockNum(EFilePriority inPriority)
