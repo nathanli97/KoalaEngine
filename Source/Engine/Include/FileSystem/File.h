@@ -51,7 +51,7 @@ namespace Koala::FileIO
         StringHash     fileName;
         size_t         fileSize;
         EOpenFileModes openMode;
-        EFilePriority  priority;
+        EFilePriority  priority{EFilePriority::Normal};
         std::fstream   fileStream;
 
         IThread        *currWorkingIOThread{nullptr};
