@@ -64,23 +64,23 @@ namespace Koala
         std::unordered_map<size_t, std::string> stringPool;
         std::shared_mutex mutex;
     };
-    class StringHash final
+    class HashedString final
     {
     public:
-        StringHash() = default;
-        StringHash(const StringHash &rhs) = default;
-        StringHash(StringHash &&rhs) = default;
-        StringHash& operator=(const StringHash&) = default;
-        StringHash& operator=(StringHash&&) = default;
+        HashedString() = default;
+        HashedString(const HashedString &rhs) = default;
+        HashedString(HashedString &&rhs) = default;
+        HashedString& operator=(const HashedString&) = default;
+        HashedString& operator=(HashedString&&) = default;
         
-        inline bool operator==(const StringHash &rhs) const
+        inline bool operator==(const HashedString &rhs) const
         {
             return hash == rhs.hash;
         }
-        inline bool operator!=(const StringHash& rhs) const {return !operator==(rhs);}
+        inline bool operator!=(const HashedString& rhs) const {return !operator==(rhs);}
         size_t GetHash() const {return hash;}
-        StringHash(size_t inHash): hash(inHash) {}
-        StringHash(const std::string& inStr)
+        HashedString(size_t inHash): hash(inHash) {}
+        HashedString(const std::string& inStr)
         {
             hash = StringHashPool::Get().RegisterString(inStr);
         }
@@ -93,13 +93,21 @@ namespace Koala
     private:
         size_t hash{0};
     };
-    
+    FORCEINLINE HashedString MakeHashedString(const char * s)
+    {
+        return HashedString(std::string(s));
+    }
+
+    FORCEINLINE HashedString MakeHashedString(const std::string &s)
+    {
+        return HashedString(s);
+    }
 }
 
 template<>
-    struct std::hash<Koala::StringHash>
+    struct std::hash<Koala::HashedString>
 {
-    std::size_t operator()(const Koala::StringHash& inHash) const noexcept
+    std::size_t operator()(const Koala::HashedString& inHash) const noexcept
     {
         return inHash.GetHash();
     }

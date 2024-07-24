@@ -23,10 +23,8 @@
 namespace Koala::FileIO
 {
     static Logger logger("FileIO");
-    FileHandle FileManager::OpenFileForRead(StringHash path, EOpenFileModes openMode)
+    FileHandle FileManager::OpenFileForRead(HashedString path, EOpenFileModes openMode)
     {
-        check(openMode & (uint32_t)EOpenFileMode::OpenAsRead);
-
         std::scoped_lock lock(mutex);
         if (openedFilesForWrite.contains(path))
         {
@@ -39,12 +37,12 @@ namespace Koala::FileIO
         {
             std::fstream stream;
             std::ios::openmode mode{};
-            if (!(openMode & (uint32_t)EOpenFileMode::OpenAsText))
+            if (!(openMode & (uint32_t)EOpenFileMode::OpenFileAsText))
             {
                 mode = std::ios::binary;
             }
 
-            if (openMode & (uint32_t)EOpenFileMode::OpenAtAppend)
+            if (openMode & (uint32_t)EOpenFileMode::OpenFileAtAppend)
             {
                 // Ignore.
             }
@@ -63,7 +61,7 @@ namespace Koala::FileIO
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
-            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenAsRead;
+            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenFileForRead;
             CalcFileSize(handle);
             
             openedFilesForRead.emplace(path, handle) ;
@@ -72,10 +70,8 @@ namespace Koala::FileIO
         }
     }
 
-    FileHandle FileManager::OpenFileForWrite(StringHash path, EOpenFileModes openMode)
+    FileHandle FileManager::OpenFileForWrite(HashedString path, EOpenFileModes openMode)
     {
-        check(openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
-
         std::scoped_lock lock(mutex);
         if (openedFilesForRead.contains(path))
         {
@@ -88,12 +84,12 @@ namespace Koala::FileIO
         {
             std::fstream stream;
             std::ios::openmode mode{};
-            if (!(openMode & (uint32_t)EOpenFileMode::OpenAsText))
+            if (!(openMode & (uint32_t)EOpenFileMode::OpenFileAsText))
             {
                 mode = std::ios::binary;
             }
 
-            if (openMode & (uint32_t)EOpenFileMode::OpenAtAppend)
+            if (openMode & (uint32_t)EOpenFileMode::OpenFileAtAppend)
             {
                 mode |= std::ios::app;
             }
@@ -112,7 +108,7 @@ namespace Koala::FileIO
             handle->fileName = path;
             handle->fileSize = 0;
             handle->fileStream = std::move(stream);
-            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenAsWrite;
+            handle->openMode = openMode | (uint32_t)EOpenFileMode::OpenFileForWrite;
             
             openedFilesForWrite.emplace(path, handle) ;
 

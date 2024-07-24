@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include "Core/StringHash.h"
+#include "Core/HashedString.h"
 #include "FileSystem/FileStream.h"
 
 namespace Koala
@@ -44,7 +44,7 @@ namespace Koala
         {
             return SaveAssetUnbaked(file);
         }
-        virtual StringHash GetAssetFilePath() = 0;
+        virtual HashedString GetAssetFilePath() = 0;
 
         FORCEINLINE bool IsBakedData() const
         {

@@ -22,7 +22,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include "Core/StringHash.h"
+#include "Core/HashedString.h"
 #include "File.h"
 #include "FileIOTask.h"
 #include "Core/ModuleInterface.h"

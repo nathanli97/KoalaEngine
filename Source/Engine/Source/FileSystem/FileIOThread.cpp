@@ -139,7 +139,7 @@ namespace Koala::FileIO
                 const char * buffer = static_cast<const char*>(task.bufferStart) + task.offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
-                    check(handle->openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
+                    check(handle->openMode & (uint32_t)EOpenFileMode::OpenFileForWrite);
                     check(handle->fileStream.good());
                     int64_t blockSize = std::min(BlockSize, remainingSize);
 

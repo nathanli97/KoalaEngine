@@ -21,19 +21,19 @@
 #include <unordered_map>
 
 #include "Core/ModuleInterface.h"
-#include "Core/StringHash.h"
+#include "Core/HashedString.h"
 #include "Core/ThreadInterface.h"
 
 
 namespace Koala::FileIO
 {
-    enum class EOpenFileMode
+    enum EOpenFileMode
     {
-        OpenAsBinary = 1 << 0,
-        OpenAsText   = 1 << 1,
-        OpenAtAppend = 1 << 2,
-        OpenAsRead   = 1 << 3,
-        OpenAsWrite  = 1 << 4,
+        OpenFileAsBinary = 1 << 0,
+        OpenFileAsText   = 1 << 1,
+        OpenFileAtAppend = 1 << 2,
+        OpenFileForRead   = 1 << 3,
+        OpenFileForWrite  = 1 << 4,
     };
     typedef uint32_t EOpenFileModes;
 
@@ -48,7 +48,7 @@ namespace Koala::FileIO
 
     struct FileHandleData
     {
-        StringHash     fileName;
+        HashedString     fileName;
         size_t         fileSize;
         EOpenFileModes openMode;
         EFilePriority  priority{EFilePriority::Normal};
@@ -76,18 +76,18 @@ namespace Koala::FileIO
 
         FORCEINLINE bool IsOpenedForReadOnly() const
         {
-            return openMode & (uint32_t)EOpenFileMode::OpenAsRead &&
-                !(openMode & (uint32_t)EOpenFileMode::OpenAsWrite);
+            return openMode & EOpenFileMode::OpenFileForRead &&
+                !(openMode & EOpenFileMode::OpenFileForWrite);
         }
 
         FORCEINLINE bool CanRead() const
         {
-            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenAsRead;
+            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenFileForRead;
         }
 
         FORCEINLINE bool CanWrite() const
         {
-            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenAsWrite;
+            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenFileForWrite;
         }
     };
 
@@ -97,15 +97,15 @@ namespace Koala::FileIO
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(FileManager)
-        FileHandle OpenFileForRead(StringHash path, EOpenFileModes openMode);
-        FileHandle OpenFileForWrite(StringHash path, EOpenFileModes openMode);
+        FileHandle OpenFileForRead(HashedString path, EOpenFileModes openMode = EOpenFileMode::OpenFileAsBinary);
+        FileHandle OpenFileForWrite(HashedString path, EOpenFileModes openMode = EOpenFileMode::OpenFileAsBinary);
         
         void CloseFile(FileHandle &handle);
     private:
         void CalcFileSize(FileHandle & inHandle);
 
-        std::unordered_map<StringHash, FileHandle>  openedFilesForRead;
-        std::unordered_map<StringHash, FileHandle> openedFilesForWrite;
+        std::unordered_map<HashedString, FileHandle>  openedFilesForRead;
+        std::unordered_map<HashedString, FileHandle> openedFilesForWrite;
         std::mutex                                      mutex;
     };
 }
