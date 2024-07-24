@@ -22,7 +22,7 @@ constexpr uint32_t MeshFileMagicMask = 0x12341234;
 constexpr uint32_t MeshFileCurrentVersion = 0x1;
 namespace Koala
 {
-    Logger logger("MeshAsset");
+    static Logger logger("MeshAsset");
     
     struct MeshAssetMetaData
     {

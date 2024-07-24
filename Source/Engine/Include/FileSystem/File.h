@@ -27,7 +27,7 @@
 
 namespace Koala::FileIO
 {
-    enum EOpenFileMode
+    enum EFileOpenMode
     {
         OpenFileAsBinary = 1 << 0,
         OpenFileAsText   = 1 << 1,
@@ -76,18 +76,18 @@ namespace Koala::FileIO
 
         FORCEINLINE bool IsOpenedForReadOnly() const
         {
-            return openMode & EOpenFileMode::OpenFileForRead &&
-                !(openMode & EOpenFileMode::OpenFileForWrite);
+            return openMode & EFileOpenMode::OpenFileForRead &&
+                !(openMode & EFileOpenMode::OpenFileForWrite);
         }
 
         FORCEINLINE bool CanRead() const
         {
-            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenFileForRead;
+            return IsValid() && openMode & (uint32_t)EFileOpenMode::OpenFileForRead;
         }
 
         FORCEINLINE bool CanWrite() const
         {
-            return IsValid() && openMode & (uint32_t)EOpenFileMode::OpenFileForWrite;
+            return IsValid() && openMode & (uint32_t)EFileOpenMode::OpenFileForWrite;
         }
     };
 
@@ -97,8 +97,8 @@ namespace Koala::FileIO
     {
     public:
         KOALA_IMPLEMENT_SINGLETON(FileManager)
-        FileHandle OpenFileForRead(HashedString path, EOpenFileModes openMode = EOpenFileMode::OpenFileAsBinary);
-        FileHandle OpenFileForWrite(HashedString path, EOpenFileModes openMode = EOpenFileMode::OpenFileAsBinary);
+        FileHandle OpenFileForRead(HashedString path, EOpenFileModes openMode = EFileOpenMode::OpenFileAsBinary);
+        FileHandle OpenFileForWrite(HashedString path, EOpenFileModes openMode = EFileOpenMode::OpenFileAsBinary);
         
         void CloseFile(FileHandle &handle);
     private:

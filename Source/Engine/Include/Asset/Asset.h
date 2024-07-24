@@ -29,9 +29,9 @@ namespace Koala
         virtual ~IAsset() = default;
         // Load the asset. The implementation of LoadAsset should check
         // The input data is baked or not.
-        virtual bool LoadAsset(ReadFileStream &file) = 0;
+        virtual bool LoadAsset(FileIO::ReadFileStream &file) = 0;
         // Save Unbaked Asset. Only unbaked asset can be saved via this function.
-        virtual bool SaveAssetUnbaked(WriteFileStream &file) = 0;
+        virtual bool SaveAssetUnbaked(FileIO::WriteFileStream &file) = 0;
 
         virtual bool IsHardcodedAsset() { return false; }
         virtual bool Initialize() { return true; }
@@ -40,7 +40,7 @@ namespace Koala
         // Default implementation is use the same format between baked and unbaked version of asset.
         // If asset's baked data format is different with unbaked version (e.g. Textures),
         // Override it.
-        virtual bool Bake(WriteFileStream &file)
+        virtual bool Bake(FileIO::WriteFileStream &file)
         {
             return SaveAssetUnbaked(file);
         }

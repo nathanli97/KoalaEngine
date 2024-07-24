@@ -19,72 +19,251 @@
 #include <fstream>
 
 #include "Definations.h"
+#include "File.h"
+#include "FileIOManager.h"
+#include "FileIOTask.h"
 #include "Core/Check.h"
+#include "Memory/MemoryPool.h"
 
-namespace Koala
+namespace Koala::FileIO
 {
-    enum ESeekFrom
-    {
-        Begin,
-        Current,
-        End
-    };
+    constexpr size_t FileStreamPageCacheSize = 4096;
     class FileStream
     {
     public:
-        FileStream(std::fstream * inFStream, size_t inOffset, size_t inFileSize):
-            fstream(inFStream), offset(inOffset), fileSize(inFileSize)
-        {}
-        FORCEINLINE size_t Tell()
+        FileStream() = default;
+        FileStream(FileHandle &inHandle): handle(inHandle){}
+        inline FileStream & operator=(const FileHandle & rhs)
         {
-            auto position = (size_t)fstream->tellg();
-            check(position >= offset);
-            return (size_t)fstream->tellg() - offset;
+            handle = rhs;
+            Initialize();
+            return *this;
         }
-        FORCEINLINE void Seek(ESeekFrom seekFrom, size_t inSeekWhere)
+
+        virtual inline void Initialize(){}
+
+        NODISCARD FORCEINLINE bool IsValid() const
         {
-            check(inSeekWhere >= offset && inSeekWhere < offset + fileSize);
-            std::ios::seekdir seekmode;
-            
-            if (seekFrom == ESeekFrom::Begin)
-                seekmode = std::ios::beg;
-            else if (seekFrom == ESeekFrom::Current)
-                seekmode = std::ios::cur;
-            else
-                seekmode = std::ios::end;
-            
-            fstream->seekg(inSeekWhere, seekmode);
+            return handle != nullptr && handle->IsValid();
         }
-        size_t GetFileSize()
+
+        FORCEINLINE void Seek(size_t num)
         {
-            return fileSize;
+            ensure(IsValid());
+
+            offset = num;
         }
+
+        FORCEINLINE size_t Tell() const
+        {
+            ensure(IsValid());
+            return offset;
+        }
+
+        FORCEINLINE size_t GetFileSize() const
+        {
+            ensure(IsValid());
+            return handle->fileSize;
+        }
+        
+        template <typename T>
+        FileStream & operator<<(T &v)
+        {
+            return *this;
+        }
+
+        virtual void Sync(void* buf, size_t size) {}
+    
     protected:
-        std::fstream* fstream{nullptr};
-        size_t offset{0};
-        size_t fileSize{0};
+        FileHandle              handle{nullptr};
+        size_t                  offset{0};
     };
 
     class ReadFileStream: public FileStream
     {
     public:
-        using FileStream::FileStream;
-        FORCEINLINE ReadFileStream& Read(void* inBuffer, size_t inSize)
+        using FileStream::operator=;
+        ReadFileStream()
         {
-            fstream->read((char*)inBuffer, inSize);
+            FileStream::Initialize();
+        }
+        ReadFileStream(FileHandle &inHandle): FileStream(inHandle)
+        {
+            FileStream::Initialize();
+        }
+        
+        ReadFileStream(HashedString filePath, bool bOpenAsText = false)
+        {
+            handle = FileManager::Get().OpenFileForRead(filePath, bOpenAsText ? EFileOpenMode::OpenFileAsText : EFileOpenMode::OpenFileAsBinary);
+            InitPageCache();
+        }
 
+        inline void Initialize() override
+        {
+            InitPageCache();
+        }
+        
+        FORCEINLINE ReadFileStream& ReadAsync(void* inBuffer, size_t inSize, FileIOCallback callback = nullptr)
+        {
+            ensure(IsValid());
+            FileIOManager::Get().RequestReadFileAsync(handle, offset, inSize, inBuffer, callback);
             return *this;
         }
+
+        inline void Sync(void *buf, size_t size) override
+        {
+            size_t currOffset = offset;
+            if (IsOffsetInCurrentPage(currOffset))
+            {
+                size_t relOffsetInPage = currOffset - GetPageCacheOffsetBegin();
+                size_t availSizeInPage = GetPageSize(currPageIdx) - relOffsetInPage + 1;
+                // TODO: Memcpy from page cache...
+            }
+        }
+
+        FORCEINLINE void InitPageCache()
+        {
+            ensure(IsValid());
+            if (page)
+            {
+                Memory::Free(page);
+                page = nullptr;
+            }
+            
+            page = Memory::Malloc(FileStreamPageCacheSize);
+            ensure(page != nullptr);
+            currPageIdx = 0;
+            InvalidatePageCache();
+            FetchPage();
+        }
+        
+        FORCEINLINE void FetchPage()
+        {
+            ensure(IsValid());
+
+            if (IsPageCacheDataReady())
+                return;
+
+            ReadAsync(page, GetPageSize(currPageIdx), [this](bool bOk, int64_t size, const void *buffer)
+            {
+                atomicPageDataReady.store(true);
+                atomicPageDataReady.notify_all();
+            });
+        }
+
+        FORCEINLINE void RefreshPageCache()
+        {
+            ensure(IsValid());
+
+            InvalidatePageCache();
+            FetchPage();
+        }
+
+        FORCEINLINE bool NextPage()
+        {
+            ensure(IsValid());
+
+            if (currPageIdx == GetMaxPageCacheIdx())
+                return false;
+
+            currPageIdx++;
+            return true;
+        }
+
+        FORCEINLINE bool PrevPage()
+        {
+            ensure(IsValid());
+
+            if (currPageIdx == GetMaxPageCacheIdx())
+                return false;
+
+            currPageIdx--;
+            return true;
+        }
+
+        FORCEINLINE bool IsOffsetInCurrentPage(size_t inOffset) const
+        {
+            return inOffset >= GetPageCacheOffsetBegin() &&
+                inOffset < GetPageCacheOffsetEnd();
+        }
+
+        FORCEINLINE bool IsPageCacheDataReady() const
+        {
+            return atomicPageDataReady.load();
+        }
+
+        FORCEINLINE void WaitForPageCacheDataReady() const
+        {
+            ensure(IsValid());
+
+            atomicPageDataReady.wait(false);
+        }
+
+        FORCEINLINE void InvalidatePageCache()
+        {
+            ensure(IsValid());
+
+            atomicPageDataReady.store(false);
+        }
+
+        FORCEINLINE size_t GetPageCacheIdx() const
+        {
+            return currPageIdx;
+        }
+
+        FORCEINLINE size_t GetPageCacheOffsetBegin() const
+        {
+            return GetPageCacheIdx() * FileStreamPageCacheSize;
+        }
+
+        FORCEINLINE size_t GetPageCacheOffsetEnd() const
+        {
+            if (currPageIdx != GetMaxPageCacheIdx())
+                return GetPageCacheOffsetBegin() + FileStreamPageCacheSize;
+            else
+            {
+                return GetPageCacheOffsetBegin() + GetLastPageSize();
+            }
+        }
+
+        FORCEINLINE size_t GetMaxPageCacheIdx() const
+        {
+            return GetFileSize() / FileStreamPageCacheSize;
+        }
+
+        FORCEINLINE size_t GetLastPageSize() const
+        {
+            return GetFileSize() % FileStreamPageCacheSize;
+        }
+
+        FORCEINLINE size_t GetPageSize(size_t idx) const
+        {
+            if (idx == GetMaxPageCacheIdx())
+                return GetLastPageSize();
+            else
+            {
+                return FileStreamPageCacheSize;
+            }
+        }
+    private:
+        void                    *page{nullptr};
+        size_t                  currPageIdx{0};
+        std::atomic<bool>       atomicPageDataReady{false};
     };
 
     class WriteFileStream: public FileStream
     {
     public:
         using FileStream::FileStream;
-        FORCEINLINE WriteFileStream& Write(void* inBuffer, size_t inSize)
+        using FileStream::operator=;
+        WriteFileStream(HashedString filePath, bool bOpenAsText = false)
         {
-            fstream->write((char*)inBuffer, inSize);
-
+            handle = FileManager::Get().OpenFileForWrite(filePath, bOpenAsText ? EFileOpenMode::OpenFileAsText : EFileOpenMode::OpenFileAsBinary);
+        }
+        FORCEINLINE WriteFileStream& WriteAsync(const void* inBuffer, size_t inSize, FileIOCallback callback = nullptr)
+        {
+            ensure(IsValid());
+            FileIOManager::Get().RequestWriteFileAsync(handle, offset, inSize, inBuffer, callback);
             return *this;
         }
     };
