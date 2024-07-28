@@ -16,7 +16,10 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#pragma once
+
 #include <fstream>
+#include <utility>
 
 #include "Definations.h"
 #include "File.h"
@@ -27,7 +30,7 @@
 
 namespace Koala::FileIO
 {
-    constexpr size_t FileStreamPageCacheSize = 4096;
+    constexpr size_t FileStreamPageSize = 4096;
     class FileStream
     {
     public:
@@ -72,7 +75,8 @@ namespace Koala::FileIO
             return *this;
         }
 
-        virtual void Sync(void* buf, size_t size) {}
+        // This function is only intend to serialize small memory fields.
+        virtual void Serialize(void* buf, size_t size) = 0;
     
     protected:
         FileHandle              handle{nullptr};
@@ -95,160 +99,19 @@ namespace Koala::FileIO
         ReadFileStream(HashedString filePath, bool bOpenAsText = false)
         {
             handle = FileManager::Get().OpenFileForRead(filePath, bOpenAsText ? EFileOpenMode::OpenFileAsText : EFileOpenMode::OpenFileAsBinary);
-            InitPageCache();
         }
 
         inline void Initialize() override
-        {
-            InitPageCache();
-        }
+        {}
         
         FORCEINLINE ReadFileStream& ReadAsync(void* inBuffer, size_t inSize, FileIOCallback callback = nullptr)
         {
             ensure(IsValid());
-            FileIOManager::Get().RequestReadFileAsync(handle, offset, inSize, inBuffer, callback);
+            FileIOManager::Get().RequestReadFileAsync(handle, offset, inSize, inBuffer, std::move(callback));
             return *this;
         }
 
-        inline void Sync(void *buf, size_t size) override
-        {
-            size_t currOffset = offset;
-            if (IsOffsetInCurrentPage(currOffset))
-            {
-                size_t relOffsetInPage = currOffset - GetPageCacheOffsetBegin();
-                size_t availSizeInPage = GetPageSize(currPageIdx) - relOffsetInPage + 1;
-                // TODO: Memcpy from page cache...
-            }
-        }
 
-        FORCEINLINE void InitPageCache()
-        {
-            ensure(IsValid());
-            if (page)
-            {
-                Memory::Free(page);
-                page = nullptr;
-            }
-            
-            page = Memory::Malloc(FileStreamPageCacheSize);
-            ensure(page != nullptr);
-            currPageIdx = 0;
-            InvalidatePageCache();
-            FetchPage();
-        }
-        
-        FORCEINLINE void FetchPage()
-        {
-            ensure(IsValid());
-
-            if (IsPageCacheDataReady())
-                return;
-
-            ReadAsync(page, GetPageSize(currPageIdx), [this](bool bOk, int64_t size, const void *buffer)
-            {
-                atomicPageDataReady.store(true);
-                atomicPageDataReady.notify_all();
-            });
-        }
-
-        FORCEINLINE void RefreshPageCache()
-        {
-            ensure(IsValid());
-
-            InvalidatePageCache();
-            FetchPage();
-        }
-
-        FORCEINLINE bool NextPage()
-        {
-            ensure(IsValid());
-
-            if (currPageIdx == GetMaxPageCacheIdx())
-                return false;
-
-            currPageIdx++;
-            return true;
-        }
-
-        FORCEINLINE bool PrevPage()
-        {
-            ensure(IsValid());
-
-            if (currPageIdx == GetMaxPageCacheIdx())
-                return false;
-
-            currPageIdx--;
-            return true;
-        }
-
-        FORCEINLINE bool IsOffsetInCurrentPage(size_t inOffset) const
-        {
-            return inOffset >= GetPageCacheOffsetBegin() &&
-                inOffset < GetPageCacheOffsetEnd();
-        }
-
-        FORCEINLINE bool IsPageCacheDataReady() const
-        {
-            return atomicPageDataReady.load();
-        }
-
-        FORCEINLINE void WaitForPageCacheDataReady() const
-        {
-            ensure(IsValid());
-
-            atomicPageDataReady.wait(false);
-        }
-
-        FORCEINLINE void InvalidatePageCache()
-        {
-            ensure(IsValid());
-
-            atomicPageDataReady.store(false);
-        }
-
-        FORCEINLINE size_t GetPageCacheIdx() const
-        {
-            return currPageIdx;
-        }
-
-        FORCEINLINE size_t GetPageCacheOffsetBegin() const
-        {
-            return GetPageCacheIdx() * FileStreamPageCacheSize;
-        }
-
-        FORCEINLINE size_t GetPageCacheOffsetEnd() const
-        {
-            if (currPageIdx != GetMaxPageCacheIdx())
-                return GetPageCacheOffsetBegin() + FileStreamPageCacheSize;
-            else
-            {
-                return GetPageCacheOffsetBegin() + GetLastPageSize();
-            }
-        }
-
-        FORCEINLINE size_t GetMaxPageCacheIdx() const
-        {
-            return GetFileSize() / FileStreamPageCacheSize;
-        }
-
-        FORCEINLINE size_t GetLastPageSize() const
-        {
-            return GetFileSize() % FileStreamPageCacheSize;
-        }
-
-        FORCEINLINE size_t GetPageSize(size_t idx) const
-        {
-            if (idx == GetMaxPageCacheIdx())
-                return GetLastPageSize();
-            else
-            {
-                return FileStreamPageCacheSize;
-            }
-        }
-    private:
-        void                    *page{nullptr};
-        size_t                  currPageIdx{0};
-        std::atomic<bool>       atomicPageDataReady{false};
     };
 
     class WriteFileStream: public FileStream
