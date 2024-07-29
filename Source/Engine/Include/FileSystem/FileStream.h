@@ -16,75 +16,117 @@
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+#pragma once
+
 #include <fstream>
+#include <utility>
 
 #include "Definations.h"
+#include "File.h"
+#include "FileIOManager.h"
+#include "FileIOTask.h"
 #include "Core/Check.h"
+#include "Memory/MemoryPool.h"
 
-namespace Koala
+namespace Koala::FileIO
 {
-    enum ESeekFrom
-    {
-        Begin,
-        Current,
-        End
-    };
+    constexpr size_t FileStreamPageSize = 4096;
     class FileStream
     {
     public:
-        FileStream(std::fstream * inFStream, size_t inOffset, size_t inFileSize):
-            fstream(inFStream), offset(inOffset), fileSize(inFileSize)
-        {}
-        FORCEINLINE size_t Tell()
+        FileStream() = default;
+        FileStream(FileHandle &inHandle): handle(inHandle){}
+        inline FileStream & operator=(const FileHandle & rhs)
         {
-            auto position = (size_t)fstream->tellg();
-            check(position >= offset);
-            return (size_t)fstream->tellg() - offset;
+            handle = rhs;
+            Initialize();
+            return *this;
         }
-        FORCEINLINE void Seek(ESeekFrom seekFrom, size_t inSeekWhere)
+
+        virtual inline void Initialize(){}
+
+        NODISCARD FORCEINLINE bool IsValid() const
         {
-            check(inSeekWhere >= offset && inSeekWhere < offset + fileSize);
-            std::ios::seekdir seekmode;
-            
-            if (seekFrom == ESeekFrom::Begin)
-                seekmode = std::ios::beg;
-            else if (seekFrom == ESeekFrom::Current)
-                seekmode = std::ios::cur;
-            else
-                seekmode = std::ios::end;
-            
-            fstream->seekg(inSeekWhere, seekmode);
+            return handle != nullptr && handle->IsValid();
         }
-        size_t GetFileSize()
+
+        FORCEINLINE void Seek(size_t num)
         {
-            return fileSize;
+            ensure(IsValid());
+
+            offset = num;
         }
+
+        FORCEINLINE size_t Tell() const
+        {
+            ensure(IsValid());
+            return offset;
+        }
+
+        FORCEINLINE size_t GetFileSize() const
+        {
+            ensure(IsValid());
+            return handle->fileSize;
+        }
+        
+        template <typename T>
+        FileStream & operator<<(T &v)
+        {
+            return *this;
+        }
+
+        // This function is only intend to serialize small memory fields.
+        virtual void Serialize(void* buf, size_t size) = 0;
+    
     protected:
-        std::fstream* fstream{nullptr};
-        size_t offset{0};
-        size_t fileSize{0};
+        FileHandle              handle{nullptr};
+        size_t                  offset{0};
     };
 
     class ReadFileStream: public FileStream
     {
     public:
-        using FileStream::FileStream;
-        FORCEINLINE ReadFileStream& Read(void* inBuffer, size_t inSize)
+        using FileStream::operator=;
+        ReadFileStream()
         {
-            fstream->read((char*)inBuffer, inSize);
+            FileStream::Initialize();
+        }
+        ReadFileStream(FileHandle &inHandle): FileStream(inHandle)
+        {
+            FileStream::Initialize();
+        }
+        
+        ReadFileStream(HashedString filePath, bool bOpenAsText = false)
+        {
+            handle = FileManager::Get().OpenFileForRead(filePath, bOpenAsText ? EFileOpenMode::OpenFileAsText : EFileOpenMode::OpenFileAsBinary);
+        }
 
+        inline void Initialize() override
+        {}
+        
+        FORCEINLINE ReadFileStream& ReadAsync(void* inBuffer, size_t inSize, FileIOCallback callback = nullptr)
+        {
+            ensure(IsValid());
+            FileIOManager::Get().RequestReadFileAsync(handle, offset, inSize, inBuffer, std::move(callback));
             return *this;
         }
+
+
     };
 
     class WriteFileStream: public FileStream
     {
     public:
         using FileStream::FileStream;
-        FORCEINLINE WriteFileStream& Write(void* inBuffer, size_t inSize)
+        using FileStream::operator=;
+        WriteFileStream(HashedString filePath, bool bOpenAsText = false)
         {
-            fstream->write((char*)inBuffer, inSize);
-
+            handle = FileManager::Get().OpenFileForWrite(filePath, bOpenAsText ? EFileOpenMode::OpenFileAsText : EFileOpenMode::OpenFileAsBinary);
+        }
+        FORCEINLINE WriteFileStream& WriteAsync(const void* inBuffer, size_t inSize, FileIOCallback callback = nullptr)
+        {
+            ensure(IsValid());
+            FileIOManager::Get().RequestWriteFileAsync(handle, offset, inSize, inBuffer, callback);
             return *this;
         }
     };
