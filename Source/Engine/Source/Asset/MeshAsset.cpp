@@ -32,14 +32,14 @@ namespace Koala
         uint64_t numIndices;
     };
     
-    bool MeshAsset::LoadAsset(ReadFileStream &file)
+    bool MeshAsset::LoadAsset(FileIO::ReadFileStream &file)
     {
         size_t fileSize = file.GetFileSize();
         if (fileSize < sizeof(MeshAssetMetaData))
             return false;
         
         MeshAssetMetaData metaData;
-        file.Read((char*)&metaData, sizeof(MeshAssetMetaData));
+        // file.Read((char*)&metaData, sizeof(MeshAssetMetaData));
 
         if (metaData.fileMagicMask != MeshFileMagicMask)
         {
@@ -72,7 +72,7 @@ namespace Koala
 
             for (uint64_t i = 0; i < metaData.numVertices; ++i)
             {
-                file.Read((char*)vecDataPtr, sizeof(Vector));
+                // file.Read((char*)vecDataPtr, sizeof(Vector));
                 vecDataPtr++;
             }
             remainingFileSize += verticesAreaSize;
@@ -91,7 +91,7 @@ namespace Koala
 
             for (uint64_t i = 0; i < metaData.numIndices; ++i)
             {
-                file.Read((char*)indicesDataPtr, sizeof(Vector));
+                // file.Read((char*)indicesDataPtr, sizeof(Vector));
                 indicesDataPtr++;
             }
 
@@ -101,7 +101,7 @@ namespace Koala
         return true;
     }
 
-    bool MeshAsset::SaveAssetUnbaked(WriteFileStream &file)
+    bool MeshAsset::SaveAssetUnbaked(FileIO::WriteFileStream &file)
     {
         MeshAssetMetaData metaData;
         metaData.fileMagicMask = MeshFileMagicMask;
@@ -109,8 +109,8 @@ namespace Koala
         metaData.numVertices = vertices.size();
         metaData.numIndices = indices.size();
 
-        file.Write(vertices.data(), vertices.size() * sizeof(Vector));
-        file.Write(indices.data(), indices.size() * sizeof(uint32_t));
+        // file.Write(vertices.data(), vertices.size() * sizeof(Vector));
+        // file.Write(indices.data(), indices.size() * sizeof(uint32_t));
 
         return true;
     }

@@ -29,8 +29,11 @@ namespace Koala
         class TaskSet;
     }
 
+    typedef std::shared_ptr<AsyncWorker::TaskSet> TaskSetPtr;
+
+
     template <typename Lambda>
-    std::shared_ptr<AsyncWorker::TaskSet> Async(Lambda&&, size_t, void* , ETaskPriority, EThreadType);
+    TaskSetPtr Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread);
 }
 
 namespace Koala::AsyncWorker
@@ -52,9 +55,4 @@ namespace Koala::AsyncWorker
         std::vector<TaskPtr>            tasks;
     };
     
-}
-
-namespace Koala
-{
-    typedef std::shared_ptr<AsyncWorker::TaskSet> TaskSetPtr;
 }

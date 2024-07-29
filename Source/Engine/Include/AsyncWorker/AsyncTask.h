@@ -28,7 +28,7 @@ namespace Koala
     }
 
     template <typename Lambda>
-    TaskSetPtr Async(Lambda&& inTask, size_t numOfTasks, void* inMem = nullptr, ETaskPriority inTaskPriority = ETaskPriority::Normal, EThreadType inAssignThread = EThreadType::WorkerThread)
+    TaskSetPtr Async(Lambda&& inTask, size_t numOfTasks, void* inMem, ETaskPriority inTaskPriority, EThreadType inAssignThread)
     {
         TaskSetPtr ptr = std::make_shared<AsyncWorker::TaskSet>(numOfTasks);
         for (size_t index = 0; index < numOfTasks; index++)
@@ -38,5 +38,6 @@ namespace Koala
                 inTask(mem, index);
             }, inMem, inTaskPriority, inAssignThread);
         }
+        return ptr;
     }
 }

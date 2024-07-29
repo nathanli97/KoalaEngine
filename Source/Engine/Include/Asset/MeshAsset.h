@@ -30,8 +30,8 @@ namespace Koala
     class MeshAsset : public IAsset
     {
     public:
-        bool LoadAsset(ReadFileStream &file) override;
-        bool SaveAssetUnbaked(WriteFileStream &file) override;
+        bool LoadAsset(FileIO::ReadFileStream &file) override;
+        bool SaveAssetUnbaked(FileIO::WriteFileStream &file) override;
 
         inline HashedString GetAssetFilePath() override
         {
