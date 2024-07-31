@@ -17,41 +17,41 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
+#include <deque>
+
 #include "Definations.h"
 
 namespace Koala
 {
-    class ISerializableObject;
-    class Archive
+    class ByteStream
     {
     public:
-        virtual ~Archive() = default;
-        // Is Reading from archive? (i.e. deserializing fields from archive)
-        NODISCARD virtual bool IsReading() const = 0;
-        // Is Writing to archive? (i.e. serializing fields to archive)
-        NODISCARD virtual bool IsWriting() const = 0;
-        // Is this archive (asset) currectly be cooking?
-        NODISCARD virtual bool IsCooking() const = 0;
+        size_t Write(const char *src, size_t size);
+        size_t Read(void *dst, size_t size);
 
-        template <typename T>
-        size_t Serialize(T &v) requires std::is_scalar_v<T>
+        NODISCARD FORCEINLINE bool CanRead(const size_t requiredSize = 1) const
         {
-            return Serialize(&v, sizeof(T));
+            return GetSize() > requiredSize;
+        }
+        NODISCARD FORCEINLINE size_t GetSize() const
+        {
+            return deque.size();
         }
 
-        template <typename T>
-        size_t Serialize(T *ptr) requires std::negation_v<std::is_pointer<T>>
+        template <typename Type>
+        ByteStream& operator<<(const Type &value)
         {
-            static_assert(std::is_base_of_v<Archive, T>, "This pointer is not pointed to a serializable object.");
-            return ptr->Serialize(*this);
+            Write(&value, sizeof(Type));
+            return *this;
         }
 
-        template <typename T>
-        auto operator<=>(T &&v)
+        template <typename Type>
+        ByteStream& operator>>(Type &dst)
         {
-            return Serialize(std::forward<T>(v));
+            Read(&dst, sizeof(Type));
+            return *this;
         }
-
-        NODISCARD virtual size_t Serialize(void *, size_t) = 0;
+    private:
+        std::deque<char> deque;
     };
 }

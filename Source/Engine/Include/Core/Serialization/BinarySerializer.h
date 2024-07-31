@@ -17,41 +17,31 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #pragma once
-#include "Definations.h"
+#include "Archive.h"
 
 namespace Koala
 {
-    class ISerializableObject;
-    class Archive
+    template <bool bIsReading>
+    class BinarySerializer: public Archive
     {
     public:
-        virtual ~Archive() = default;
-        // Is Reading from archive? (i.e. deserializing fields from archive)
-        NODISCARD virtual bool IsReading() const = 0;
-        // Is Writing to archive? (i.e. serializing fields to archive)
-        NODISCARD virtual bool IsWriting() const = 0;
-        // Is this archive (asset) currectly be cooking?
-        NODISCARD virtual bool IsCooking() const = 0;
-
-        template <typename T>
-        size_t Serialize(T &v) requires std::is_scalar_v<T>
+        NODISCARD bool IsReading() const override
         {
-            return Serialize(&v, sizeof(T));
+            return bIsReading;
         }
-
-        template <typename T>
-        size_t Serialize(T *ptr) requires std::negation_v<std::is_pointer<T>>
+        NODISCARD bool IsWriting() const override
         {
-            static_assert(std::is_base_of_v<Archive, T>, "This pointer is not pointed to a serializable object.");
-            return ptr->Serialize(*this);
+            return !bIsReading;
         }
-
-        template <typename T>
-        auto operator<=>(T &&v)
+        NODISCARD bool IsCooking() const override
         {
-            return Serialize(std::forward<T>(v));
+            return bIsCooking;
         }
+        NODISCARD size_t Serialize(void *, size_t) override
+        {
 
-        NODISCARD virtual size_t Serialize(void *, size_t) = 0;
+        }
+    private:
+        bool bIsCooking{false};
     };
 }
