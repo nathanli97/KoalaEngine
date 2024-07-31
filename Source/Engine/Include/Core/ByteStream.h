@@ -19,39 +19,59 @@
 #pragma once
 #include <deque>
 
+#include "Check.h"
 #include "Definations.h"
 
 namespace Koala
 {
-    class ByteStream
+    class IByteStream
     {
     public:
-        size_t Write(const char *src, size_t size);
-        size_t Read(void *dst, size_t size);
+        virtual ~IByteStream() {}
+        
+        virtual size_t Write(const void *src, size_t size) = 0;
+        virtual size_t Read(void *dst, size_t size) = 0;
+        virtual size_t Tell() const = 0;
+        virtual void SeekFromBegin(size_t offset) const = 0;
+        virtual void SeekFromCurrent(size_t offset) const = 0;
+        virtual void SeekFromEnd(size_t offset) const = 0;
+        virtual bool IsOpened() const = 0;
+        virtual bool IsEOF() const = 0;
+        virtual void Close() const = 0;
+        virtual bool IsReadOnly() const = 0;
 
-        NODISCARD FORCEINLINE bool CanRead(const size_t requiredSize = 1) const
+        virtual bool IsGood() const
         {
-            return GetSize() > requiredSize;
+            if (IsReadOnly())
+                return IsOpened() && !IsEOF();
+            else
+                return IsOpened();
         }
-        NODISCARD FORCEINLINE size_t GetSize() const
+
+        NODISCARD FORCEINLINE bool CanRead() const
         {
-            return deque.size();
+            return IsGood() && !IsEOF();
+        }
+
+        NODISCARD FORCEINLINE bool CanWrite() const
+        {
+            return !IsReadOnly() && IsGood();
         }
 
         template <typename Type>
-        ByteStream& operator<<(const Type &value)
+        IByteStream& operator<<(const Type &value)
         {
+            check(CanWrite());
             Write(&value, sizeof(Type));
             return *this;
         }
 
         template <typename Type>
-        ByteStream& operator>>(Type &dst)
+        IByteStream& operator>>(Type &dst)
         {
+            check(CanRead());
             Read(&dst, sizeof(Type));
             return *this;
         }
-    private:
-        std::deque<char> deque;
     };
 }

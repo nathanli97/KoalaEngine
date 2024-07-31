@@ -18,6 +18,7 @@
 
 #pragma once
 #include "Archive.h"
+#include "Core/ByteStream.h"
 
 namespace Koala
 {
@@ -37,11 +38,19 @@ namespace Koala
         {
             return bIsCooking;
         }
-        NODISCARD size_t Serialize(void *, size_t) override
+        NODISCARD size_t Serialize(void *ptr, size_t size) override
         {
-
+            if constexpr (bIsReading)
+            {
+                return byteStream->Read(ptr, size);
+            }
+            else
+            {
+                return byteStream->Write(ptr, size);
+            }
         }
     private:
         bool bIsCooking{false};
+        IByteStream *byteStream{nullptr};
     };
 }
