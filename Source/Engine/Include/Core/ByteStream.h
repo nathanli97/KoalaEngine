@@ -32,12 +32,12 @@ namespace Koala
         virtual size_t Write(const void *src, size_t size) = 0;
         virtual size_t Read(void *dst, size_t size) = 0;
         virtual size_t Tell() const = 0;
-        virtual void SeekFromBegin(size_t offset) const = 0;
-        virtual void SeekFromCurrent(size_t offset) const = 0;
-        virtual void SeekFromEnd(size_t offset) const = 0;
+        virtual void SeekFromBegin(size_t offset) = 0;
+        virtual void SeekFromCurrent(size_t offset) = 0;
+        virtual void SeekFromEnd(size_t offset) = 0;
         virtual bool IsOpened() const = 0;
         virtual bool IsEOF() const = 0;
-        virtual void Close() const = 0;
+        virtual void Close() = 0;
         virtual bool IsReadOnly() const = 0;
 
         virtual bool IsGood() const
