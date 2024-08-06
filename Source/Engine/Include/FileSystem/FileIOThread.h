@@ -39,13 +39,13 @@ namespace Koala::FileIO
             return atomicTQLength.load();
         }
 
-        void GetFinishedTasks(std::list<FileIOTask> &v)
+        void GetFinishedTasks(std::list<FileIOTaskHandle> &v)
         {
             std::lock_guard lock(mutexFinishedTaskList);
             v.swap(finishedTasks);
         }
         
-        void PushTask(FileIOTask &&);
+        void PushTask(FileIOTaskHandle &&);
         void ShutdownIOThread();
         void DoWork();
 
@@ -59,13 +59,13 @@ namespace Koala::FileIO
             return !IsIOReadThread();
         }
     protected:
-        std::queue<FileIOTask> taskQueue;
-        std::mutex             mutexTQ;
+        std::queue<FileIOTaskHandle> taskQueue;
+        std::mutex                   mutexTQ;
 
-        std::list<FileIOTask> finishedTasks;
-        std::mutex            mutexFinishedTaskList;
+        std::list<FileIOTaskHandle> finishedTasks;
+        std::mutex                  mutexFinishedTaskList;
 
-        std::atomic<size_t>     atomicTQLength;
+        std::atomic<size_t>         atomicTQLength;
 
         bool bIsReadThread{true};
 

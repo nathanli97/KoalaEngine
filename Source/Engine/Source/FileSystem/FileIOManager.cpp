@@ -91,28 +91,28 @@ namespace Koala::FileIO
     void FileIOManager::TickFileIOThread(IThread* threadHandle)
     {
         FileIOThread* thread = dynamic_cast<FileIOThread*> (threadHandle);
-        std::list<FileIOTask> finishedTasks;
+        std::list<FileIOTaskHandle> finishedTasks;
 
         thread->GetFinishedTasks(finishedTasks);
 
         for (auto &task: finishedTasks)
         {
-            if (task.callback)
+            if (task->callback)
             {
-                task.callback(task.bOK, task.performedSize, task.bufferStart);
+                task->callback(task->bOK, task->performedSize, task->bufferStart);
             }
         }
     }
 
-    void FileIOManager::TickRemainingIOTasks(std::queue<FileIOTask> &taskQueue, const std::vector<IThread*> &threadHandles)
+    void FileIOManager::TickRemainingIOTasks(std::queue<FileIOTaskHandle> &taskQueue, const std::vector<IThread*> &threadHandles)
     {
         while (!taskQueue.empty())
         {
             auto task = taskQueue.front();
-            auto fileName = task.handle->fileName;
-            if (task.handle->currWorkingIOThread)
+            auto fileName = task->handle->fileName;
+            if (task->handle->currWorkingIOThread)
             {
-                FileIOThread* thread = dynamic_cast<FileIOThread*> (task.handle->currWorkingIOThread);
+                FileIOThread* thread = dynamic_cast<FileIOThread*> (task->handle->currWorkingIOThread);
                 thread->PushTask(std::move(task));
             }
             else
@@ -140,26 +140,45 @@ namespace Koala::FileIO
     void FileIOManager::RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer,
         FileIOCallback callback)
     {
-        FileIOTask task;
-        task.handle = std::move(inHandle);
-        task.offset = offset;
-        task.remainingSize = size;
-        task.bufferStart = buffer;
-        task.callback = std::move(callback);
+        FileIOTaskHandle handle = std::make_shared<FileIOTask>();
+        handle->handle = std::move(inHandle);
+        handle->offset = offset;
+        handle->remainingSize = size;
+        handle->bufferStart = buffer;
+        handle->callback = std::move(callback);
 
-        remainingReadTasks.push(std::move(task));
+        remainingReadTasks.push(std::move(handle));
     }
 
     void FileIOManager::RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, const void *buffer,
         FileIOCallback callback)
     {
-        FileIOTask task;
-        task.handle = std::move(inHandle);
-        task.offset = offset;
-        task.remainingSize = size;
-        task.bufferStart = const_cast<void *>(buffer);
-        task.callback = std::move(callback);
+        FileIOTaskHandle handle = std::make_shared<FileIOTask>();
+        handle->handle = std::move(inHandle);
+        handle->offset = offset;
+        handle->remainingSize = size;
+        handle->bufferStart = const_cast<void *>(buffer);
+        handle->callback = std::move(callback);
 
-        remainingWriteTasks.push(std::move(task));
+        remainingWriteTasks.push(std::move(handle));
     }
+
+    void FileIOTask::WaitForFinished() const
+    {
+        using std::literals::chrono_literals::operator""ms;
+
+        if (IsInMainThread())
+        {
+            while (!bFinished.load())
+            {
+                std::this_thread::sleep_for(10ms);
+                FileIOManager::Get().Tick_MainThread(10);
+            }
+        }
+        else
+        {
+            bFinished.wait(false);
+        }
+    }
+
 }

@@ -63,7 +63,7 @@ namespace Koala::FileIO
 
     void FileIOThread::DoWork()
     {
-        FileIOTask task;
+        FileIOTaskHandle task;
         
         {
             std::lock_guard lock(mutexTQ);
@@ -80,7 +80,7 @@ namespace Koala::FileIO
             atomicTQLength.fetch_sub(1);
         }
 
-        if (!task.bOK || task.bCanceled)
+        if (!task->bOK || task->bCanceled)
         {
             std::lock_guard lock(mutexFinishedTaskList);
             finishedTasks.push_back(task);
@@ -88,11 +88,14 @@ namespace Koala::FileIO
             return;
         }
 
-        if (task.bCancelRequested)
+        if (task->bCancelRequested)
         {
-            task.bOK = false;
-            task.bCanceled = true;
-            task.bFinished = true;
+            task->bOK = false;
+            task->bCanceled = true;
+            task->bFinished = true;
+            task->bOK.notify_all();
+            task->bCanceled.notify_all();
+            task->bFinished.notify_all();
             
             {
                 std::lock_guard lock(mutexFinishedTaskList);
@@ -103,30 +106,30 @@ namespace Koala::FileIO
         }
         
         
-        if (task.remainingSize != 0 && task.bufferStart)
+        if (task->remainingSize != 0 && task->bufferStart)
         {
             
-            FileHandle handle = task.handle;
+            FileHandle handle = task->handle;
             
-            int64_t blocks = std::min(task.remainingSize / BlockSize, FilePriorityToBlockNum(task.handle->priority));
+            int64_t blocks = std::min(task->remainingSize / BlockSize, FilePriorityToBlockNum(task->handle->priority));
             blocks = std::min(blocks, MaxContinuousIOWorkBlocks);
             
             if (blocks == 0)
                 blocks = 1;
 
-            int64_t remainingSize = task.remainingSize;
+            int64_t remainingSize = task->remainingSize;
             int64_t size = 0;
 
             if (bIsReadThread)
             {
-                char * buffer = static_cast<char*>(task.bufferStart) + task.offset;
+                char * buffer = static_cast<char*>(task->bufferStart) + task->offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
                     int64_t blockSize = std::min(BlockSize, remainingSize);
 
                     auto fileOffset = handle->fileStream.tellg() + size;
-                    if (fileOffset != task.offset)
-                        handle->fileStream.seekg(task.offset, std::ios::beg);
+                    if (fileOffset != task->offset)
+                        handle->fileStream.seekg(task->offset, std::ios::beg);
                     
                     handle->fileStream.read(buffer + size, blockSize);
                     int64_t readSize = handle->fileStream.gcount();
@@ -136,7 +139,7 @@ namespace Koala::FileIO
             }
             else
             {
-                const char * buffer = static_cast<const char*>(task.bufferStart) + task.offset;
+                const char * buffer = static_cast<const char*>(task->bufferStart) + task->offset;
                 for (auto i = 0; i < blocks; ++i)
                 {
                     check(handle->openMode & (uint32_t)EFileOpenMode::OpenFileForWrite);
@@ -149,25 +152,31 @@ namespace Koala::FileIO
                 }
             }
             
-            task.offset += size;
-            task.performedSize += size;
-            task.remainingSize = remainingSize;
+            task->offset += size;
+            task->performedSize += size;
+            task->remainingSize = remainingSize;
 
             if (remainingSize == 0)
             {
-                task.bOK = true;
-                task.bFinished = true;
-                task.bCompleted = true;
+                task->bOK = true;
+                task->bFinished = true;
+                task->bCompleted = true;
+                task->bOK.notify_all();
+                task->bFinished.notify_all();
+                task->bCompleted.notify_all();
+
             }
             
             if (handle->IsEOF() || !handle->IsValid())
             {
-                task.bOK = false;
-                task.bFinished = true;
+                task->bOK = false;
+                task->bFinished = true;
+                task->bOK.notify_all();
+                task->bFinished.notify_all();
             }
         }
 
-        if (!task.bFinished && !task.bCanceled && task.bOK)
+        if (!task->bFinished && !task->bCanceled && task->bOK)
         {
             std::lock_guard lock(mutexTQ);
             taskQueue.push(std::move(task));
@@ -180,15 +189,15 @@ namespace Koala::FileIO
         }
     }
 
-    void FileIOThread::PushTask(FileIOTask && inTask)
+    void FileIOThread::PushTask(FileIOTaskHandle && inTask)
     {
         check(
-            inTask.handle->currWorkingIOThread == nullptr || inTask.handle->currWorkingIOThread == this,
+            inTask->handle->currWorkingIOThread == nullptr || inTask->handle->currWorkingIOThread == this,
             "The task is already assigned to other I/O thread. Reassigning is currently unsupported!");
         std::lock_guard lock(mutexTQ);
 
-        if (inTask.handle->currWorkingIOThread == nullptr)
-            inTask.handle->currWorkingIOThread = this;
+        if (inTask->handle->currWorkingIOThread == nullptr)
+            inTask->handle->currWorkingIOThread = this;
         taskQueue.push(std::move(inTask));
         atomicTQLength.fetch_add(1);
         atomicAwakeSignal.store(true);

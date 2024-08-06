@@ -18,27 +18,61 @@
 
 #pragma once
 #include <queue>
-
+#include <chrono>
 #include "File.h"
+#include "Core/ThreadManager.h"
 
 namespace Koala::FileIO
 {
     typedef std::function<void(bool bOk, int64_t size, const void *buffer)> FileIOCallback;
-    struct FileIOTask
+    class FileIOTask
     {
+    public:
+        friend class FileIOManager;
+        friend class FileIOThread;
+
+        FORCEINLINE void Cancel()
+        {
+            bCancelRequested = true;
+        }
+
+        FORCEINLINE bool IsCompleted() const
+        {
+            return bCompleted.load();
+        }
+        NODISCARD FORCEINLINE bool IsCanceled() const
+        {
+            return bCanceled.load();
+        }
+        NODISCARD FORCEINLINE bool IsOk() const
+        {
+            return bOK.load();
+        }
+        NODISCARD FORCEINLINE bool IsCancelRequired() const
+        {
+            return bCancelRequested.load();
+        }
+        NODISCARD FORCEINLINE bool IsFinished() const
+        {
+            return bFinished.load();
+        }
+        void WaitForFinished() const;
+    private:
         int64_t offset{0};
         int64_t remainingSize{0};
         int64_t performedSize{0};
-        void   *bufferStart;
+        void   *bufferStart{nullptr};
         FileIOCallback callback;
         FileHandle handle;
 
         // Indicates status is good (no error)
-        uint8_t  bOK             :  1{true};
+        std::atomic_bool  bOK             {true};
         // Indicates task has been finished (success or error or canceled)
-        uint8_t  bFinished       :  1{false};
-        uint8_t  bCanceled       :  1{false};
-        uint8_t  bCompleted      :  1{false};
-        uint8_t  bCancelRequested:  1{false};
+        std::atomic_bool  bFinished       {false};
+        std::atomic_bool  bCanceled       {false};
+        std::atomic_bool  bCompleted      {false};
+        std::atomic_bool  bCancelRequested{false};
     };
+
+    typedef std::shared_ptr<FileIOTask> FileIOTaskHandle;
 }
