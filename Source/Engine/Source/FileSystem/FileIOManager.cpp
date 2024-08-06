@@ -137,7 +137,7 @@ namespace Koala::FileIO
         }
     }
 
-    void FileIOManager::RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer,
+    FileIOTaskHandle FileIOManager::RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer,
         FileIOCallback callback)
     {
         FileIOTaskHandle handle = std::make_shared<FileIOTask>();
@@ -147,10 +147,11 @@ namespace Koala::FileIO
         handle->bufferStart = buffer;
         handle->callback = std::move(callback);
 
-        remainingReadTasks.push(std::move(handle));
+        remainingReadTasks.push(handle);
+        return handle;
     }
 
-    void FileIOManager::RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, const void *buffer,
+    FileIOTaskHandle FileIOManager::RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, const void *buffer,
         FileIOCallback callback)
     {
         FileIOTaskHandle handle = std::make_shared<FileIOTask>();
@@ -160,7 +161,8 @@ namespace Koala::FileIO
         handle->bufferStart = const_cast<void *>(buffer);
         handle->callback = std::move(callback);
 
-        remainingWriteTasks.push(std::move(handle));
+        remainingWriteTasks.push(handle);
+        return handle;
     }
 
     void FileIOTask::WaitForFinished() const

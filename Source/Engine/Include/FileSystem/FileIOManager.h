@@ -38,8 +38,8 @@ namespace Koala::FileIO
         bool Shutdown_MainThread() override;
         void Tick_MainThread(float deltaTime) override;
 
-        void RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
-        void RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, const void *buffer, FileIOCallback callback = nullptr);
+        FileIOTaskHandle RequestReadFileAsync(FileHandle inHandle, size_t offset, size_t size, void *buffer, FileIOCallback callback = nullptr);
+        FileIOTaskHandle RequestWriteFileAsync(FileHandle inHandle, size_t offset, size_t size, const void *buffer, FileIOCallback callback = nullptr);
     private:
         void TickFileIOThread(IThread* threadHandle);
         void TickRemainingIOTasks(std::queue<FileIOTaskHandle> &taskQueue, const std::vector<IThread*> &threadHandles);
