@@ -15,31 +15,16 @@
 //OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
 //WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 #pragma once
-#include "Asset.h"
-#include "Math/MathDefinations.h"
 
 namespace Koala
 {
-    struct Vector
-    {
-        Vec3f position{};
-        Vec3f normal{};
-        Vec2f uv{};
-    };
-    class MeshAsset : public IAsset
+    class Archive;
+    class ISerializableObject
     {
     public:
-        bool LoadAsset(FileIO::ReadFileStream &file) override;
-        bool SaveAssetUnbaked(FileIO::WriteFileStream &file) override;
-
-        inline HashedString GetAssetFilePath() override
-        {
-            return 0;
-        }
-
-    protected:
-        std::vector<Vector>   vertices;
-        std::vector<uint32_t> indices;
+        virtual ~ISerializableObject() = default;
+        virtual size_t Serialize(Archive &) = 0;
     };
 }

@@ -17,8 +17,8 @@
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-
 #pragma once
+#include <forward_list>
 #include <string>
 #include <unordered_set>
 

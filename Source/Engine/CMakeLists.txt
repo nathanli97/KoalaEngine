@@ -44,7 +44,7 @@ target_include_directories(KoalaEngine
         PUBLIC ${Vulkan_INCLUDE_DIRS}
 )
 
-if (${ENABLE_CPU_PROFILE})
+if (${ENABLE_CPU_PROFILE} AND WIN32)
     target_link_libraries(KoalaEngine PUBLIC ${CMAKE_SOURCE_DIR}/ThirdParty/Target/lib/WinPixEventRuntime.lib)
 endif ()
 

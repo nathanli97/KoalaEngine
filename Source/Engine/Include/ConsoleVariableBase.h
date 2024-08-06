@@ -181,7 +181,7 @@ namespace Koala
         }
         FORCEINLINE void SetArithmetic(size_t i) override
         {
-            value.store(i, std::memory_order::consume);
+            value.store(i, std::memory_order::release);
         }
         FORCEINLINE void SetString(std::string inStr) override {}
         FORCEINLINE bool IsArithmetic() const override
